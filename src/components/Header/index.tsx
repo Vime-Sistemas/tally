@@ -8,9 +8,11 @@ import {
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
 import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target } from "lucide-react";
+import { HousePlus } from "lucide-react";
 import React from "react";
+import { HomeModernIcon } from '@heroicons/react/24/solid'
 
-export type Page = 'dashboard' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports';
+export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -47,7 +49,7 @@ export function Header({ onNavigate }: HeaderProps) {
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
         <div className="mr-4 hidden md:flex">
-          <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+          <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
             <div className="h-6 w-6 bg-black rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-xs">T</span>
             </div>
@@ -64,13 +66,13 @@ export function Header({ onNavigate }: HeaderProps) {
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 w-[260px]">
-                    <ListItem href="#" title="Resumo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+                    <ListItem href="#" title="Resumo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
                       <div className="flex items-center gap-2">
                         <PieChart className="h-4 w-4" />
                         <span>Visão resumo</span>
                       </div>
                     </ListItem>
-                    <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+                    <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}>
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4" />
                         <span>Analisar metas</span>
@@ -159,6 +161,47 @@ export function Header({ onNavigate }: HeaderProps) {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-transparent">
+                  <HousePlus className="mr-2 h-4 w-4" />
+                  Patrimônio
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}
+                        >
+                          <HousePlus className="h-6 w-6" />
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Patrimônio
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Gerencie seus bens.
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem href="#" title="Novo Item" onClick={(e) => { e.preventDefault(); onNavigate('equity-new'); }}>
+                      <div className="flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Adicionar novo bem</span>
+                      </div>
+                    </ListItem>
+                    <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}>
+                      <div className="flex items-center gap-2">
+                        <CardIcon className="h-4 w-4" />
+                        <span>Gerenciar os bens cadastrados</span>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
             </NavigationMenuList>
           </NavigationMenu>
         </div>

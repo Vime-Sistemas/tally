@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
-import { Dashboard } from './pages/Dashboard'
+import { Summary } from './pages/Dashboard/Summary'
+import { Goals } from './pages/Dashboard/Goals'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header, type Page } from './components/Header'
 import './App.css'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [currentPage, setCurrentPage] = useState<Page>('dashboard-summary');
 
   const renderPage = () => {
     switch (currentPage) {
@@ -32,8 +33,10 @@ function App() {
             </div>
           </div>
         );
-      case 'dashboard':
-        return <Dashboard />;
+      case 'dashboard-summary':
+        return <Summary />;
+      case 'dashboard-goals':
+        return <Goals />;
       case 'reports':
         return (
           <div className="flex items-center justify-center min-h-[60vh]">
