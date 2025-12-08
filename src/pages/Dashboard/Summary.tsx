@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, TrendingUp } from "lucide-react";
 
 const chartData = [
@@ -21,6 +21,46 @@ const chartConfig = {
   expense: {
     label: "Despesas",
     color: "#ef4444", // red-500
+  },
+};
+
+const equityEvolutionData = [
+  { month: "Jan", value: 680000 },
+  { month: "Fev", value: 695000 },
+  { month: "Mar", value: 710000 },
+  { month: "Abr", value: 705000 },
+  { month: "Mai", value: 725000 },
+  { month: "Jun", value: 740000 },
+  { month: "Jul", value: 750000 },
+];
+
+const equityCompositionData = [
+  { name: "imoveis", value: 450000, color: "#4f46e5" }, // indigo-600
+  { name: "veiculos", value: 180000, color: "#2563eb" }, // blue-600
+  { name: "investimentos", value: 70000, color: "#10b981" }, // emerald-500
+  { name: "liquidez", value: 50000, color: "#f59e0b" }, // amber-500
+];
+
+const equityConfig = {
+  value: {
+    label: "Patrimônio",
+    color: "#4f46e5",
+  },
+  imoveis: {
+    label: "Imóveis",
+    color: "#4f46e5",
+  },
+  veiculos: {
+    label: "Veículos",
+    color: "#2563eb",
+  },
+  investimentos: {
+    label: "Investimentos",
+    color: "#10b981",
+  },
+  liquidez: {
+    label: "Liquidez",
+    color: "#f59e0b",
   },
 };
 
@@ -115,6 +155,68 @@ export function Summary() {
           </ChartContainer>
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4 shadow-sm">
+          <CardHeader>
+            <CardTitle>Evolução Patrimonial</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <ChartContainer config={equityConfig} className="h-[300px] w-full">
+              <AreaChart data={equityEvolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fillEquity" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => value.slice(0, 3)}
+                />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
+                <Area
+                  dataKey="value"
+                  type="monotone"
+                  fill="url(#fillEquity)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-value)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-3 shadow-sm">
+          <CardHeader>
+            <CardTitle>Composição do Patrimônio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={equityConfig} className="mx-auto aspect-square max-h-[300px]">
+              <PieChart>
+                <Pie
+                  data={equityCompositionData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  strokeWidth={5}
+                >
+                  {equityCompositionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center" />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

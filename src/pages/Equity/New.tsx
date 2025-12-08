@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 import { EQUITY_TYPES } from "../../types/equity";
 import { cn } from "../../lib/utils";
 import { Check } from "lucide-react";
@@ -80,127 +80,128 @@ export function EquityNew() {
   }, {} as Record<string, typeof EQUITY_TYPES>);
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <Card className="w-full max-w-2xl shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl">Novo Patrimônio</CardTitle>
-          <CardDescription>
-            Cadastre seus bens para acompanhar a evolução do seu patrimônio.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Nome */}
+    <div className="p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-black mb-2 tracking-tight">Novo Patrimônio</h1>
+          <p className="text-gray-500">Cadastre seus bens para acompanhar a evolução do seu patrimônio</p>
+        </div>
+
+        <Card className="w-full shadow-lg">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Nome */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome do Item</Label>
+                  <Input
+                    id="name"
+                    placeholder="Ex: Apartamento Centro, BMW X1..."
+                    {...register('name')}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">{errors.name.message}</p>
+                  )}
+                </div>
+
+                {/* Tipo (Combobox/Select) */}
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de Patrimônio</Label>
+                  <Select onValueChange={(value) => setValue('type', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(groupedTypes).map(([group, items]) => (
+                        <SelectGroup key={group}>
+                          <SelectLabel>{group}</SelectLabel>
+                          {items.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.type && (
+                    <p className="text-sm text-red-500">{errors.type.message}</p>
+                  )}
+                </div>
+
+                {/* Valor */}
+                <div className="space-y-2">
+                  <Label htmlFor="value">Valor Estimado (R$)</Label>
+                  <Input
+                    id="value"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...register('value', { valueAsNumber: true })}
+                  />
+                  {errors.value && (
+                    <p className="text-sm text-red-500">{errors.value.message}</p>
+                  )}
+                </div>
+
+                {/* Data de Aquisição */}
+                <div className="space-y-2">
+                  <Label htmlFor="acquisitionDate">Data de Aquisição</Label>
+                  <Input
+                    id="acquisitionDate"
+                    type="date"
+                    {...register('acquisitionDate')}
+                  />
+                  {errors.acquisitionDate && (
+                    <p className="text-sm text-red-500">{errors.acquisitionDate.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Descrição */}
               <div className="space-y-2">
-                <Label htmlFor="name">Nome do Item</Label>
+                <Label htmlFor="description">Descrição (Opcional)</Label>
                 <Input
-                  id="name"
-                  placeholder="Ex: Apartamento Centro, BMW X1..."
-                  {...register('name')}
+                  id="description"
+                  placeholder="Detalhes adicionais, localização, placa..."
+                  {...register('description')}
                 />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
               </div>
 
-              {/* Tipo (Combobox/Select) */}
+              {/* Cor */}
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Patrimônio</Label>
-                <Select onValueChange={(value) => setValue('type', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(groupedTypes).map(([group, items]) => (
-                      <SelectGroup key={group}>
-                        <SelectLabel>{group}</SelectLabel>
-                        {items.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.type && (
-                  <p className="text-sm text-red-500">{errors.type.message}</p>
+                <Label>Cor de Identificação</Label>
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      className={cn(
+                        "w-8 h-8 rounded-full cursor-pointer transition-all flex items-center justify-center",
+                        color.value,
+                        selectedColor === color.value ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110"
+                      )}
+                      onClick={() => setValue('color', color.value)}
+                      title={color.name}
+                    >
+                      {selectedColor === color.value && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                  ))}
+                </div>
+                {errors.color && (
+                  <p className="text-sm text-red-500">{errors.color.message}</p>
                 )}
               </div>
 
-              {/* Valor */}
-              <div className="space-y-2">
-                <Label htmlFor="value">Valor Estimado (R$)</Label>
-                <Input
-                  id="value"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  {...register('value', { valueAsNumber: true })}
-                />
-                {errors.value && (
-                  <p className="text-sm text-red-500">{errors.value.message}</p>
-                )}
+              <div className="pt-4">
+                <Button type="submit" className="w-full bg-black hover:bg-gray-800 text-white" disabled={isSubmitting}>
+                  {isSubmitting ? "Salvando..." : "Cadastrar Patrimônio"}
+                </Button>
               </div>
-
-              {/* Data de Aquisição */}
-              <div className="space-y-2">
-                <Label htmlFor="acquisitionDate">Data de Aquisição</Label>
-                <Input
-                  id="acquisitionDate"
-                  type="date"
-                  {...register('acquisitionDate')}
-                />
-                {errors.acquisitionDate && (
-                  <p className="text-sm text-red-500">{errors.acquisitionDate.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Descrição */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição (Opcional)</Label>
-              <Input
-                id="description"
-                placeholder="Detalhes adicionais, localização, placa..."
-                {...register('description')}
-              />
-            </div>
-
-            {/* Cor */}
-            <div className="space-y-2">
-              <Label>Cor de Identificação</Label>
-              <div className="flex flex-wrap gap-3 pt-2">
-                {colors.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    className={cn(
-                      "w-8 h-8 rounded-full cursor-pointer transition-all flex items-center justify-center",
-                      color.value,
-                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110"
-                    )}
-                    onClick={() => setValue('color', color.value)}
-                    title={color.name}
-                  >
-                    {selectedColor === color.value && <Check className="w-4 h-4 text-white" />}
-                  </button>
-                ))}
-              </div>
-              {errors.color && (
-                <p className="text-sm text-red-500">{errors.color.message}</p>
-              )}
-            </div>
-
-            <div className="pt-4">
-              <Button type="submit" className="w-full bg-black hover:bg-gray-800 text-white" disabled={isSubmitting}>
-                {isSubmitting ? "Salvando..." : "Cadastrar Patrimônio"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
