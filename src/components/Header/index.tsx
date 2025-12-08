@@ -159,29 +159,6 @@ export function Header({ onNavigate }: HeaderProps) {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  <PieChart className="mr-2 h-4 w-4" />
-                  Relatórios
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 w-[260px]">
-                    <ListItem href="#" title="Mensal" onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}>
-                      <div className="flex items-center gap-2">
-                        <List className="h-4 w-4" />
-                        <span>Relatório mensal</span>
-                      </div>
-                    </ListItem>
-                    <ListItem href="#" title="Categorias" onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}>
-                      <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        <span>Por categoria</span>
-                      </div>
-                    </ListItem>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
