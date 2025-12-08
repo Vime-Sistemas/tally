@@ -5,7 +5,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
 import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon } from "lucide-react";
@@ -59,14 +58,26 @@ export function Header({ onNavigate }: HeaderProps) {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}
-                >
+                <NavigationMenuTrigger className="bg-transparent">
                   <Wallet className="mr-2 h-4 w-4" />
                   Visão Geral
-                </NavigationMenuLink>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 w-[260px]">
+                    <ListItem href="#" title="Resumo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+                      <div className="flex items-center gap-2">
+                        <PieChart className="h-4 w-4" />
+                        <span>Visão resumo</span>
+                      </div>
+                    </ListItem>
+                    <ListItem href="#" title="Fluxo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>Analisar fluxo</span>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
@@ -150,14 +161,26 @@ export function Header({ onNavigate }: HeaderProps) {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  href="#"
-                  onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}
-                >
+                <NavigationMenuTrigger className="bg-transparent">
                   <PieChart className="mr-2 h-4 w-4" />
                   Relatórios
-                </NavigationMenuLink>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 w-[260px]">
+                    <ListItem href="#" title="Mensal" onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}>
+                      <div className="flex items-center gap-2">
+                        <List className="h-4 w-4" />
+                        <span>Relatório mensal</span>
+                      </div>
+                    </ListItem>
+                    <ListItem href="#" title="Categorias" onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}>
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>Por categoria</span>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
