@@ -16,7 +16,6 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { ChevronRight, Facebook } from "lucide-react";
 import type { Page } from "@/types/navigation";
-import { Separator } from "@/components/ui/separator";
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
