@@ -3,6 +3,8 @@ import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Summary } from './pages/Dashboard/Summary'
 import { Goals } from './pages/Dashboard/Goals'
+import { EquityNew } from './pages/Equity/New'
+import { EquityList } from './pages/Equity/List'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header, type Page } from './components/Header'
@@ -33,6 +35,10 @@ function App() {
             </div>
           </div>
         );
+      case 'equity-new':
+        return <EquityNew />;
+      case 'equity-list':
+        return <EquityList />;
       case 'dashboard-summary':
         return <Summary />;
       case 'dashboard-goals':
