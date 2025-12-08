@@ -1,0 +1,1 @@
+Tally it's a self financial controll app.
