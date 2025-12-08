@@ -22,9 +22,19 @@ const transactionSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
   description: z.string().min(3, 'Descrição deve ter pelo menos 3 caracteres'),
   date: z.string().min(1, 'Data é obrigatória'),
+  accountId: z.string().min(1, 'Conta é obrigatória'),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
+
+// Mock accounts - In a real app this would come from an API/Context
+const accounts = [
+  { value: 'nubank', label: 'Nubank' },
+  { value: 'inter', label: 'Banco Inter' },
+  { value: 'itau', label: 'Itaú' },
+  { value: 'wallet', label: 'Carteira Física' },
+  { value: 'xp', label: 'XP Investimentos' },
+];
 
 const incomeCategoriesLabels: Record<string, string> = {
   SALARY: 'Salário',
@@ -172,6 +182,32 @@ export function TransactionForm() {
           {errors.category && (
             <p className="text-sm text-red-600 -mt-2">{errors.category.message}</p>
           )}
+
+          {/* Conta */}
+          <div className="space-y-2">
+            <Label htmlFor="accountId" className="text-gray-600">Conta</Label>
+            <Controller
+              name="accountId"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
+                    <SelectValue placeholder="Selecione a conta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.value} value={account.value}>
+                        {account.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.accountId && (
+              <p className="text-sm text-red-600">{errors.accountId.message}</p>
+            )}
+          </div>
 
           {/* Descrição */}
           <div className="space-y-2">

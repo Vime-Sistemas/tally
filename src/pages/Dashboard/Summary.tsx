@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, Bar, BarChart, YAxis } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, TrendingUp } from "lucide-react";
 
 const chartData = [
@@ -61,6 +61,30 @@ const equityConfig = {
   liquidez: {
     label: "Liquidez",
     color: "#f59e0b",
+  },
+};
+
+const investmentAllocationData = [
+  { name: "Renda Fixa", value: 45, color: "#3b82f6" }, // blue-500
+  { name: "Ações BR", value: 25, color: "#10b981" }, // emerald-500
+  { name: "FIIs", value: 15, color: "#f59e0b" }, // amber-500
+  { name: "Stocks", value: 10, color: "#8b5cf6" }, // violet-500
+  { name: "Cripto", value: 5, color: "#6366f1" }, // indigo-500
+];
+
+const investedBalanceData = [
+  { month: "Jan", value: 15000 },
+  { month: "Fev", value: 16200 },
+  { month: "Mar", value: 17500 },
+  { month: "Abr", value: 17100 },
+  { month: "Mai", value: 18500 },
+  { month: "Jun", value: 19800 },
+];
+
+const investmentConfig = {
+  value: {
+    label: "Saldo Investido",
+    color: "#10b981",
   },
 };
 
@@ -216,6 +240,77 @@ export function Summary() {
             </ChartContainer>
           </CardContent>
         </Card>
+      </div>
+
+      <div>
+        <h3 className="text-2xl font-bold tracking-tight mb-4">Investimentos</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Alocação por Classe</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
+                <PieChart>
+                  <Pie
+                    data={investmentAllocationData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {investmentAllocationData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2" />
+                </PieChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Evolução do Saldo Investido</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={investmentConfig} className="min-h-[300px] w-full">
+                <AreaChart data={investedBalanceData}>
+                  <defs>
+                    <linearGradient id="fillInvested" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `R$ ${value/1000}k`}
+                  />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                  <Area
+                    dataKey="value"
+                    type="monotone"
+                    fill="url(#fillInvested)"
+                    fillOpacity={0.4}
+                    stroke="var(--color-value)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

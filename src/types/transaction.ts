@@ -1,6 +1,7 @@
 export const TransactionType = {
   INCOME: 'INCOME',
   EXPENSE: 'EXPENSE',
+  TRANSFER: 'TRANSFER',
 } as const;
 
 export type TransactionType = typeof TransactionType[keyof typeof TransactionType];
@@ -22,6 +23,9 @@ export const TransactionCategory = {
   EDUCATION: 'EDUCATION',
   SHOPPING: 'SHOPPING',
   OTHER_EXPENSE: 'OTHER_EXPENSE',
+  
+  // Transferência
+  TRANSFER: 'TRANSFER',
 } as const;
 
 export type TransactionCategory = typeof TransactionCategory[keyof typeof TransactionCategory];
@@ -33,6 +37,8 @@ export interface Transaction {
   amount: number;
   description: string;
   date: string;
+  accountId: string;
+  destinationAccountId?: string; // For transfers
   createdAt?: string;
   updatedAt?: string;
 }
@@ -43,6 +49,8 @@ export interface CreateTransactionDTO {
   amount: number;
   description: string;
   date: string;
+  accountId: string;
+  destinationAccountId?: string;
 }
 
 export interface UpdateTransactionDTO extends Partial<CreateTransactionDTO> {

@@ -23,7 +23,7 @@ function App() {
       case 'transactions-history':
         return (
           <div className="p-4 md:p-8">
-            <div className="mx-auto max-w-2xl">
+            <div className="mx-auto max-w-5xl">
               <TransactionHistory />
             </div>
           </div>

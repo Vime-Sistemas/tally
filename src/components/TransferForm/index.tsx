@@ -27,11 +27,13 @@ const transferSchema = z.object({
 
 type TransferFormData = z.infer<typeof transferSchema>;
 
+// Mock accounts - In a real app this would come from an API/Context
 const accounts = [
-  { value: 'CHECKING', label: 'Conta Corrente' },
-  { value: 'SAVINGS', label: 'Poupança' },
-  { value: 'WALLET', label: 'Carteira' },
-  { value: 'INVESTMENT', label: 'Investimentos' },
+  { value: 'nubank', label: 'Nubank' },
+  { value: 'inter', label: 'Banco Inter' },
+  { value: 'itau', label: 'Itaú' },
+  { value: 'wallet', label: 'Carteira Física' },
+  { value: 'xp', label: 'XP Investimentos' },
 ];
 
 export function TransferForm() {
