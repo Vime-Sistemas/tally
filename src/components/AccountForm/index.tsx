@@ -14,11 +14,14 @@ import {
 } from '../ui/select';
 import { Button } from '../ui/button';
 import { AccountType } from '../../types/account';
+import { cn } from '../../lib/utils';
+import { Check } from 'lucide-react';
 
 const accountSchema = z.object({
   name: z.string().min(1, 'Nome da conta é obrigatório'),
   type: z.nativeEnum(AccountType),
   balance: z.number(),
+  color: z.string().min(1, 'Cor é obrigatória'),
 });
 
 type AccountFormData = z.infer<typeof accountSchema>;
@@ -30,6 +33,19 @@ const accountTypes = [
   { value: AccountType.INVESTMENT, label: 'Investimentos' },
 ];
 
+const colors = [
+  { name: 'Roxo', value: 'bg-purple-600' },
+  { name: 'Azul', value: 'bg-blue-600' },
+  { name: 'Verde', value: 'bg-green-600' },
+  { name: 'Vermelho', value: 'bg-red-600' },
+  { name: 'Laranja', value: 'bg-orange-600' },
+  { name: 'Preto', value: 'bg-gray-900' },
+  { name: 'Cinza', value: 'bg-gray-600' },
+  { name: 'Rosa', value: 'bg-pink-600' },
+  { name: 'Amarelo', value: 'bg-yellow-500' },
+  { name: 'Indigo', value: 'bg-indigo-600' },
+];
+
 export function AccountForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,12 +55,17 @@ export function AccountForm() {
     formState: { errors },
     reset,
     control,
+    setValue,
+    watch,
   } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       balance: 0,
+      color: 'bg-gray-900',
     },
   });
+
+  const selectedColor = watch('color');
 
   const onSubmit = async (data: AccountFormData) => {
     try {
@@ -129,6 +150,31 @@ export function AccountForm() {
               />
               {errors.type && (
                 <p className="text-sm text-red-600">{errors.type.message}</p>
+              )}
+            </div>
+
+            {/* Cor */}
+            <div className="space-y-2">
+              <Label className="text-gray-600">Cor de Identificação</Label>
+              <div className="flex flex-wrap gap-3 pt-2">
+                {colors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={cn(
+                      "w-8 h-8 rounded-full cursor-pointer transition-all flex items-center justify-center",
+                      color.value,
+                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110"
+                    )}
+                    onClick={() => setValue('color', color.value)}
+                    title={color.name}
+                  >
+                    {selectedColor === color.value && <Check className="w-4 h-4 text-white" />}
+                  </button>
+                ))}
+              </div>
+              {errors.color && (
+                <p className="text-sm text-red-600">{errors.color.message}</p>
               )}
             </div>
           </div>

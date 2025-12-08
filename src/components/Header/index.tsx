@@ -61,7 +61,8 @@ export function Header({ onNavigate }: HeaderProps) {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  onClick={() => onNavigate('dashboard')}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}
                 >
                   <Wallet className="mr-2 h-4 w-4" />
                   Visão Geral
@@ -151,7 +152,8 @@ export function Header({ onNavigate }: HeaderProps) {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  onClick={() => onNavigate('reports')}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); onNavigate('reports'); }}
                 >
                   <PieChart className="mr-2 h-4 w-4" />
                   Relatórios
