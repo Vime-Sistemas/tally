@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Button } from '../ui/button';
+import { Calendar } from '../ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { transactionService } from '../../services/transactions';
 import { TransactionType, type TransactionCategory } from '../../types/transaction';
 
@@ -48,6 +50,7 @@ const expenseCategoriesLabels: Record<string, string> = {
 export function TransactionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE);
+  
 
   const {
     register,
@@ -189,11 +192,39 @@ export function TransactionForm() {
           {/* Data */}
           <div className="space-y-2">
             <Label htmlFor="date" className="text-gray-600">Data</Label>
-            <Input
-              id="date"
-              type="date"
-              className="h-10 border-gray-200 focus:border-black focus:ring-black"
-              {...register('date')}
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => {
+                const parsed = field.value ? new Date(field.value) : undefined;
+                const formatDisplay = (d?: Date) => {
+                  if (!d) return 'Selecione';
+                  return d.toLocaleDateString();
+                };
+                return (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        className="w-full text-left h-10 border border-gray-200 rounded-md bg-white"
+                      >
+                        {formatDisplay(parsed)}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" className="p-0">
+                      <Calendar
+                        mode="single"
+                        selected={parsed}
+                        onSelect={(d?: Date) => {
+                          if (!d) return;
+                          const iso = d.toISOString().split('T')[0];
+                          field.onChange(iso);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                );
+              }}
             />
              {errors.date && (
                 <p className="text-sm text-red-600">{errors.date.message}</p>
