@@ -1,16 +1,47 @@
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, Settings, CreditCard } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon } from "lucide-react";
+import React from "react";
+
+export type Page = 'dashboard' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports';
 
 interface HeaderProps {
-  onNavigate: (page: 'dashboard' | 'transactions' | 'reports' | 'accounts') => void;
+  onNavigate: (page: Page) => void;
 }
+
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  )
+})
+ListItem.displayName = "ListItem"
 
 export function Header({ onNavigate }: HeaderProps) {
   return (
@@ -36,24 +67,87 @@ export function Header({ onNavigate }: HeaderProps) {
                   Visão Geral
                 </NavigationMenuLink>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  onClick={() => onNavigate('transactions')}
-                >
+                <NavigationMenuTrigger className="bg-transparent">
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Transações
-                </NavigationMenuLink>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}
+                        >
+                          <TrendingUp className="h-6 w-6" />
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Transações
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Gerencie suas receitas, despesas e transferências em um só lugar.
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem href="#" title="Nova Transação" onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}>
+                      <div className="flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Registrar nova movimentação</span>
+                      </div>
+                    </ListItem>
+                    <ListItem href="#" title="Histórico" onClick={(e) => { e.preventDefault(); onNavigate('transactions-history'); }}>
+                      <div className="flex items-center gap-2">
+                        <List className="h-4 w-4" />
+                        <span>Ver todas as transações</span>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  onClick={() => onNavigate('accounts')}
-                >
+                <NavigationMenuTrigger className="bg-transparent">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Contas e Cartões
-                </NavigationMenuLink>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}
+                        >
+                          <Wallet className="h-6 w-6" />
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Carteira
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Visualize seus saldos e limites de cartão de crédito.
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem href="#" title="Nova Conta ou Cartão" onClick={(e) => { e.preventDefault(); onNavigate('accounts-new'); }}>
+                      <div className="flex items-center gap-2">
+                        <PlusCircle className="h-4 w-4" />
+                        <span>Adicionar nova conta</span>
+                      </div>
+                    </ListItem>
+                    <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
+                      <div className="flex items-center gap-2">
+                        <CardIcon className="h-4 w-4" />
+                        <span>Gerenciar contas e cartões</span>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
+
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}

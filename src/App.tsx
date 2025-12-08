@@ -1,20 +1,36 @@
 import { useState } from 'react'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
-import { Header } from './components/Header'
+import { TransactionHistory } from './components/TransactionHistory'
+import { AccountsList } from './components/AccountsList'
+import { Header, type Page } from './components/Header'
 import './App.css'
 
-type Page = 'dashboard' | 'transactions' | 'reports' | 'accounts';
-
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('transactions');
+  const [currentPage, setCurrentPage] = useState<Page>('transactions-new');
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'transactions':
+      case 'transactions-new':
         return <Transactions />;
-      case 'accounts':
+      case 'transactions-history':
+        return (
+          <div className="p-4 md:p-8">
+            <div className="mx-auto max-w-2xl">
+              <TransactionHistory />
+            </div>
+          </div>
+        );
+      case 'accounts-new':
         return <Accounts />;
+      case 'accounts-list':
+        return (
+          <div className="p-4 md:p-8">
+            <div className="mx-auto max-w-2xl">
+              <AccountsList />
+            </div>
+          </div>
+        );
       case 'dashboard':
         return (
           <div className="flex items-center justify-center min-h-[60vh]">
