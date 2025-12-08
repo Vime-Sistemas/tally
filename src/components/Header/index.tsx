@@ -6,14 +6,18 @@ import {
   navigationMenuTriggerStyle,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, Settings } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, Settings, CreditCard } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onNavigate: (page: 'dashboard' | 'transactions' | 'reports' | 'accounts') => void;
+}
+
+export function Header({ onNavigate }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
         <div className="mr-4 hidden md:flex">
-          <a className="mr-6 flex items-center space-x-2" href="/">
+          <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
             <div className="h-6 w-6 bg-black rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-xs">T</span>
             </div>
@@ -26,7 +30,7 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  href="#"
+                  onClick={() => onNavigate('dashboard')}
                 >
                   <Wallet className="mr-2 h-4 w-4" />
                   Visão Geral
@@ -35,7 +39,7 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  href="#"
+                  onClick={() => onNavigate('transactions')}
                 >
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Transações
@@ -44,7 +48,16 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink
                   className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
-                  href="#"
+                  onClick={() => onNavigate('accounts')}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Contas e Cartões
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  className={cn(navigationMenuTriggerStyle(), "bg-transparent cursor-pointer")}
+                  onClick={() => onNavigate('reports')}
                 >
                   <PieChart className="mr-2 h-4 w-4" />
                   Relatórios
