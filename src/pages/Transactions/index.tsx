@@ -1,6 +1,14 @@
+import { useState } from 'react';
 import { TransactionForm } from '../../components/TransactionForm';
+import { TransferForm } from '../../components/TransferForm';
+import { InvestmentForm } from '../../components/InvestmentForm';
+import { cn } from '../../lib/utils';
+
+type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
 
 export function Transactions() {
+  const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
+
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="mx-auto max-w-2xl">
@@ -9,9 +17,52 @@ export function Transactions() {
           <h1 className="text-4xl font-bold text-black mb-2 tracking-tight">Tally</h1>
           <p className="text-gray-500 text-lg">Controle financeiro pessoal</p>
         </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('TRANSACTION')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                activeTab === 'TRANSACTION'
+                  ? "bg-white text-black shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              )}
+            >
+              Transação
+            </button>
+            <button
+              onClick={() => setActiveTab('TRANSFER')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                activeTab === 'TRANSFER'
+                  ? "bg-white text-black shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              )}
+            >
+              Transferência
+            </button>
+            <button
+              onClick={() => setActiveTab('INVESTMENT')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                activeTab === 'INVESTMENT'
+                  ? "bg-white text-black shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              )}
+            >
+              Aplicação
+            </button>
+          </div>
+        </div>
         
         {/* Form */}
-        <TransactionForm />
+        <div className="transition-all duration-300 ease-in-out">
+          {activeTab === 'TRANSACTION' && <TransactionForm />}
+          {activeTab === 'TRANSFER' && <TransferForm />}
+          {activeTab === 'INVESTMENT' && <InvestmentForm />}
+        </div>
       </div>
     </div>
   );
