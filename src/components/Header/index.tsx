@@ -7,7 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User } from "lucide-react";
 import { HousePlus } from "lucide-react";
 import React from "react";
 
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new' | 'profile';
 
@@ -227,22 +228,32 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
           <nav className="flex items-center gap-2">
              {hasBusiness && (
               <Select value={currentContext} onValueChange={(v) => onContextChange(v as AppContext)}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue placeholder="Contexto" />
+                <SelectTrigger className="w-[160px] h-9 border-dashed bg-transparent hover:bg-accent/50 transition-colors focus:ring-0 focus:ring-offset-0">
+                  <div className="flex items-center gap-2">
+                    {currentContext === 'PERSONAL' ? <User className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                    <SelectValue placeholder="Contexto" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PERSONAL">Pessoal</SelectItem>
-                  <SelectItem value="BUSINESS">Empresarial</SelectItem>
+                  <SelectItem value="PERSONAL">
+                    <div className="flex items-center gap-2">
+                        <span>Pessoal</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="BUSINESS">
+                    <div className="flex items-center gap-2">
+                        <span>Empresarial</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
-             <button onClick={() => onNavigate('profile')} className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 py-2 w-9">
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Configurações</span>
+             <button onClick={() => onNavigate('profile')} className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Avatar className="h-8 w-8 border border-gray-200">
+                  <AvatarImage src="https://flow.setup-ac.com.br/uploads/bc5d9f72-4f9d-4ea6-b48a-a388ac6fe992_Zelo.png" alt="@shadcn" />
+                  <AvatarFallback>US</AvatarFallback>
+                </Avatar>
              </button>
-             <div className="ml-2 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-200">
-                <span className="text-xs font-medium text-gray-600">US</span>
-             </div>
           </nav>
         </div>
       </div>
