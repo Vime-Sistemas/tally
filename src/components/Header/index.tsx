@@ -11,10 +11,23 @@ import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, C
 import { HousePlus } from "lucide-react";
 import React from "react";
 
-export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+
+export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new' | 'profile';
+
+export type AppContext = 'PERSONAL' | 'BUSINESS';
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
+  hasBusiness: boolean;
+  currentContext: AppContext;
+  onContextChange: (context: AppContext) => void;
 }
 
 const ListItem = React.forwardRef<
@@ -43,7 +56,7 @@ const ListItem = React.forwardRef<
 })
 ListItem.displayName = "ListItem"
 
-export function Header({ onNavigate }: HeaderProps) {
+export function Header({ onNavigate, hasBusiness, currentContext, onContextChange }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
@@ -211,8 +224,19 @@ export function Header({ onNavigate }: HeaderProps) {
           <div className="w-full flex-1 md:w-auto md:flex-none">
             {/* Search or other controls */}
           </div>
-          <nav className="flex items-center">
-             <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 py-2 w-9">
+          <nav className="flex items-center gap-2">
+             {hasBusiness && (
+              <Select value={currentContext} onValueChange={(v) => onContextChange(v as AppContext)}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Contexto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PERSONAL">Pessoal</SelectItem>
+                  <SelectItem value="BUSINESS">Empresarial</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+             <button onClick={() => onNavigate('profile')} className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 py-2 w-9">
                 <Settings className="h-4 w-4" />
                 <span className="sr-only">Configurações</span>
              </button>

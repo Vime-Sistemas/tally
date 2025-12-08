@@ -5,13 +5,16 @@ import { Summary } from './pages/Dashboard/Summary'
 import { Goals } from './pages/Dashboard/Goals'
 import { EquityNew } from './pages/Equity/New'
 import { EquityList } from './pages/Equity/List'
+import { Profile } from './pages/Profile'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
-import { Header, type Page } from './components/Header'
+import { Header, type Page, type AppContext } from './components/Header'
 import './App.css'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard-summary');
+  const [hasBusiness, setHasBusiness] = useState(false);
+  const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
 
   const renderPage = () => {
     switch (currentPage) {
@@ -39,6 +42,8 @@ function App() {
         return <EquityNew />;
       case 'equity-list':
         return <EquityList />;
+      case 'profile':
+        return <Profile hasBusiness={hasBusiness} setHasBusiness={setHasBusiness} />;
       case 'dashboard-summary':
         return <Summary />;
       case 'dashboard-goals':
@@ -58,8 +63,13 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <Header onNavigate={setCurrentPage} />
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        onNavigate={setCurrentPage} 
+        hasBusiness={hasBusiness}
+        currentContext={currentContext}
+        onContextChange={setCurrentContext}
+      />
       <main>
         {renderPage()}
       </main>
