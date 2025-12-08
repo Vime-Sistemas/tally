@@ -19,10 +19,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-
-export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new' | 'profile';
-
-export type AppContext = 'PERSONAL' | 'BUSINESS';
+import type { Page, AppContext } from "../../types/navigation";
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
