@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, Bar, BarChart, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, YAxis } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, TrendingUp } from "lucide-react";
 
 const chartData = [

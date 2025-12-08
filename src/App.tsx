@@ -33,7 +33,7 @@ function App() {
       case 'accounts-list':
         return (
           <div className="p-4 md:p-8">
-            <div className="mx-auto max-w-2xl">
+            <div className="mx-auto max-w-5xl">
               <AccountsList />
             </div>
           </div>
