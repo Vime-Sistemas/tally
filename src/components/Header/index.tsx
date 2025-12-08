@@ -10,7 +10,6 @@ import { cn } from "../../lib/utils";
 import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target } from "lucide-react";
 import { HousePlus } from "lucide-react";
 import React from "react";
-import { HomeModernIcon } from '@heroicons/react/24/solid'
 
 export type Page = 'dashboard-summary' | 'dashboard-goals' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports' | 'equity-list' | 'equity-new';
 
