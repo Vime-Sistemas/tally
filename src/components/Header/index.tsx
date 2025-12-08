@@ -7,7 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, Settings, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target } from "lucide-react";
 import React from "react";
 
 export type Page = 'dashboard' | 'transactions-new' | 'transactions-history' | 'accounts-new' | 'accounts-list' | 'reports';
@@ -72,7 +72,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     </ListItem>
                     <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
+                        <Target className="h-4 w-4" />
                         <span>Analisar metas</span>
                       </div>
                     </ListItem>
