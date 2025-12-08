@@ -70,10 +70,10 @@ export function Header({ onNavigate }: HeaderProps) {
                         <span>Visão resumo</span>
                       </div>
                     </ListItem>
-                    <ListItem href="#" title="Fluxo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
+                    <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard'); }}>
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4" />
-                        <span>Analisar fluxo</span>
+                        <span>Analisar metas</span>
                       </div>
                     </ListItem>
                   </ul>
