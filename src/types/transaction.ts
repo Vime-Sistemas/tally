@@ -51,6 +51,7 @@ export interface CreateTransactionDTO {
   date: string;
   accountId: string;
   destinationAccountId?: string;
+  equityId?: string;
 }
 
 export interface UpdateTransactionDTO extends Partial<CreateTransactionDTO> {

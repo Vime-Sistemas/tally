@@ -14,9 +14,11 @@ import {
 } from '../ui/select';
 import { Button } from '../ui/button';
 import { createTransaction, confirmTransaction, getAccounts } from '../../services/api';
+import { equityService } from '../../services/equities';
 import { TransactionType, type TransactionCategory } from '../../types/transaction';
 import { toast } from 'sonner';
 import type { Account } from '../../types/account';
+import type { Equity } from '../../types/equity';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 
 const transactionSchema = z.object({
@@ -26,6 +28,7 @@ const transactionSchema = z.object({
   description: z.string().min(3, 'Descrição deve ter pelo menos 3 caracteres'),
   date: z.string().min(1, 'Data é obrigatória'),
   accountId: z.string().min(1, 'Conta é obrigatória'),
+  equityId: z.string().optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -46,6 +49,7 @@ const expenseCategoriesLabels: Record<string, string> = {
   ENTERTAINMENT: 'Lazer',
   EDUCATION: 'Educação',
   SHOPPING: 'Compras',
+  INVESTMENT: 'Investimento / Aplicação',
   OTHER_EXPENSE: 'Outros',
 };
 
@@ -57,24 +61,29 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [equities, setEquities] = useState<Equity[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingData, setPendingData] = useState<TransactionFormData | null>(null);
 
   useEffect(() => {
-    const loadAccounts = async () => {
+    const loadData = async () => {
       try {
-        const data = await getAccounts();
-        setAccounts(data);
+        const [accData, eqData] = await Promise.all([
+          getAccounts(),
+          equityService.getAll()
+        ]);
+        setAccounts(accData);
+        setEquities(eqData);
       } catch (error) {
-        console.error('Erro ao carregar contas:', error);
-        toast.error('Erro ao carregar contas');
+        console.error('Erro ao carregar dados:', error);
+        toast.error('Erro ao carregar dados');
       } finally {
         setLoadingAccounts(false);
       }
     };
-    loadAccounts();
+    loadData();
   }, []);
   
 
@@ -84,6 +93,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     formState: { errors },
     reset,
     control,
+    watch,
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
@@ -91,6 +101,8 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
       date: new Date().toISOString().split('T')[0],
     },
   });
+
+  const selectedCategory = watch('category');
 
   const onSubmit = async (data: TransactionFormData) => {
     try {
@@ -235,6 +247,36 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
             </div>
             {errors.category && (
               <p className="text-sm text-red-600 -mt-2">{errors.category.message}</p>
+            )}
+
+            {/* Seleção de Patrimônio (Apenas para Investimentos) */}
+            {selectedType === TransactionType.EXPENSE && selectedCategory === 'INVESTMENT' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Label htmlFor="equityId" className="text-gray-600">Destino do Investimento (Opcional)</Label>
+                <Controller
+                  name="equityId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full h-10 border-gray-200 focus:ring-black">
+                        <SelectValue placeholder="Investimentos Gerais (Automático)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {equities
+                          .filter(e => ['stocks', 'crypto', 'business', 'other'].includes(e.type)) // Filter relevant types
+                          .map((equity) => (
+                          <SelectItem key={equity.id} value={equity.id}>
+                            {equity.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="text-xs text-gray-500">
+                  Se vazio, será adicionado a "Investimentos Gerais".
+                </p>
+              </div>
             )}
 
             {/* Conta */}

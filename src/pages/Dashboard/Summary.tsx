@@ -403,7 +403,7 @@ export function Summary() {
       <div>
         <h3 className="text-2xl font-bold tracking-tight mb-4">Investimentos</h3>
 
-        <div className="grid gap-4 md:grid-cols-3 mb-4">
+        <div className="grid gap-4 md:grid-cols-2 mb-4">
            <Card className="shadow-sm">
              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Investido</CardTitle></CardHeader>
              <CardContent>
@@ -416,17 +416,6 @@ export function Summary() {
              <CardContent>
                <div className="text-2xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalInvestedValue)}</div>
                <p className="text-xs text-muted-foreground">Valor de mercado</p>
-             </CardContent>
-           </Card>
-           <Card className="shadow-sm">
-             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rentabilidade</CardTitle></CardHeader>
-             <CardContent>
-               <div className={`text-2xl font-bold ${investmentProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                 {investmentProfit >= 0 ? '+' : ''}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investmentProfit)}
-               </div>
-               <p className={`text-xs ${investmentProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                 {investmentProfit >= 0 ? '+' : ''}{investmentProfitPercent.toFixed(2)}%
-               </p>
              </CardContent>
            </Card>
         </div>
