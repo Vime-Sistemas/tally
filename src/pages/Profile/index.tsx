@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, User, Mail, Phone, Briefcase, Camera, Upload } from "lucide-react";
+import { Building2, User, Mail, Phone, Briefcase, Camera } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { useEffect, useState, useRef } from "react";
 import api from "../../services/api";
