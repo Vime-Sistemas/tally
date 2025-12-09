@@ -7,8 +7,11 @@ export interface User {
   email: string;
   name: string;
   picture?: string;
+  coverImage?: string;
   phone?: string;
   occupation?: string;
+  businessName?: string;
+  businessCnpj?: string;
   createdAt: string;
   updatedAt: string;
 }
