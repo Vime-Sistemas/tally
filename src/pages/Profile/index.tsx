@@ -11,7 +11,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Building2, User, Mail, Phone, Briefcase } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { updateUser } from "../../services/api";
 
 interface ProfileProps {
   hasBusiness: boolean;
@@ -28,15 +29,16 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      occupation: "",
+      phone: user?.phone || "",
+      occupation: user?.occupation || "",
     },
   });
 
@@ -45,15 +47,28 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
       form.reset({
         name: user.name,
         email: user.email,
-        phone: "", 
-        occupation: "",
+        phone: user.phone || "", 
+        occupation: user.occupation || "",
       });
     }
   }, [user, form]);
 
-  const onSubmit = (data: ProfileFormValues) => {
-    console.log(data);
-    // Here you would typically save the data
+  const onSubmit = async (data: ProfileFormValues) => {
+    setIsLoading(true);
+    try {
+      const updatedUser = await updateUser({
+        name: data.name,
+        phone: data.phone,
+        occupation: data.occupation,
+      });
+      setUser(updatedUser);
+      alert("Perfil atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      alert("Erro ao atualizar perfil. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -87,7 +102,7 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
                     <div className="mt-6 space-y-2">
                         <div className="flex items-center text-sm text-muted-foreground">
                             <Briefcase className="mr-2 h-4 w-4" />
-                            Desenvolvedor de Software
+                            {user?.occupation || "Ocupação não definida"}
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                             <Building2 className="mr-2 h-4 w-4" />
@@ -164,11 +179,13 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
                                         </div>
                                     </div>
                                 </div>
+                                <div className="flex justify-end pt-4">
+                                    <Button type="submit" disabled={isLoading}>
+                                      {isLoading ? "Salvando..." : "Salvar Alterações"}
+                                    </Button>
+                                </div>
                             </form>
                         </CardContent>
-                        <CardFooter className="border-t px-6 py-4">
-                            <Button>Salvar Alterações</Button>
-                        </CardFooter>
                     </Card>
                 </TabsContent>
 

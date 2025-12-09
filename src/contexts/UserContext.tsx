@@ -1,10 +1,14 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState } from 'react';
+import type { ReactNode } from 'react';
 
 export interface User {
   id: string;
   auth0Id: string;
   email: string;
   name: string;
+  picture?: string;
+  phone?: string;
+  occupation?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -59,4 +59,9 @@ api.interceptors.response.use(
   }
 );
 
+export const updateUser = async (data: { name?: string; phone?: string; occupation?: string; picture?: string }) => {
+  const response = await api.put('/users/me', data);
+  return response.data;
+};
+
 export default api;
