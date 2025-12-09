@@ -25,6 +25,7 @@ const equitySchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   type: z.string().min(1, "Selecione um tipo"),
   value: z.number().min(0.01, "Valor deve ser maior que zero"),
+  cost: z.number().optional(),
   acquisitionDate: z.string().min(1, "Data de aquisição é obrigatória"),
   description: z.string().optional(),
   color: z.string().min(1, "Selecione uma cor"),
@@ -74,6 +75,7 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
     try {
       await equityService.create({
         ...data,
+        cost: data.cost ?? data.value, // Default to current value if not provided
         type: data.type as any, // Cast to EquityType
       });
       toast.success("Patrimônio cadastrado com sucesso!");
@@ -168,6 +170,19 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
                   {errors.value && (
                     <p className="text-sm text-red-500">{errors.value.message}</p>
                   )}
+                </div>
+
+                {/* Custo */}
+                <div className="space-y-2">
+                  <Label htmlFor="cost">Custo de Aquisição (R$)</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...register('cost', { valueAsNumber: true })}
+                  />
+                  <p className="text-xs text-muted-foreground">Opcional. Se vazio, será igual ao valor atual.</p>
                 </div>
 
                 {/* Data de Aquisição */}

@@ -7,7 +7,7 @@ import { accountService } from "../../services/accounts";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
 import type { Account } from "../../types/account";
-import type { Transaction } from "../../types/transaction";
+import { TransactionCategory, type Transaction } from "../../types/transaction";
 import { EQUITY_TYPES } from "../../types/equity";
 import type { Equity } from "../../types/equity";
 import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, parseISO, isBefore } from "date-fns";
@@ -25,32 +25,39 @@ const chartConfig = {
   },
 };
 
-const equityConfig = {
+// Config keys must match the data keys (which are the group names)
+// We normalize them to be safe, but here we will use the exact group strings as keys
+// or we can map them. Let's use the exact strings from EQUITY_TYPES groups.
+const equityConfig: Record<string, { label: string; color: string }> = {
   value: {
     label: "Patrimônio",
     color: "#4f46e5",
   },
-  imoveis: {
+  'Imóveis': {
     label: "Imóveis",
     color: "#4f46e5",
   },
-  veiculos: {
+  'Veículos': {
     label: "Veículos",
     color: "#2563eb",
   },
-  investimentos: {
+  'Investimentos': {
     label: "Investimentos",
     color: "#10b981",
   },
-  liquidez: {
+  'Liquidez': {
     label: "Liquidez",
     color: "#f59e0b",
   },
-  bens: {
+  'Bens Pessoais': {
     label: "Bens Pessoais",
     color: "#8b5cf6",
   },
-  outros: {
+  'Participações': {
+    label: "Participações",
+    color: "#db2777",
+  },
+  'Outros': {
     label: "Outros",
     color: "#71717a",
   }
@@ -58,8 +65,12 @@ const equityConfig = {
 
 const investmentConfig = {
   value: {
-    label: "Saldo Investido",
+    label: "Saldo Atual",
     color: "#10b981",
+  },
+  cost: {
+    label: "Total Investido",
+    color: "#3b82f6",
   },
 };
 
@@ -69,6 +80,7 @@ const GROUP_COLORS: Record<string, string> = {
   'Investimentos': "#10b981",
   'Liquidez': "#f59e0b",
   'Bens Pessoais': "#8b5cf6",
+  'Participações': "#db2777",
   'Outros': "#71717a",
 };
 
@@ -115,10 +127,10 @@ export function Summary() {
   const prevMonthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), prevMonthStart));
 
   const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
 
   const prevIncome = prevMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
 
   const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
   const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
@@ -130,7 +142,7 @@ export function Summary() {
     return {
       month: format(date, 'MMM', { locale: ptBR }),
       income: monthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0),
-      expense: monthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0),
+      expense: monthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0),
       date: date // for sorting
     };
   }).reverse();
@@ -160,9 +172,9 @@ export function Summary() {
   }, {} as Record<string, number>);
 
   const equityCompositionData = Object.entries(equityCompositionMap).map(([name, value]) => ({
-    name,
+    name, // This matches the keys in equityConfig (e.g., 'Imóveis')
     value,
-    color: GROUP_COLORS[name] || GROUP_COLORS['Outros']
+    fill: GROUP_COLORS[name] || GROUP_COLORS['Outros']
   }));
 
   // 5. Investment Allocation
@@ -170,6 +182,11 @@ export function Summary() {
     const typeInfo = EQUITY_TYPES.find(t => t.value === e.type);
     return typeInfo?.group === 'Investimentos';
   });
+
+  const totalInvestedCost = investmentEquities.reduce((sum, e) => sum + (e.cost || e.value), 0);
+  const totalInvestedValue = investmentEquities.reduce((sum, e) => sum + e.value, 0);
+  const investmentProfit = totalInvestedValue - totalInvestedCost;
+  const investmentProfitPercent = totalInvestedCost > 0 ? (investmentProfit / totalInvestedCost) * 100 : 0;
 
   const investmentAllocationMap = investmentEquities.reduce((acc, item) => {
     const typeInfo = EQUITY_TYPES.find(t => t.value === item.type);
@@ -180,11 +197,21 @@ export function Summary() {
 
   // Generate colors for investments
   const investmentColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#6366f1", "#ec4899"];
+  
   const investmentAllocationData = Object.entries(investmentAllocationMap).map(([name, value], index) => ({
     name,
     value,
-    color: investmentColors[index % investmentColors.length]
+    fill: investmentColors[index % investmentColors.length]
   }));
+
+  // Create dynamic config for investments to ensure legends work
+  const dynamicInvestmentConfig: Record<string, { label: string; color: string }> = {};
+  investmentAllocationData.forEach((item) => {
+    dynamicInvestmentConfig[item.name] = {
+      label: item.name,
+      color: item.fill
+    };
+  });
 
   // 6. Invested Balance Evolution
   const investedBalanceData = Array.from({ length: 6 }).map((_, i) => {
@@ -357,7 +384,7 @@ export function Summary() {
                     strokeWidth={5}
                   >
                     {equityCompositionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
@@ -375,6 +402,35 @@ export function Summary() {
 
       <div>
         <h3 className="text-2xl font-bold tracking-tight mb-4">Investimentos</h3>
+
+        <div className="grid gap-4 md:grid-cols-3 mb-4">
+           <Card className="shadow-sm">
+             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Investido</CardTitle></CardHeader>
+             <CardContent>
+               <div className="text-2xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalInvestedCost)}</div>
+               <p className="text-xs text-muted-foreground">Custo de aquisição</p>
+             </CardContent>
+           </Card>
+           <Card className="shadow-sm">
+             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Saldo Atual</CardTitle></CardHeader>
+             <CardContent>
+               <div className="text-2xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalInvestedValue)}</div>
+               <p className="text-xs text-muted-foreground">Valor de mercado</p>
+             </CardContent>
+           </Card>
+           <Card className="shadow-sm">
+             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rentabilidade</CardTitle></CardHeader>
+             <CardContent>
+               <div className={`text-2xl font-bold ${investmentProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                 {investmentProfit >= 0 ? '+' : ''}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(investmentProfit)}
+               </div>
+               <p className={`text-xs ${investmentProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                 {investmentProfit >= 0 ? '+' : ''}{investmentProfitPercent.toFixed(2)}%
+               </p>
+             </CardContent>
+           </Card>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="shadow-sm">
             <CardHeader>
@@ -382,7 +438,7 @@ export function Summary() {
             </CardHeader>
             <CardContent>
               {investmentAllocationData.length > 0 ? (
-                <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
+                <ChartContainer config={dynamicInvestmentConfig} className="mx-auto aspect-square max-h-[300px]">
                   <PieChart>
                     <Pie
                       data={investmentAllocationData}
@@ -394,7 +450,7 @@ export function Summary() {
                       label
                     >
                       {investmentAllocationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
                     <ChartTooltip content={<ChartTooltipContent />} />

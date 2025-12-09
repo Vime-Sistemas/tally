@@ -18,6 +18,7 @@ export interface Equity {
   name: string;
   type: EquityType;
   value: number;
+  cost: number;
   acquisitionDate: string;
   description?: string;
   color?: string; // For the wallet card look
@@ -34,7 +35,7 @@ export const EQUITY_TYPES: { value: EquityType; label: string; group: string }[]
   { value: 'real-estate-land', label: 'Terreno / Lote', group: 'Imóveis' },
   { value: 'vehicle-car', label: 'Carro', group: 'Veículos' },
   { value: 'vehicle-motorcycle', label: 'Moto', group: 'Veículos' },
-  { value: 'business', label: 'Empresa / Participação', group: 'Investimentos' },
+  { value: 'business', label: 'Empresa / Participação', group: 'Participações' },
   { value: 'stocks', label: 'Ações / Fundos', group: 'Investimentos' },
   { value: 'crypto', label: 'Criptomoedas', group: 'Investimentos' },
   { value: 'cash', label: 'Dinheiro em Espécie', group: 'Liquidez' },
