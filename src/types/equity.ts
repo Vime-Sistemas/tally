@@ -21,7 +21,12 @@ export interface Equity {
   acquisitionDate: string;
   description?: string;
   color?: string; // For the wallet card look
+  createdAt: string;
+  updatedAt: string;
 }
+
+export type CreateEquityDTO = Omit<Equity, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateEquityDTO = Partial<CreateEquityDTO> & { id: string };
 
 export const EQUITY_TYPES: { value: EquityType; label: string; group: string }[] = [
   { value: 'real-estate-house', label: 'Casa', group: 'Imóveis' },

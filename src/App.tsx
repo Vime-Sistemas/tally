@@ -112,9 +112,9 @@ function AppContent() {
           </div>
         );
       case 'equity-new':
-        return <EquityNew />;
+        return <EquityNew onNavigate={setCurrentPage} />;
       case 'equity-list':
-        return <EquityList />;
+        return <EquityList onNavigate={setCurrentPage} />;
       case 'profile':
         return <Profile hasBusiness={hasBusiness} setHasBusiness={setHasBusiness} />;
       case 'dashboard-summary':

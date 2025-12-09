@@ -1,54 +1,19 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote, MoreHorizontal } from "lucide-react";
 import { type Equity, EQUITY_TYPES } from "../../types/equity";
 import { cn } from "../../lib/utils";
-
-// Mock data
-const mockEquity: Equity[] = [
-  {
-    id: '1',
-    name: 'Apartamento Centro',
-    type: 'real-estate-apt',
-    value: 450000,
-    acquisitionDate: '2020-03-15',
-    color: 'bg-zinc-900',
-    description: 'Rua das Flores, 123'
-  },
-  {
-    id: '2',
-    name: 'BMW X1',
-    type: 'vehicle-car',
-    value: 180000,
-    acquisitionDate: '2023-01-10',
-    color: 'bg-blue-600',
-    description: 'Placa ABC-1234'
-  },
-  {
-    id: '3',
-    name: 'Reserva de Emergência',
-    type: 'cash',
-    value: 50000,
-    acquisitionDate: '2024-01-01',
-    color: 'bg-emerald-600',
-    description: 'Nubank Caixinha'
-  },
-  {
-    id: '4',
-    name: 'MacBook Pro M3',
-    type: 'electronics',
-    value: 18000,
-    acquisitionDate: '2024-05-20',
-    color: 'bg-zinc-500',
-  }
-];
+import { equityService } from "../../services/equities";
+import { toast } from "sonner";
+import type { Page } from "../../types/navigation";
 
 const getIconForType = (type: string) => {
-  if (type.startsWith('real-estate')) return Home;
-  if (type.startsWith('vehicle')) return Car;
-  if (type === 'business' || type === 'stocks') return Briefcase;
-  if (type === 'jewelry' || type === 'art') return Gem;
-  if (type === 'electronics') return Smartphone;
+  if (type.startsWith("real-estate")) return Home;
+  if (type.startsWith("vehicle")) return Car;
+  if (type === "business" || type === "stocks") return Briefcase;
+  if (type === "jewelry" || type === "art") return Gem;
+  if (type === "electronics") return Smartphone;
   return Banknote;
 };
 
@@ -56,8 +21,35 @@ const getLabelForType = (type: string) => {
   return EQUITY_TYPES.find(t => t.value === type)?.label || type;
 };
 
-export function EquityList() {
-  const totalValue = mockEquity.reduce((acc, item) => acc + item.value, 0);
+interface EquityListProps {
+  onNavigate: (page: Page) => void;
+}
+
+export function EquityList({ onNavigate }: EquityListProps) {
+  const [equities, setEquities] = useState<Equity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadEquities();
+  }, []);
+
+  const loadEquities = async () => {
+    try {
+      const data = await equityService.getAll();
+      setEquities(data);
+    } catch (error) {
+      console.error("Failed to load equities:", error);
+      toast.error("Erro ao carregar patrimônio");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalValue = equities.reduce((acc, item) => acc + item.value, 0);
+
+  if (loading) {
+    return <div className="p-8 text-center">Carregando...</div>;
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -70,10 +62,13 @@ export function EquityList() {
           <div className="text-right hidden md:block">
             <p className="text-sm text-muted-foreground">Valor Total Estimado</p>
             <p className="text-2xl font-bold">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValue)}
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalValue)}
             </p>
           </div>
-          <Button className="bg-black hover:bg-gray-800 text-white gap-2">
+          <Button 
+            className="bg-black hover:bg-gray-800 text-white gap-2"
+            onClick={() => onNavigate('equity-new')}
+          >
             <Plus className="h-4 w-4" />
             Novo Item
           </Button>
@@ -85,13 +80,13 @@ export function EquityList() {
         <CardContent className="pt-6 text-center">
           <p className="text-sm text-muted-foreground">Valor Total Estimado</p>
           <p className="text-3xl font-bold mt-1">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValue)}
+            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalValue)}
           </p>
         </CardContent>
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {mockEquity.map((item) => {
+        {equities.map((item) => {
           const Icon = getIconForType(item.type);
           
           return (
@@ -124,7 +119,7 @@ export function EquityList() {
                 </h3>
                 <div className="flex justify-between items-end pt-2">
                   <p className="text-lg font-semibold">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.value)}
+                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.value)}
                   </p>
                   {item.acquisitionDate && (
                     <p className="text-xs text-white/60">
@@ -138,7 +133,10 @@ export function EquityList() {
         })}
 
         {/* Add New Card Placeholder */}
-        <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer h-[200px] gap-4 group">
+        <div 
+          className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer h-[200px] gap-4 group"
+          onClick={() => onNavigate('equity-new')}
+        >
           <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all">
             <Plus className="h-6 w-6" />
           </div>
@@ -148,3 +146,4 @@ export function EquityList() {
     </div>
   );
 }
+

@@ -16,7 +16,10 @@ import {
 import { Card, CardContent } from "../../components/ui/card";
 import { EQUITY_TYPES } from "../../types/equity";
 import { cn } from "../../lib/utils";
-import { Check } from "lucide-react";
+import { Check, ArrowLeft } from "lucide-react";
+import { equityService } from "../../services/equities";
+import { toast } from "sonner";
+import type { Page } from "../../types/navigation";
 
 const equitySchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -44,7 +47,11 @@ const colors = [
   { name: 'Rose', value: 'bg-rose-600' },
 ];
 
-export function EquityNew() {
+interface EquityNewProps {
+  onNavigate?: (page: Page) => void;
+}
+
+export function EquityNew({ onNavigate }: EquityNewProps) {
   const {
     register,
     handleSubmit,
@@ -64,10 +71,19 @@ export function EquityNew() {
   const selectedColor = watch('color');
 
   const onSubmit = async (data: EquityFormValues) => {
-    console.log(data);
-    // Here you would typically save the data
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    alert("Patrimônio cadastrado com sucesso!");
+    try {
+      await equityService.create({
+        ...data,
+        type: data.type as any, // Cast to EquityType
+      });
+      toast.success("Patrimônio cadastrado com sucesso!");
+      if (onNavigate) {
+        onNavigate('equity-list');
+      }
+    } catch (error) {
+      console.error("Failed to create equity:", error);
+      toast.error("Erro ao cadastrar patrimônio");
+    }
   };
 
   // Group types for the select
@@ -82,9 +98,19 @@ export function EquityNew() {
   return (
     <div className="p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-black mb-2 tracking-tight">Novo Patrimônio</h1>
-          <p className="text-gray-500">Cadastre seus bens para acompanhar a evolução do seu patrimônio</p>
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            className="mb-4 pl-0 hover:bg-transparent hover:text-gray-600"
+            onClick={() => onNavigate && onNavigate('equity-list')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-black mb-2 tracking-tight">Novo Patrimônio</h1>
+            <p className="text-gray-500">Cadastre seus bens para acompanhar a evolução do seu patrimônio</p>
+          </div>
         </div>
 
         <Card className="w-full shadow-lg">
