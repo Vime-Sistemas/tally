@@ -185,8 +185,6 @@ export function Summary() {
 
   const totalInvestedCost = investmentEquities.reduce((sum, e) => sum + (e.cost || e.value), 0);
   const totalInvestedValue = investmentEquities.reduce((sum, e) => sum + e.value, 0);
-  const investmentProfit = totalInvestedValue - totalInvestedCost;
-  const investmentProfitPercent = totalInvestedCost > 0 ? (investmentProfit / totalInvestedCost) * 100 : 0;
 
   const investmentAllocationMap = investmentEquities.reduce((acc, item) => {
     const typeInfo = EQUITY_TYPES.find(t => t.value === item.type);
