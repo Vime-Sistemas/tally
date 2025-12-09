@@ -83,7 +83,7 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (data: CardFormData) => {
     try {
       setIsSubmitting(true);
-      await createCard(data);
+      await createCard({ ...data, currentInvoice: 0 });
       reset();
       toast.success('Cartão cadastrado com sucesso!');
       onSuccess?.();

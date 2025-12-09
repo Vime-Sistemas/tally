@@ -223,13 +223,13 @@ export function TransactionHistory() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 pb-4 pt-2 space-y-4">
+      <div className="sticky top-0 backdrop-blur-md z-10 pb-4 pt-2 space-y-4">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Histórico</h2>
         </div>
         
-        <div className="space-y-3">
-          <div className="relative">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar transações..."
@@ -239,12 +239,12 @@ export function TransactionHistory() {
             />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
             <Button
               variant={typeFilter === "ALL" ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter("ALL")}
-              className="rounded-full px-4"
+              className="rounded-full px-4 h-11"
             >
               Tudo
             </Button>
@@ -252,7 +252,7 @@ export function TransactionHistory() {
               variant={typeFilter === TransactionType.INCOME ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter(TransactionType.INCOME)}
-              className="rounded-full px-4"
+              className="rounded-full px-4 h-11"
             >
               Entradas
             </Button>
@@ -260,7 +260,7 @@ export function TransactionHistory() {
               variant={typeFilter === TransactionType.EXPENSE ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter(TransactionType.EXPENSE)}
-              className="rounded-full px-4"
+              className="rounded-full px-4 h-11"
             >
               Saídas
             </Button>
