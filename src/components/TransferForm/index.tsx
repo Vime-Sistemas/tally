@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Button } from '../ui/button';
+import { toast } from 'sonner';
+import { getAccounts, createTransaction } from '../../services/api';
+import type { Account } from '../../types/account';
+import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 
 const transferSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
@@ -27,17 +31,13 @@ const transferSchema = z.object({
 
 type TransferFormData = z.infer<typeof transferSchema>;
 
-// Mock accounts - In a real app this would come from an API/Context
-const accounts = [
-  { value: 'nubank', label: 'Nubank' },
-  { value: 'inter', label: 'Banco Inter' },
-  { value: 'itau', label: 'Itaú' },
-  { value: 'wallet', label: 'Carteira Física' },
-  { value: 'xp', label: 'XP Investimentos' },
-];
-
 export function TransferForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [showBalanceDialog, setShowBalanceDialog] = useState(false);
+  const [balanceInfo, setBalanceInfo] = useState<any>(null);
+  const [pendingData, setPendingData] = useState<TransferFormData | null>(null);
 
   const {
     register,
@@ -52,24 +52,98 @@ export function TransferForm() {
     },
   });
 
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await getAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Erro ao carregar contas:', error);
+        toast.error('Erro ao carregar contas');
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    loadAccounts();
+  }, []);
+
   const onSubmit = async (data: TransferFormData) => {
     try {
       setIsSubmitting(true);
-      // TODO: Implement transfer service
-      console.log('Transfer data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await createTransaction({
+        type: 'TRANSFER',
+        category: 'TRANSFER',
+        amount: data.amount,
+        description: data.description || 'Transferência entre contas',
+        date: data.date,
+        accountId: data.sourceAccount,
+        destinationAccountId: data.destinationAccount,
+      });
       reset();
-      alert('Transferência realizada com sucesso!');
+      toast.success('Transferência realizada com sucesso!');
+    } catch (error: any) {
+      // Check if it's an insufficient balance error
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
+        const info = error.response.data;
+        setBalanceInfo(info);
+        setPendingData(data);
+        setShowBalanceDialog(true);
+      } else {
+        console.error('Erro ao realizar transferência:', error);
+        toast.error('Erro ao realizar transferência. Tente novamente.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmNegativeBalance = async () => {
+    if (!pendingData || !balanceInfo) return;
+
+    try {
+      setIsSubmitting(true);
+      // Retry with confirmation flag using the confirm endpoint
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transactions/confirm`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            type: 'TRANSFER',
+            category: 'TRANSFER',
+            amount: pendingData.amount,
+            description: pendingData.description || 'Transferência entre contas',
+            date: pendingData.date,
+            accountId: pendingData.sourceAccount,
+            destinationAccountId: pendingData.destinationAccount,
+            confirmNegativeBalance: true
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create transaction');
+      }
+
+      reset();
+      setShowBalanceDialog(false);
+      setPendingData(null);
+      setBalanceInfo(null);
+      toast.success('Transferência realizada com sucesso!');
     } catch (error) {
       console.error('Erro ao realizar transferência:', error);
-      alert('Erro ao realizar transferência. Tente novamente.');
+      toast.error('Erro ao realizar transferência');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="w-full shadow-sm border-gray-100">
+    <>
+      <Card className="w-full shadow-sm border-gray-100">
       <CardHeader className="pb-6">
         <CardTitle className="text-xl font-semibold text-center text-black">Nova Transferência</CardTitle>
       </CardHeader>
@@ -105,14 +179,14 @@ export function TransferForm() {
                 name="sourceAccount"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
                     <SelectTrigger id="sourceAccount" className="w-full h-10 border-gray-200 focus:ring-black">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
-                        <SelectItem key={account.value} value={account.value}>
-                          {account.label}
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -131,14 +205,14 @@ export function TransferForm() {
                 name="destinationAccount"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
                     <SelectTrigger id="destinationAccount" className="w-full h-10 border-gray-200 focus:ring-black">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
-                        <SelectItem key={account.value} value={account.value}>
-                          {account.label}
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -189,5 +263,22 @@ export function TransferForm() {
         </form>
       </CardContent>
     </Card>
+
+    {balanceInfo && (
+      <InsufficientBalanceDialog
+        open={showBalanceDialog}
+        currentBalance={balanceInfo.currentBalance}
+        requiredAmount={balanceInfo.requiredAmount}
+        finalBalance={balanceInfo.finalBalance}
+        onConfirm={handleConfirmNegativeBalance}
+        onCancel={() => {
+          setShowBalanceDialog(false);
+          setBalanceInfo(null);
+          setPendingData(null);
+        }}
+        isLoading={isSubmitting}
+      />
+    )}
+    </>
   );
 }

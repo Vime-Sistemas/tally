@@ -4,11 +4,15 @@ import { CreditCard, Wallet, Plus } from "lucide-react";
 import { getAccounts, getCards } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
+import { EditAccountDialog } from '../EditAccountDialog';
+import { EditCardDialog } from '../EditCardDialog';
 
 export function AccountsList() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCardType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editingCard, setEditingCard] = useState<CreditCardType | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -28,6 +32,19 @@ export function AccountsList() {
     };
     loadData();
   }, []);
+
+  const handleReloadData = async () => {
+    try {
+      const [accountsData, cardsData] = await Promise.all([
+        getAccounts(),
+        getCards(),
+      ]);
+      setAccounts(accountsData);
+      setCards(cardsData);
+    } catch (error) {
+      console.error('Erro ao recarregar dados:', error);
+    }
+  };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -60,7 +77,11 @@ export function AccountsList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {accounts.map((account) => (
-              <div key={account.id} className={`p-6 rounded-2xl text-white shadow-lg ${account.color} transition-transform hover:scale-[1.02] cursor-pointer`}>
+              <div 
+                key={account.id} 
+                className={`p-6 rounded-2xl text-white shadow-lg ${account.color} transition-transform hover:scale-[1.02] cursor-pointer`}
+                onClick={() => setEditingAccount(account)}
+              >
                 <div className="flex justify-between items-start mb-8">
                   <Wallet className="h-6 w-6 opacity-80" />
                   <span className="text-sm font-medium opacity-80">{getTypeLabel(account.type)}</span>
@@ -90,7 +111,11 @@ export function AccountsList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cards.map((card) => (
-              <div key={card.id} className={`p-6 rounded-2xl text-white shadow-lg ${card.color} relative overflow-hidden transition-transform hover:scale-[1.02] cursor-pointer`}>
+              <div 
+                key={card.id} 
+                className={`p-6 rounded-2xl text-white shadow-lg ${card.color} relative overflow-hidden transition-transform hover:scale-[1.02] cursor-pointer`}
+                onClick={() => setEditingCard(card)}
+              >
                 {/* Decorative circles */}
                 <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white opacity-10"></div>
                 <div className="absolute -right-10 top-10 w-32 h-32 rounded-full bg-white opacity-5"></div>
@@ -120,6 +145,29 @@ export function AccountsList() {
           </div>
         )}
       </section>
+
+      {/* Edit Dialogs */}
+      {editingAccount && (
+        <EditAccountDialog
+          open={!!editingAccount}
+          account={editingAccount}
+          onOpenChange={(open) => {
+            if (!open) setEditingAccount(null);
+          }}
+          onSuccess={handleReloadData}
+        />
+      )}
+
+      {editingCard && (
+        <EditCardDialog
+          open={!!editingCard}
+          card={editingCard}
+          onOpenChange={(open) => {
+            if (!open) setEditingCard(null);
+          }}
+          onSuccess={handleReloadData}
+        />
+      )}
     </div>
   );
 }

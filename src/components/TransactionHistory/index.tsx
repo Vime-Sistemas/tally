@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { TransactionType, TransactionCategory } from "../../types/transaction";
-import { ArrowDownCircle, ArrowUpCircle, Search, Filter, ArrowUpDown, Calendar, Receipt, Tag, Wallet } from "lucide-react";
+import { TransactionType } from "../../types/transaction";
+import { ArrowDownCircle, ArrowUpCircle, Search, Filter, ArrowUpDown, Calendar, Receipt, Tag, Wallet, Edit, Trash2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { getTransactions, getAccounts, updateTransaction, deleteTransaction } from "../../services/api";
+import { toast } from "sonner";
+import type { Transaction } from "../../types/transaction";
+import type { Account } from "../../types/account";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,61 +19,110 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 
-// Mock data
-const initialTransactions = [
-  {
-    id: '1',
-    type: TransactionType.EXPENSE,
-    category: TransactionCategory.FOOD,
-    amount: 45.90,
-    description: 'Almoço',
-    date: '2025-12-08',
-    account: 'Nubank',
-  },
-  {
-    id: '2',
-    type: TransactionType.INCOME,
-    category: TransactionCategory.FREELANCE,
-    amount: 1500.00,
-    description: 'Projeto Website',
-    date: '2025-12-07',
-    account: 'Banco Inter',
-  },
-  {
-    id: '3',
-    type: TransactionType.EXPENSE,
-    category: TransactionCategory.TRANSPORT,
-    amount: 22.50,
-    description: 'Uber',
-    date: '2025-12-07',
-    account: 'Nubank',
-  },
-   {
-    id: '4',
-    type: TransactionType.EXPENSE,
-    category: TransactionCategory.SHOPPING,
-    amount: 250.00,
-    description: 'Roupas',
-    date: '2025-12-05',
-    account: 'Itaú',
-  },
-  {
-    id: '5',
-    type: TransactionType.EXPENSE,
-    category: TransactionCategory.UTILITIES,
-    amount: 120.00,
-    description: 'Conta de Luz',
-    date: '2025-12-01',
-    account: 'Banco Inter',
-  },
-];
-
 export function TransactionHistory() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<string>("DATE_DESC");
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingDescription, setEditingDescription] = useState("");
+  const [editingAmount, setEditingAmount] = useState(0);
+  const [editingCategory, setEditingCategory] = useState("");
+  const [editingDate, setEditingDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredTransactions = initialTransactions
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [transactionsData, accountsData] = await Promise.all([
+          getTransactions(),
+          getAccounts(),
+        ]);
+        setTransactions(transactionsData);
+        setAccounts(accountsData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        toast.error('Erro ao carregar transações');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const getAccountName = (accountId: string): string => {
+    return accounts.find(a => a.id === accountId)?.name || accountId;
+  };
+
+  const formatDateToDDMMYYYY = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split('T')[0].split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleEditClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setEditingDescription(transaction.description);
+    setEditingAmount(transaction.amount);
+    setEditingCategory(transaction.category);
+    setEditingDate(transaction.date.split('T')[0]);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedTransaction) return;
+    
+    setIsSubmitting(true);
+    try {
+      await updateTransaction(selectedTransaction.id, {
+        description: editingDescription,
+        amount: editingAmount,
+        category: editingCategory as any,
+        date: editingDate,
+      });
+      
+      setTransactions(transactions.map(t => 
+        t.id === selectedTransaction.id 
+          ? { ...t, description: editingDescription, amount: editingAmount, category: editingCategory as any, date: editingDate }
+          : t
+      ));
+      
+      setIsEditDialogOpen(false);
+      toast.success('Transação atualizada com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar transação:', error);
+      toast.error('Erro ao atualizar transação');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedTransaction) return;
+    
+    setIsSubmitting(true);
+    try {
+      await deleteTransaction(selectedTransaction.id);
+      setTransactions(transactions.filter(t => t.id !== selectedTransaction.id));
+      setIsDeleteDialogOpen(false);
+      toast.success('Transação deletada com sucesso');
+    } catch (error) {
+      console.error('Erro ao deletar transação:', error);
+      toast.error('Erro ao deletar transação');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredTransactions = transactions
     .filter((t) => {
       const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === "ALL" || t.type === typeFilter;
@@ -81,6 +135,19 @@ export function TransactionHistory() {
       if (sortOrder === "AMOUNT_ASC") return a.amount - b.amount;
       return 0;
     });
+
+  if (loading) {
+    return (
+      <Card className="w-full shadow-sm border-gray-100">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold text-black">Histórico de Transações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-gray-500">Carregando...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full shadow-sm border-gray-100">
@@ -155,10 +222,10 @@ export function TransactionHistory() {
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(transaction.date).toLocaleDateString()}
+                            {formatDateToDDMMYYYY(transaction.date)}
                           </span>
                           <span>•</span>
-                          <span className="font-medium text-gray-600">{transaction.account}</span>
+                          <span className="font-medium text-gray-600">{getAccountName(transaction.accountId)}</span>
                         </div>
                       </div>
                     </div>
@@ -210,7 +277,7 @@ export function TransactionHistory() {
                           <Wallet className="h-4 w-4" />
                           <span>Conta</span>
                         </div>
-                        <span className="font-medium">{transaction.account}</span>
+                        <span className="font-medium">{getAccountName(transaction.accountId)}</span>
                       </div>
 
                       <div className="flex items-center justify-between border-b pb-2">
@@ -218,8 +285,148 @@ export function TransactionHistory() {
                           <Calendar className="h-4 w-4" />
                           <span>Data</span>
                         </div>
-                        <span className="font-medium">{new Date(transaction.date).toLocaleDateString()}</span>
+                        <span className="font-medium">{formatDateToDDMMYYYY(transaction.date)}</span>
                       </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-6 pt-4 border-t">
+                      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEditClick(transaction)}
+                            className="flex-1"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                        </DialogTrigger>
+                        {selectedTransaction && selectedTransaction.id === transaction.id && (
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Editar Transação</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div>
+                                <label className="text-sm font-medium">Descrição</label>
+                                <Input
+                                  value={editingDescription}
+                                  onChange={(e) => setEditingDescription(e.target.value)}
+                                  placeholder="Digite a descrição..."
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Valor</label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={editingAmount}
+                                  onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Categoria</label>
+                                <Select value={editingCategory} onValueChange={setEditingCategory}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecionar categoria" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {selectedTransaction?.type === TransactionType.INCOME && (
+                                      <>
+                                        <SelectItem value="SALARY">Salário</SelectItem>
+                                        <SelectItem value="FREELANCE">Freelance</SelectItem>
+                                        <SelectItem value="INVESTMENT">Investimento</SelectItem>
+                                        <SelectItem value="OTHER_INCOME">Outra Receita</SelectItem>
+                                      </>
+                                    )}
+                                    {selectedTransaction?.type === TransactionType.EXPENSE && (
+                                      <>
+                                        <SelectItem value="FOOD">Alimentação</SelectItem>
+                                        <SelectItem value="TRANSPORT">Transporte</SelectItem>
+                                        <SelectItem value="HOUSING">Moradia</SelectItem>
+                                        <SelectItem value="UTILITIES">Utilidades</SelectItem>
+                                        <SelectItem value="HEALTHCARE">Saúde</SelectItem>
+                                        <SelectItem value="ENTERTAINMENT">Entretenimento</SelectItem>
+                                        <SelectItem value="EDUCATION">Educação</SelectItem>
+                                        <SelectItem value="SHOPPING">Compras</SelectItem>
+                                        <SelectItem value="OTHER_EXPENSE">Outra Despesa</SelectItem>
+                                      </>
+                                    )}
+                                    {selectedTransaction?.type === TransactionType.TRANSFER && (
+                                      <SelectItem value="TRANSFER">Transferência</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Data</label>
+                                <Input
+                                  type="date"
+                                  value={editingDate}
+                                  onChange={(e) => setEditingDate(e.target.value)}
+                                />
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setIsEditDialogOpen(false)}
+                                  disabled={isSubmitting}
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button 
+                                  onClick={handleEditSave}
+                                  disabled={isSubmitting}
+                                >
+                                  {isSubmitting ? 'Salvando...' : 'Salvar'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        )}
+                      </Dialog>
+
+                      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => handleDeleteClick(transaction)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Deletar
+                          </Button>
+                        </DialogTrigger>
+                        {selectedTransaction && selectedTransaction.id === transaction.id && (
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Confirmar exclusão</DialogTitle>
+                              <DialogDescription>
+                                Tem certeza que deseja deletar esta transação? Esta ação não pode ser desfeita.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex gap-2 justify-end mt-6">
+                              <Button 
+                                variant="outline" 
+                                onClick={() => setIsDeleteDialogOpen(false)}
+                                disabled={isSubmitting}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button 
+                                variant="destructive"
+                                onClick={handleDeleteConfirm}
+                                disabled={isSubmitting}
+                              >
+                                {isSubmitting ? 'Deletando...' : 'Deletar'}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        )}
+                      </Dialog>
                     </div>
                   </div>
                 </DialogContent>

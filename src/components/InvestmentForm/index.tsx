@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Button } from '../ui/button';
+import { toast } from 'sonner';
+import { getAccounts, createTransaction } from '../../services/api';
+import type { Account } from '../../types/account';
+import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 
 const investmentSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
@@ -24,23 +28,22 @@ const investmentSchema = z.object({
 
 type InvestmentFormData = z.infer<typeof investmentSchema>;
 
-const investmentTypes = [
-  { value: 'CDB', label: 'CDB' },
-  { value: 'TREASURY', label: 'Tesouro Direto' },
-  { value: 'STOCKS', label: 'Ações' },
-  { value: 'FII', label: 'FIIs' },
-  { value: 'CRYPTO', label: 'Criptomoedas' },
-  { value: 'OTHER', label: 'Outros' },
-];
-
-const accounts = [
-  { value: 'CHECKING', label: 'Conta Corrente' },
-  { value: 'SAVINGS', label: 'Poupança' },
-  { value: 'WALLET', label: 'Carteira' },
-];
+const investmentTypeMap: Record<string, string> = {
+  'CDB': 'CDB',
+  'TREASURY': 'Tesouro Direto',
+  'STOCKS': 'Ações',
+  'FII': 'FIIs',
+  'CRYPTO': 'Criptomoedas',
+  'OTHER': 'Outros',
+};
 
 export function InvestmentForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [showBalanceDialog, setShowBalanceDialog] = useState(false);
+  const [balanceInfo, setBalanceInfo] = useState<any>(null);
+  const [pendingData, setPendingData] = useState<InvestmentFormData | null>(null);
 
   const {
     register,
@@ -55,24 +58,96 @@ export function InvestmentForm() {
     },
   });
 
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await getAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Erro ao carregar contas:', error);
+        toast.error('Erro ao carregar contas');
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    loadAccounts();
+  }, []);
+
   const onSubmit = async (data: InvestmentFormData) => {
     try {
       setIsSubmitting(true);
-      // TODO: Implement investment service
-      console.log('Investment data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await createTransaction({
+        type: 'EXPENSE',
+        category: 'INVESTMENT',
+        amount: data.amount,
+        description: data.description || `Investimento em ${investmentTypeMap[data.investmentType] || data.investmentType}`,
+        date: data.date,
+        accountId: data.sourceAccount,
+      });
       reset();
-      alert('Aplicação registrada com sucesso!');
+      toast.success('Aplicação registrada com sucesso!');
+    } catch (error: any) {
+      // Check if it's an insufficient balance error
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
+        const info = error.response.data;
+        setBalanceInfo(info);
+        setPendingData(data);
+        setShowBalanceDialog(true);
+      } else {
+        console.error('Erro ao registrar aplicação:', error);
+        toast.error('Erro ao registrar aplicação. Tente novamente.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmNegativeBalance = async () => {
+    if (!pendingData || !balanceInfo) return;
+
+    try {
+      setIsSubmitting(true);
+      // Retry with confirmation flag using the confirm endpoint
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transactions/confirm`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            type: 'EXPENSE',
+            category: 'INVESTMENT',
+            amount: pendingData.amount,
+            description: pendingData.description || `Investimento em ${investmentTypeMap[pendingData.investmentType] || pendingData.investmentType}`,
+            date: pendingData.date,
+            accountId: pendingData.sourceAccount,
+            confirmNegativeBalance: true
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create transaction');
+      }
+
+      reset();
+      setShowBalanceDialog(false);
+      setPendingData(null);
+      setBalanceInfo(null);
+      toast.success('Aplicação registrada com sucesso!');
     } catch (error) {
       console.error('Erro ao registrar aplicação:', error);
-      alert('Erro ao registrar aplicação. Tente novamente.');
+      toast.error('Erro ao registrar aplicação');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="w-full shadow-sm border-gray-100">
+    <>
+      <Card className="w-full shadow-sm border-gray-100">
       <CardHeader className="pb-6">
         <CardTitle className="text-xl font-semibold text-center text-black">Nova Aplicação</CardTitle>
       </CardHeader>
@@ -113,9 +188,9 @@ export function InvestmentForm() {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
-                      {investmentTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {Object.entries(investmentTypeMap).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -134,14 +209,14 @@ export function InvestmentForm() {
                 name="sourceAccount"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
                     <SelectTrigger id="sourceAccount" className="w-full h-10 border-gray-200 focus:ring-black">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
-                        <SelectItem key={account.value} value={account.value}>
-                          {account.label}
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -192,5 +267,22 @@ export function InvestmentForm() {
         </form>
       </CardContent>
     </Card>
+
+    {balanceInfo && (
+      <InsufficientBalanceDialog
+        open={showBalanceDialog}
+        currentBalance={balanceInfo.currentBalance}
+        requiredAmount={balanceInfo.requiredAmount}
+        finalBalance={balanceInfo.finalBalance}
+        onConfirm={handleConfirmNegativeBalance}
+        onCancel={() => {
+          setShowBalanceDialog(false);
+          setBalanceInfo(null);
+          setPendingData(null);
+        }}
+        isLoading={isSubmitting}
+      />
+    )}
+    </>
   );
 }

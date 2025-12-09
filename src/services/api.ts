@@ -1,6 +1,8 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Account, CreditCard } from '../types/account';
+import type { Transaction } from '../types/transaction';
+import type { CreateTransactionDTO } from '../types/transaction';
 // import { encryptPayload, decryptPayload } from '../utils/crypto';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -105,6 +107,27 @@ export const updateCard = async (id: string, data: Partial<Omit<CreditCard, 'id'
 
 export const deleteCard = async (id: string): Promise<void> => {
   await api.delete(`/cards/${id}`);
+};
+
+// TRANSACTIONS API
+
+export const getTransactions = async (): Promise<Transaction[]> => {
+  const response = await api.get('/transactions');
+  return response.data;
+};
+
+export const createTransaction = async (data: CreateTransactionDTO): Promise<Transaction> => {
+  const response = await api.post('/transactions', data);
+  return response.data;
+};
+
+export const updateTransaction = async (id: string, data: Partial<CreateTransactionDTO>): Promise<Transaction> => {
+  const response = await api.put(`/transactions/${id}`, data);
+  return response.data;
+};
+
+export const deleteTransaction = async (id: string): Promise<void> => {
+  await api.delete(`/transactions/${id}`);
 };
 
 export default api;
