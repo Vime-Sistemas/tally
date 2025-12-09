@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 import type { Account, CreditCard } from '../types/account';
 import type { Transaction } from '../types/transaction';
 import type { CreateTransactionDTO } from '../types/transaction';
+import type { Goal, CreateGoalDTO, UpdateGoalDTO } from '../types/goal';
 // import { encryptPayload, decryptPayload } from '../utils/crypto';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -134,6 +135,27 @@ export const updateTransaction = async (id: string, data: Partial<CreateTransact
 
 export const deleteTransaction = async (id: string): Promise<void> => {
   await api.delete(`/transactions/${id}`);
+};
+
+// GOALS API
+
+export const getGoals = async (): Promise<Goal[]> => {
+  const response = await api.get('/goals');
+  return response.data;
+};
+
+export const createGoal = async (data: CreateGoalDTO): Promise<Goal> => {
+  const response = await api.post('/goals', data);
+  return response.data;
+};
+
+export const updateGoal = async (id: string, data: UpdateGoalDTO): Promise<Goal> => {
+  const response = await api.put(`/goals/${id}`, data);
+  return response.data;
+};
+
+export const deleteGoal = async (id: string): Promise<void> => {
+  await api.delete(`/goals/${id}`);
 };
 
 export default api;

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../../components/ui/chart";
 import { RadialBar, RadialBarChart, PolarAngleAxis } from "recharts";
-import { Plane, Laptop, ShieldCheck, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Plane, Laptop, ShieldCheck, Plus, Calendar as CalendarIcon, Home, Car, PiggyBank, HelpCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,34 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
-
-const goalsData = [
-  {
-    id: 1,
-    name: "Viagem de Férias",
-    current: 3000,
-    target: 5000,
-    icon: Plane,
-    color: "#3b82f6", // blue-500
-  },
-  {
-    id: 2,
-    name: "Reserva de Emergência",
-    current: 8500,
-    target: 10000,
-    icon: ShieldCheck,
-    color: "#10b981", // emerald-500
-  },
-  {
-    id: 3,
-    name: "Novo MacBook",
-    current: 2000,
-    target: 12000,
-    icon: Laptop,
-    color: "#8b5cf6", // violet-500
-  },
-];
+import { useState, useEffect } from "react";
+import { getGoals, createGoal } from "../../services/api";
+import type { Goal } from "../../types/goal";
+import { toast } from "sonner";
+import { DepositGoalDialog } from "../../components/DepositGoalDialog";
 
 const goalSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -49,8 +26,35 @@ const goalSchema = z.object({
 
 type GoalFormValues = z.infer<typeof goalSchema>;
 
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'travel': return Plane;
+    case 'electronics': return Laptop;
+    case 'vehicle': return Car;
+    case 'home': return Home;
+    case 'emergency': return ShieldCheck;
+    case 'investment': return PiggyBank;
+    default: return HelpCircle;
+  }
+};
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'travel': return "#3b82f6"; // blue-500
+    case 'electronics': return "#8b5cf6"; // violet-500
+    case 'vehicle': return "#ef4444"; // red-500
+    case 'home': return "#f59e0b"; // amber-500
+    case 'emergency': return "#10b981"; // emerald-500
+    case 'investment': return "#06b6d4"; // cyan-500
+    default: return "#6b7280"; // gray-500
+  }
+};
+
 export function Goals() {
   const [activeTab, setActiveTab] = useState("list");
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
@@ -63,10 +67,41 @@ export function Goals() {
     },
   });
 
-  const onSubmit = (data: GoalFormValues) => {
-    console.log(data);
-    // Here you would typically save the data
-    setActiveTab("list");
+  const fetchGoals = async () => {
+    try {
+      const data = await getGoals();
+      setGoals(data);
+    } catch (error) {
+      console.error("Erro ao carregar metas:", error);
+      toast.error("Erro ao carregar metas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  const onSubmit = async (data: GoalFormValues) => {
+    try {
+      await createGoal({
+        name: data.name,
+        targetAmount: parseFloat(data.target),
+        currentAmount: data.current ? parseFloat(data.current) : 0,
+        category: data.category,
+        deadline: data.deadline,
+        color: getCategoryColor(data.category),
+      });
+      
+      toast.success("Meta criada com sucesso!");
+      form.reset();
+      fetchGoals();
+      setActiveTab("list");
+    } catch (error) {
+      console.error("Erro ao criar meta:", error);
+      toast.error("Erro ao criar meta");
+    }
   };
 
   return (
@@ -85,95 +120,109 @@ export function Goals() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {goalsData.map((goal) => {
-              const percentage = Math.round((goal.current / goal.target) * 100);
-              const chartData = [{ name: "progress", value: percentage, fill: goal.color }];
-              
-              return (
-                <Card key={goal.id} className="overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-semibold">{goal.name}</CardTitle>
-                      <div className={`p-2 rounded-full bg-opacity-10`} style={{ backgroundColor: `${goal.color}20` }}>
-                        <goal.icon className="h-5 w-5" style={{ color: goal.color }} />
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Carregando...</div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {goals.map((goal) => {
+                const percentage = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
+                const chartData = [{ name: "progress", value: percentage, fill: goal.color }];
+                const Icon = getCategoryIcon(goal.category);
+                
+                return (
+                  <Card key={goal.id} className="overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-semibold">{goal.name}</CardTitle>
+                        <div className={`p-2 rounded-full bg-opacity-10`} style={{ backgroundColor: `${goal.color}20` }}>
+                          <Icon className="h-5 w-5" style={{ color: goal.color }} />
+                        </div>
                       </div>
-                    </div>
-                    <CardDescription>
-                      R$ {goal.current.toLocaleString()} de R$ {goal.target.toLocaleString()}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center pb-6">
-                    <div className="h-[180px] w-full relative flex items-center justify-center">
-                      <ChartContainer
-                        config={{
-                          progress: {
-                            label: "Progresso",
-                            color: goal.color,
-                          },
-                        }}
-                        className="h-full w-full absolute inset-0"
-                      >
-                        <RadialBarChart
-                          data={chartData}
-                          startAngle={90}
-                          endAngle={-270}
-                          innerRadius={60}
-                          outerRadius={85}
+                      <CardDescription>
+                        R$ {goal.currentAmount.toLocaleString()} de R$ {goal.targetAmount.toLocaleString()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center pb-6">
+                      <div className="h-[180px] w-full relative flex items-center justify-center">
+                        <ChartContainer
+                          config={{
+                            progress: {
+                              label: "Progresso",
+                              color: goal.color,
+                            },
+                          }}
+                          className="h-full w-full absolute inset-0"
                         >
-                          <PolarAngleAxis
-                            type="number"
-                            domain={[0, 100]}
-                            angleAxisId={0}
-                            tick={false}
-                          />
-                          <RadialBar
-                            background
-                            dataKey="value"
-                            cornerRadius={10}
-                            fill={goal.color}
-                          />
-                          <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel nameKey="progress" />}
-                          />
-                        </RadialBarChart>
-                      </ChartContainer>
-                      <div className="z-10 flex flex-col items-center justify-center text-center">
-                        <span className="text-3xl font-bold">{percentage}%</span>
-                        <span className="text-xs text-muted-foreground uppercase tracking-widest">Concluído</span>
+                          <RadialBarChart
+                            data={chartData}
+                            startAngle={90}
+                            endAngle={-270}
+                            innerRadius={60}
+                            outerRadius={85}
+                          >
+                            <PolarAngleAxis
+                              type="number"
+                              domain={[0, 100]}
+                              angleAxisId={0}
+                              tick={false}
+                            />
+                            <RadialBar
+                              background
+                              dataKey="value"
+                              cornerRadius={10}
+                              fill={goal.color}
+                            />
+                            <ChartTooltip
+                              cursor={false}
+                              content={<ChartTooltipContent hideLabel nameKey="progress" />}
+                            />
+                          </RadialBarChart>
+                        </ChartContainer>
+                        <div className="z-10 flex flex-col items-center justify-center text-center">
+                          <span className="text-3xl font-bold">{percentage}%</span>
+                          <span className="text-xs text-muted-foreground uppercase tracking-widest">Concluído</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full mt-4 space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>0%</span>
-                        <span>50%</span>
-                        <span>100%</span>
+                      <div className="w-full mt-4 space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>0%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                          </div>
+                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-1000 ease-out" 
+                              style={{ width: `${percentage}%`, backgroundColor: goal.color }} 
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          variant="outline"
+                          onClick={() => setSelectedGoal(goal)}
+                        >
+                          Adicionar Valor
+                        </Button>
                       </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-1000 ease-out" 
-                          style={{ width: `${percentage}%`, backgroundColor: goal.color }} 
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            
-            {/* Card para adicionar nova meta (atalho para a aba) */}
-            <Card 
-              className="border-dashed border-2 flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:bg-gray-50 transition-colors group"
-              onClick={() => setActiveTab("new")}
-            >
-              <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
-                <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-600">Nova Meta</h3>
-              <p className="text-sm text-gray-400">Defina um novo objetivo</p>
-            </Card>
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              
+              {/* Card para adicionar nova meta (atalho para a aba) */}
+              <Card 
+                className="border-dashed border-2 flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:bg-gray-50 transition-colors group"
+                onClick={() => setActiveTab("new")}
+              >
+                <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
+                  <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-600">Nova Meta</h3>
+                <p className="text-sm text-gray-400">Defina um novo objetivo</p>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="new">
@@ -272,6 +321,17 @@ export function Goals() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {selectedGoal && (
+        <DepositGoalDialog
+          open={!!selectedGoal}
+          goal={selectedGoal}
+          onOpenChange={(open) => {
+            if (!open) setSelectedGoal(null);
+          }}
+          onSuccess={fetchGoals}
+        />
+      )}
     </div>
   );
 }
