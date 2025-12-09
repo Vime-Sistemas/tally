@@ -14,7 +14,7 @@ import {
 } from '../ui/select';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
-import { getAccounts, createTransaction } from '../../services/api';
+import { getAccounts, createTransaction, confirmTransaction } from '../../services/api';
 import type { Account } from '../../types/account';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 
@@ -107,30 +107,16 @@ export function InvestmentForm() {
 
     try {
       setIsSubmitting(true);
-      // Retry with confirmation flag using the confirm endpoint
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transactions/confirm`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            type: 'EXPENSE',
-            category: 'INVESTMENT',
-            amount: pendingData.amount,
-            description: pendingData.description || `Investimento em ${investmentTypeMap[pendingData.investmentType] || pendingData.investmentType}`,
-            date: pendingData.date,
-            accountId: pendingData.sourceAccount,
-            confirmNegativeBalance: true
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create transaction');
-      }
+      
+      await confirmTransaction({
+        type: 'EXPENSE',
+        category: 'INVESTMENT',
+        amount: pendingData.amount,
+        description: pendingData.description || `Investimento em ${investmentTypeMap[pendingData.investmentType] || pendingData.investmentType}`,
+        date: pendingData.date,
+        accountId: pendingData.sourceAccount,
+        confirmNegativeBalance: true
+      });
 
       reset();
       setShowBalanceDialog(false);

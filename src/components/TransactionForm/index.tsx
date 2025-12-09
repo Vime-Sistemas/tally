@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Button } from '../ui/button';
-import { createTransaction, getAccounts } from '../../services/api';
+import { createTransaction, confirmTransaction, getAccounts } from '../../services/api';
 import { TransactionType, type TransactionCategory } from '../../types/transaction';
 import { toast } from 'sonner';
 import type { Account } from '../../types/account';
@@ -123,26 +123,12 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
 
     try {
       setIsSubmitting(true);
-      // Retry with confirmation flag using the confirm endpoint
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/transactions/confirm`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            ...pendingData,
-            category: pendingData.category as TransactionCategory,
-            confirmNegativeBalance: true
-          })
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create transaction');
-      }
+      
+      await confirmTransaction({
+        ...pendingData,
+        category: pendingData.category as TransactionCategory,
+        confirmNegativeBalance: true
+      });
 
       reset();
       setShowBalanceDialog(false);

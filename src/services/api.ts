@@ -121,6 +121,11 @@ export const createTransaction = async (data: CreateTransactionDTO): Promise<Tra
   return response.data;
 };
 
+export const confirmTransaction = async (data: CreateTransactionDTO & { confirmNegativeBalance: boolean }): Promise<Transaction> => {
+  const response = await api.post('/transactions/confirm', data);
+  return response.data;
+};
+
 export const updateTransaction = async (id: string, data: Partial<CreateTransactionDTO>): Promise<Transaction> => {
   const response = await api.put(`/transactions/${id}`, data);
   return response.data;
