@@ -10,6 +10,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Building2, User, Mail, Phone, Briefcase } from "lucide-react";
+import { useUser } from "../../contexts/UserContext";
+import { useEffect } from "react";
 
 interface ProfileProps {
   hasBusiness: boolean;
@@ -26,20 +28,44 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
+  const { user } = useUser();
+  
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "Usuário Exemplo",
-      email: "usuario@exemplo.com",
-      phone: "(11) 99999-9999",
-      occupation: "Desenvolvedor de Software",
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      occupation: "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name,
+        email: user.email,
+        phone: "", 
+        occupation: "",
+      });
+    }
+  }, [user, form]);
 
   const onSubmit = (data: ProfileFormValues) => {
     console.log(data);
     // Here you would typically save the data
   };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
+  const userInitials = user?.name ? getInitials(user.name) : user?.email?.substring(0, 2).toUpperCase() || 'US';
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -51,12 +77,12 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
                 <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
                 <CardContent className="relative pt-0">
                     <Avatar className="h-24 w-24 border-4 border-white absolute -top-12 left-6 shadow-md">
-                        <AvatarImage src="https://flow.setup-ac.com.br/uploads/bc5d9f72-4f9d-4ea6-b48a-a388ac6fe992_Zelo.png" />
-                        <AvatarFallback>US</AvatarFallback>
+                        <AvatarImage src="" />
+                        <AvatarFallback className="text-2xl">{userInitials}</AvatarFallback>
                     </Avatar>
                     <div className="mt-14 space-y-1">
-                        <h2 className="text-2xl font-bold">Usuário Exemplo</h2>
-                        <p className="text-muted-foreground text-sm">usuario@exemplo.com</p>
+                        <h2 className="text-2xl font-bold">{user?.name || "Usuário"}</h2>
+                        <p className="text-muted-foreground text-sm">{user?.email || "email@exemplo.com"}</p>
                     </div>
                     <div className="mt-6 space-y-2">
                         <div className="flex items-center text-sm text-muted-foreground">
@@ -83,7 +109,9 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
                     <Separator />
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Membro desde</span>
-                        <span className="text-sm text-muted-foreground">Dezembro 2023</span>
+                        <span className="text-sm text-muted-foreground">
+                          {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : "Dezembro 2023"}
+                        </span>
                     </div>
                 </CardContent>
             </Card>

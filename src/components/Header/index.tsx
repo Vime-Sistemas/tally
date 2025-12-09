@@ -20,12 +20,14 @@ import {
 } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import type { Page, AppContext } from "../../types/navigation";
+import { useUser } from "../../contexts/UserContext";
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
   hasBusiness: boolean;
   currentContext: AppContext;
   onContextChange: (context: AppContext) => void;
+  currentPage: Page;
 }
 
 const ListItem = React.forwardRef<
@@ -55,6 +57,20 @@ const ListItem = React.forwardRef<
 ListItem.displayName = "ListItem"
 
 export function Header({ onNavigate, hasBusiness, currentContext, onContextChange }: HeaderProps) {
+  const { user } = useUser();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
+  const userInitials = user?.name ? getInitials(user.name) : user?.email?.substring(0, 2).toUpperCase() || 'US';
+  const displayName = user?.name || user?.email || 'Usuário';
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
@@ -245,10 +261,15 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                 </SelectContent>
               </Select>
             )}
-             <button onClick={() => onNavigate('profile')} className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+             <button 
+              onClick={() => onNavigate('profile')} 
+              className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
+              title={displayName}
+             >
+                <span className="hidden md:inline-block text-sm font-medium text-gray-700">{displayName}</span>
                 <Avatar className="h-8 w-8 border border-gray-200">
-                  <AvatarImage src="https://flow.setup-ac.com.br/uploads/bc5d9f72-4f9d-4ea6-b48a-a388ac6fe992_Zelo.png" alt="@shadcn" />
-                  <AvatarFallback>US</AvatarFallback>
+                  <AvatarImage src="" alt={displayName} />
+                  <AvatarFallback>{userInitials}</AvatarFallback>
                 </Avatar>
              </button>
           </nav>

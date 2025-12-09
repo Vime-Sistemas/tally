@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth0 } from "@auth0/auth0-react"
-import api from './services/api'
+import api, { setAuthToken } from './services/api'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Summary } from './pages/Dashboard/Summary'
@@ -14,10 +14,12 @@ import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
 import type { Page, AppContext } from './types/navigation'
+import { UserProvider, useUser } from './contexts/UserContext'
 import './App.css'
 
-function App() {
-  const { isAuthenticated, isLoading, error, getAccessTokenSilently, user } = useAuth0();
+function AppContent() {
+  const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
+  const { setUser } = useUser();
   const [currentPage, setCurrentPage] = useState<Page>('signup');
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
@@ -25,7 +27,7 @@ function App() {
 
   useEffect(() => {
     const syncUser = async () => {
-      if (isAuthenticated && user) {
+      if (isAuthenticated && auth0User) {
         setIsSyncing(true);
         try {
           const token = await getAccessTokenSilently({
@@ -33,13 +35,14 @@ function App() {
               audience: import.meta.env.VITE_AUTH0_AUDIENCE,
             }
           });
-          console.log('Token obtained:', token.substring(0, 20) + '...');
-          localStorage.setItem('token', token);
+          setAuthToken(token);
           
-          await api.post('/auth/sync', {
-            email: user.email,
-            name: user.name
+          const response = await api.post('/auth/sync', {
+            email: auth0User.email,
+            name: auth0User.name
           });
+          
+          setUser(response.data);
         } catch (err) {
           console.error('Error syncing user:', err);
         } finally {
@@ -52,7 +55,7 @@ function App() {
     if (!isLoading) {
       syncUser();
     }
-  }, [isAuthenticated, isLoading, user, getAccessTokenSilently]);
+  }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, setUser]);
 
   if (isLoading || isSyncing) {
     return (
@@ -146,6 +149,14 @@ function App() {
       </main>
     </div>
   )
+}
+
+function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
 }
 
 export default App

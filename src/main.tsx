@@ -19,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         scope: "openid profile email",
         ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR',
       }}
+      cacheLocation="localstorage"
     >
       <App />
     </Auth0Provider>

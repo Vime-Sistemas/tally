@@ -12,13 +12,18 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
 // Request interceptor - adiciona JWT e ofusca payload
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Adiciona JWT token
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (authToken && config.headers) {
+      config.headers.Authorization = `Bearer ${authToken}`;
     }
 
     // Ofusca payload em POST, PUT, PATCH
@@ -47,7 +52,7 @@ api.interceptors.response.use(
   (error) => {
     // Trata erros de autenticação
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      authToken = null;
       // window.location.href = '/login'; // Let Auth0 handle this
     }
     return Promise.reject(error);
