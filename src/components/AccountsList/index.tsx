@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
 import { EditAccountDialog } from '../EditAccountDialog';
 import { EditCardDialog } from '../EditCardDialog';
+import { PayInvoiceDialog } from '../PayInvoiceDialog';
+import { Button } from '../ui/button';
 
 export function AccountsList() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -13,6 +15,7 @@ export function AccountsList() {
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingCard, setEditingCard] = useState<CreditCardType | null>(null);
+  const [payingCard, setPayingCard] = useState<CreditCardType | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -136,8 +139,21 @@ export function AccountsList() {
                     </div>
                   </div>
                   <div className="mt-6 flex justify-between items-center">
-                    <p className="font-medium tracking-wide">{card.name}</p>
-                    <p className="text-xs opacity-80">Vence dia {card.dueDay}</p>
+                    <div>
+                        <p className="font-medium tracking-wide">{card.name}</p>
+                        <p className="text-xs opacity-80">Vence dia {card.dueDay}</p>
+                    </div>
+                    <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="bg-white/20 hover:bg-white/30 text-white border-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setPayingCard(card);
+                        }}
+                    >
+                        Pagar Fatura
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -164,6 +180,17 @@ export function AccountsList() {
           card={editingCard}
           onOpenChange={(open) => {
             if (!open) setEditingCard(null);
+          }}
+          onSuccess={handleReloadData}
+        />
+      )}
+
+      {payingCard && (
+        <PayInvoiceDialog
+          open={!!payingCard}
+          card={payingCard}
+          onOpenChange={(open) => {
+            if (!open) setPayingCard(null);
           }}
           onSuccess={handleReloadData}
         />

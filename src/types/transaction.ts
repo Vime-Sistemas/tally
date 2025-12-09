@@ -2,6 +2,7 @@ export const TransactionType = {
   INCOME: 'INCOME',
   EXPENSE: 'EXPENSE',
   TRANSFER: 'TRANSFER',
+  INVOICE_PAYMENT: 'INVOICE_PAYMENT',
 } as const;
 
 export type TransactionType = typeof TransactionType[keyof typeof TransactionType];
@@ -37,8 +38,10 @@ export interface Transaction {
   amount: number;
   description: string;
   date: string;
-  accountId: string;
+  accountId?: string;
+  cardId?: string;
   destinationAccountId?: string; // For transfers
+  equityId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,7 +52,8 @@ export interface CreateTransactionDTO {
   amount: number;
   description: string;
   date: string;
-  accountId: string;
+  accountId?: string;
+  cardId?: string;
   destinationAccountId?: string;
   equityId?: string;
 }

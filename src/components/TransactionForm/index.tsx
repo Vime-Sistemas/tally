@@ -11,13 +11,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from '../ui/select';
 import { Button } from '../ui/button';
-import { createTransaction, confirmTransaction, getAccounts } from '../../services/api';
+import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../services/api';
 import { equityService } from '../../services/equities';
 import { TransactionType, type TransactionCategory } from '../../types/transaction';
 import { toast } from 'sonner';
-import type { Account } from '../../types/account';
+import type { Account, CreditCard } from '../../types/account';
 import type { Equity } from '../../types/equity';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 
@@ -27,7 +29,7 @@ const transactionSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
   description: z.string().min(3, 'Descrição deve ter pelo menos 3 caracteres'),
   date: z.string().min(1, 'Data é obrigatória'),
-  accountId: z.string().min(1, 'Conta é obrigatória'),
+  paymentMethod: z.string().min(1, 'Selecione uma conta ou cartão'),
   equityId: z.string().optional(),
 });
 
@@ -61,20 +63,23 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
-  const [pendingData, setPendingData] = useState<TransactionFormData | null>(null);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accData, eqData] = await Promise.all([
+        const [accData, cardData, eqData] = await Promise.all([
           getAccounts(),
+          getCards(),
           equityService.getAll()
         ]);
         setAccounts(accData);
+        setCards(cardData);
         setEquities(eqData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -107,10 +112,21 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const onSubmit = async (data: TransactionFormData) => {
     try {
       setIsSubmitting(true);
-      await createTransaction({
-        ...data,
+      
+      const [methodType, methodId] = data.paymentMethod.split(':');
+      
+      const payload = {
+        type: data.type,
         category: data.category as TransactionCategory,
-      });
+        amount: data.amount,
+        description: data.description,
+        date: data.date,
+        equityId: data.equityId,
+        accountId: methodType === 'account' ? methodId : undefined,
+        cardId: methodType === 'card' ? methodId : undefined,
+      };
+
+      await createTransaction(payload);
       reset();
       toast.success('Movimentação registrada com sucesso!');
       onSuccess?.();
@@ -119,7 +135,20 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
       if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
         const info = error.response.data;
         setBalanceInfo(info);
-        setPendingData(data);
+        
+        // Reconstruct payload for retry
+        const [methodType, methodId] = data.paymentMethod.split(':');
+        const payload = {
+            type: data.type,
+            category: data.category as TransactionCategory,
+            amount: data.amount,
+            description: data.description,
+            date: data.date,
+            equityId: data.equityId,
+            accountId: methodType === 'account' ? methodId : undefined,
+            cardId: methodType === 'card' ? methodId : undefined,
+        };
+        setPendingPayload(payload);
         setShowBalanceDialog(true);
       } else {
         console.error('Erro ao registrar movimentação:', error);
@@ -131,20 +160,19 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   };
 
   const handleConfirmNegativeBalance = async () => {
-    if (!pendingData || !balanceInfo) return;
+    if (!pendingPayload || !balanceInfo) return;
 
     try {
       setIsSubmitting(true);
       
       await confirmTransaction({
-        ...pendingData,
-        category: pendingData.category as TransactionCategory,
+        ...pendingPayload,
         confirmNegativeBalance: true
       });
 
       reset();
       setShowBalanceDialog(false);
-      setPendingData(null);
+      setPendingPayload(null);
       setBalanceInfo(null);
       toast.success('Movimentação registrada com sucesso!');
       onSuccess?.();
@@ -279,29 +307,42 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
               </div>
             )}
 
-            {/* Conta */}
+            {/* Conta / Cartão */}
             <div className="space-y-2">
-              <Label htmlFor="accountId" className="text-gray-600">Conta</Label>
+              <Label htmlFor="paymentMethod" className="text-gray-600">Conta / Cartão</Label>
               <Controller
-                name="accountId"
+                name="paymentMethod"
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
-                    <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta"} />
+                    <SelectTrigger id="paymentMethod" className="w-full h-10 border-gray-200 focus:ring-black">
+                      <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Contas</SelectLabel>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={`account:${account.id}`}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {cards.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Cartões de Crédito</SelectLabel>
+                          {cards.map((card) => (
+                            <SelectItem key={card.id} value={`card:${card.id}`}>
+                              {card.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 )}
               />
-              {errors.accountId && (
-                <p className="text-sm text-red-600">{errors.accountId.message}</p>
+              {errors.paymentMethod && (
+                <p className="text-sm text-red-600">{errors.paymentMethod.message}</p>
               )}
             </div>
 
@@ -354,7 +395,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
           onCancel={() => {
             setShowBalanceDialog(false);
             setBalanceInfo(null);
-            setPendingData(null);
+            setPendingPayload(null);
           }}
           isLoading={isSubmitting}
         />

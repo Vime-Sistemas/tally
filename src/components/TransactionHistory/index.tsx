@@ -21,10 +21,10 @@ import {
   ArrowRightLeft
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { getTransactions, getAccounts, updateTransaction, deleteTransaction } from "../../services/api";
+import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
-import type { Account } from "../../types/account";
+import type { Account, CreditCard } from "../../types/account";
 import { Button } from "../ui/button";
 import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,6 +46,7 @@ const parseUTCDate = (dateString: string) => {
 export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -61,12 +62,14 @@ export function TransactionHistory() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [transactionsData, accountsData] = await Promise.all([
+        const [transactionsData, accountsData, cardsData] = await Promise.all([
           getTransactions(),
           getAccounts(),
+          getCards(),
         ]);
         setTransactions(transactionsData);
         setAccounts(accountsData);
+        setCards(cardsData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar transações');
@@ -77,8 +80,17 @@ export function TransactionHistory() {
     loadData();
   }, []);
 
-  const getAccountName = (accountId: string): string => {
-    return accounts.find(a => a.id === accountId)?.name || accountId;
+  const getSourceName = (transaction: Transaction): string => {
+    if (transaction.type === TransactionType.INVOICE_PAYMENT && transaction.accountId) {
+        return accounts.find(a => a.id === transaction.accountId)?.name || 'Conta';
+    }
+    if (transaction.cardId) {
+        return cards.find(c => c.id === transaction.cardId)?.name || 'Cartão';
+    }
+    if (transaction.accountId) {
+        return accounts.find(a => a.id === transaction.accountId)?.name || 'Conta';
+    }
+    return '-';
   };
 
   const formatDateToDDMMYYYY = (dateStr: string): string => {
@@ -187,7 +199,9 @@ export function TransactionHistory() {
     const filtered = transactions
       .filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesType = typeFilter === "ALL" || t.type === typeFilter;
+        const matchesType = typeFilter === "ALL" || 
+          t.type === typeFilter || 
+          (typeFilter === TransactionType.EXPENSE && t.type === 'INVOICE_PAYMENT');
         return matchesSearch && matchesType;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -317,7 +331,7 @@ export function TransactionHistory() {
                           )}>
                             {transaction.type === TransactionType.INCOME ? '+' : ''} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
-                          <span className="text-xs text-gray-400">{getAccountName(transaction.accountId)}</span>
+                          <span className="text-xs text-gray-400">{getSourceName(transaction)}</span>
                         </div>
                       </div>
                     </DialogTrigger>
@@ -360,7 +374,7 @@ export function TransactionHistory() {
 
                           <div className="flex items-center justify-between py-2 border-b border-gray-100">
                             <span className="text-gray-500">Conta</span>
-                            <span className="font-medium text-gray-900">{getAccountName(transaction.accountId)}</span>
+                            <span className="font-medium text-gray-900">{getSourceName(transaction)}</span>
                           </div>
 
                           <div className="flex items-center justify-between py-2 border-b border-gray-100">
