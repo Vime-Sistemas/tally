@@ -16,6 +16,8 @@ createRoot(document.getElementById('root')!).render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: audience,
+        scope: "openid profile email",
+        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR',
       }}
     >
       <App />

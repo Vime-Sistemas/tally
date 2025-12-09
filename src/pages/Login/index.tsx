@@ -19,7 +19,6 @@ import type { Page } from "@/types/navigation";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(1, "A senha é obrigatória"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -36,7 +35,6 @@ export function Login({ onNavigate }: LoginProps) {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
-      password: "",
     },
   });
 
@@ -48,6 +46,7 @@ export function Login({ onNavigate }: LoginProps) {
     await loginWithRedirect({
       authorizationParams: {
         login_hint: data.email,
+        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR',
       }
     });
     setIsLoading(false);
@@ -57,6 +56,7 @@ export function Login({ onNavigate }: LoginProps) {
     loginWithRedirect({ 
       authorizationParams: {
         connection: connection 
+        ,ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
       }
     });
   };
@@ -174,24 +174,6 @@ export function Login({ onNavigate }: LoginProps) {
                 />
                 {form.formState.errors.email && (
                   <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  <button type="button" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 hover:underline">
-                    Esqueceu a senha?
-                  </button>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  {...form.register("password")}
-                  className="h-11"
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
                 )}
               </div>
             </div>

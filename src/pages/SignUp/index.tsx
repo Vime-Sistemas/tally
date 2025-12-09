@@ -20,11 +20,6 @@ import type { Page } from "@/types/navigation";
 const signUpSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
 });
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
@@ -42,8 +37,6 @@ export function SignUp({ onNavigate }: SignUpProps) {
     defaultValues: {
       name: "",
       email: "",
-      password: "",
-      confirmPassword: "",
     },
   });
 
@@ -56,6 +49,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
         screen_hint: 'signup',
         login_hint: data.email,
         connection: 'Username-Password-Authentication',
+        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR',
       }
     });
     setIsLoading(false);
@@ -66,6 +60,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
       authorizationParams: {
         connection: connection,
         screen_hint: 'signup'
+        ,ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
       }
     });
   };
@@ -196,32 +191,6 @@ export function SignUp({ onNavigate }: SignUpProps) {
                 />
                 {form.formState.errors.email && (
                   <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...form.register("password")}
-                  className="h-11"
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  {...form.register("confirmPassword")}
-                  className="h-11"
-                />
-                {form.formState.errors.confirmPassword && (
-                  <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</p>
                 )}
               </div>
             </div>
