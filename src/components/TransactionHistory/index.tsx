@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account } from "../../types/account";
 import { Button } from "../ui/button";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Dialog,
@@ -37,6 +37,11 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 
+// Helper to parse UTC date string as local date (ignoring time)
+const parseUTCDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+};
 
 export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -190,7 +195,7 @@ export function TransactionHistory() {
     const groups: Record<string, Transaction[]> = {};
 
     filtered.forEach(transaction => {
-      const date = parseISO(transaction.date);
+      const date = parseUTCDate(transaction.date);
       let dateKey = format(date, "dd 'de' MMMM", { locale: ptBR });
       
       if (isToday(date)) {
