@@ -12,7 +12,8 @@ import { z } from "zod";
 import { Building2, User, Mail, Phone, Briefcase } from "lucide-react";
 import { useUser } from "../../contexts/UserContext";
 import { useEffect, useState } from "react";
-import { updateUser } from "../../services/api";
+import api from "../../services/api";
+import { toast } from "sonner";
 
 interface ProfileProps {
   hasBusiness: boolean;
@@ -56,16 +57,16 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
   const onSubmit = async (data: ProfileFormValues) => {
     setIsLoading(true);
     try {
-      const updatedUser = await updateUser({
+      const response = await api.put('/users/me', {
         name: data.name,
         phone: data.phone,
         occupation: data.occupation,
       });
-      setUser(updatedUser);
-      alert("Perfil atualizado com sucesso!");
+      setUser(response.data);
+      toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
-      alert("Erro ao atualizar perfil. Tente novamente.");
+      toast.error("Erro ao atualizar perfil. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -206,7 +207,9 @@ export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
                             </div>
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4">
-                            <Button>Salvar Alterações</Button>
+                            <Button type="submit" disabled={isLoading}>
+                              {isLoading ? "Salvando..." : "Salvar Alterações"}
+                            </Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>

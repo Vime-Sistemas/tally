@@ -15,6 +15,7 @@ import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
 import type { Page, AppContext } from './types/navigation'
 import { UserProvider, useUser } from './contexts/UserContext'
+import { Toaster } from "./components/ui/sonner"
 import './App.css'
 
 function AppContent() {
@@ -142,11 +143,13 @@ function AppContent() {
           hasBusiness={hasBusiness}
           currentContext={currentContext}
           onContextChange={setCurrentContext}
+          currentPage={currentPage}
         />
       )}
       <main>
         {renderPage()}
       </main>
+      <Toaster />
     </div>
   )
 }
