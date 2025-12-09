@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../types/account";
-import { CreditCard, Wallet, Plus } from "lucide-react";
+import { CreditCard, Wallet } from "lucide-react";
 import { getAccounts, getCards } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';

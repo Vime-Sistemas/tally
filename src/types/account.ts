@@ -23,4 +23,5 @@ export interface CreditCard {
   closingDay: number;
   dueDay: number;
   color?: string;
+  currentInvoice: number;
 }

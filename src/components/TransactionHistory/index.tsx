@@ -1,15 +1,33 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { TransactionType } from "../../types/transaction";
-import { ArrowDownCircle, ArrowUpCircle, Search, Filter, ArrowUpDown, Calendar, Receipt, Tag, Wallet, Edit, Trash2 } from "lucide-react";
+import { 
+  Search, 
+  Edit, 
+  Trash2,
+  ShoppingBag,
+  Coffee,
+  Home,
+  Car,
+  Zap,
+  Heart,
+  Gamepad2,
+  GraduationCap,
+  Briefcase,
+  DollarSign,
+  TrendingUp,
+  MoreHorizontal,
+  ArrowRightLeft
+} from "lucide-react";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, updateTransaction, deleteTransaction } from "../../services/api";
 import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account } from "../../types/account";
 import { Button } from "../ui/button";
+import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
@@ -19,13 +37,13 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 
+
 export function TransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [sortOrder, setSortOrder] = useState<string>("DATE_DESC");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -61,6 +79,44 @@ export function TransactionHistory() {
   const formatDateToDDMMYYYY = (dateStr: string): string => {
     const [year, month, day] = dateStr.split('T')[0].split('-');
     return `${day}/${month}/${year}`;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const iconProps = { className: "h-5 w-5" };
+    switch (category) {
+      case 'FOOD': return <Coffee {...iconProps} />;
+      case 'SHOPPING': return <ShoppingBag {...iconProps} />;
+      case 'HOUSING': return <Home {...iconProps} />;
+      case 'TRANSPORT': return <Car {...iconProps} />;
+      case 'UTILITIES': return <Zap {...iconProps} />;
+      case 'HEALTHCARE': return <Heart {...iconProps} />;
+      case 'ENTERTAINMENT': return <Gamepad2 {...iconProps} />;
+      case 'EDUCATION': return <GraduationCap {...iconProps} />;
+      case 'SALARY': return <Briefcase {...iconProps} />;
+      case 'INVESTMENT': return <TrendingUp {...iconProps} />;
+      case 'FREELANCE': return <DollarSign {...iconProps} />;
+      case 'TRANSFER': return <ArrowRightLeft {...iconProps} />;
+      default: return <MoreHorizontal {...iconProps} />;
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels: Record<string, string> = {
+      FOOD: 'Alimentação',
+      SHOPPING: 'Compras',
+      HOUSING: 'Moradia',
+      TRANSPORT: 'Transporte',
+      UTILITIES: 'Contas',
+      HEALTHCARE: 'Saúde',
+      ENTERTAINMENT: 'Lazer',
+      EDUCATION: 'Educação',
+      OTHER_EXPENSE: 'Outros',
+      SALARY: 'Salário',
+      FREELANCE: 'Freelance',
+      INVESTMENT: 'Investimento',
+      OTHER_INCOME: 'Outros',
+    };
+    return labels[category] || category;
   };
 
   const handleEditClick = (transaction: Transaction) => {
@@ -122,319 +178,309 @@ export function TransactionHistory() {
     }
   };
 
-  const filteredTransactions = transactions
-    .filter((t) => {
-      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = typeFilter === "ALL" || t.type === typeFilter;
-      return matchesSearch && matchesType;
-    })
-    .sort((a, b) => {
-      if (sortOrder === "DATE_DESC") return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sortOrder === "DATE_ASC") return new Date(a.date).getTime() - new Date(b.date).getTime();
-      if (sortOrder === "AMOUNT_DESC") return b.amount - a.amount;
-      if (sortOrder === "AMOUNT_ASC") return a.amount - b.amount;
-      return 0;
+  const groupedTransactions = useMemo(() => {
+    const filtered = transactions
+      .filter(t => {
+        const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = typeFilter === "ALL" || t.type === typeFilter;
+        return matchesSearch && matchesType;
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const groups: Record<string, Transaction[]> = {};
+
+    filtered.forEach(transaction => {
+      const date = parseISO(transaction.date);
+      let dateKey = format(date, "dd 'de' MMMM", { locale: ptBR });
+      
+      if (isToday(date)) {
+        dateKey = "Hoje";
+      } else if (isYesterday(date)) {
+        dateKey = "Ontem";
+      }
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(transaction);
     });
+
+    return groups;
+  }, [transactions, searchTerm, typeFilter]);
 
   if (loading) {
     return (
-      <Card className="w-full shadow-sm border-gray-100">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-black">Histórico de Transações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">Carregando...</div>
-        </CardContent>
-      </Card>
+      <div className="w-full space-y-4">
+        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 w-full bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full shadow-sm border-gray-100">
-      <CardHeader className="pb-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold text-black">Histórico de Transações</CardTitle>
-          <div className="text-sm text-muted-foreground">
-            {filteredTransactions.length} registros encontrados
-          </div>
+    <div className="w-full space-y-6">
+      <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 pb-4 pt-2 space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Histórico</h2>
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Buscar por descrição..."
-              className="pl-9"
+              placeholder="Buscar transações..."
+              className="pl-10 bg-gray-100/50 border-none rounded-xl h-11 focus-visible:ring-1 focus-visible:ring-gray-900 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos</SelectItem>
-                <SelectItem value={TransactionType.INCOME}>Receitas</SelectItem>
-                <SelectItem value={TransactionType.EXPENSE}>Despesas</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger className="w-[160px]">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DATE_DESC">Mais recentes</SelectItem>
-                <SelectItem value="DATE_ASC">Mais antigas</SelectItem>
-                <SelectItem value="AMOUNT_DESC">Maior valor</SelectItem>
-                <SelectItem value="AMOUNT_ASC">Menor valor</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <Button
+              variant={typeFilter === "ALL" ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setTypeFilter("ALL")}
+              className="rounded-full px-4"
+            >
+              Tudo
+            </Button>
+            <Button
+              variant={typeFilter === TransactionType.INCOME ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setTypeFilter(TransactionType.INCOME)}
+              className="rounded-full px-4"
+            >
+              Entradas
+            </Button>
+            <Button
+              variant={typeFilter === TransactionType.EXPENSE ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setTypeFilter(TransactionType.EXPENSE)}
+              className="rounded-full px-4"
+            >
+              Saídas
+            </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {filteredTransactions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhuma transação encontrada.
+      </div>
+
+      <div className="space-y-8">
+        {Object.keys(groupedTransactions).length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-gray-400" />
             </div>
-          ) : (
-            filteredTransactions.map((transaction) => (
-              <Dialog key={transaction.id}>
-                <DialogTrigger asChild>
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                        transaction.type === TransactionType.INCOME 
-                          ? "bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200" 
-                          : "bg-red-100 text-red-600 group-hover:bg-red-200"
-                      )}>
-                        {transaction.type === TransactionType.INCOME ? <ArrowUpCircle className="h-6 w-6" /> : <ArrowDownCircle className="h-6 w-6" />}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{transaction.description}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDateToDDMMYYYY(transaction.date)}
+            <p className="font-medium">Nenhuma transação encontrada</p>
+            <p className="text-sm mt-1">Tente ajustar seus filtros de busca</p>
+          </div>
+        ) : (
+          Object.entries(groupedTransactions).map(([date, transactions]) => (
+            <div key={date} className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider px-1">{date}</h3>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {transactions.map((transaction, index) => (
+                  <Dialog key={transaction.id}>
+                    <DialogTrigger asChild>
+                      <div 
+                        className={cn(
+                          "flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer group",
+                          index !== transactions.length - 1 && "border-b border-gray-100"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                            transaction.type === TransactionType.INCOME 
+                              ? "bg-emerald-100 text-emerald-600" 
+                              : "bg-gray-100 text-gray-600"
+                          )}>
+                            {getCategoryIcon(transaction.category)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{transaction.description}</p>
+                            <p className="text-sm text-gray-500">{getCategoryLabel(transaction.category)}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={cn(
+                            "font-semibold",
+                            transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-gray-900"
+                          )}>
+                            {transaction.type === TransactionType.INCOME ? '+' : ''} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
-                          <span>•</span>
-                          <span className="font-medium text-gray-600">{getAccountName(transaction.accountId)}</span>
+                          <span className="text-xs text-gray-400">{getAccountName(transaction.accountId)}</span>
                         </div>
                       </div>
-                    </div>
-                    <div className={cn(
-                      "font-semibold text-lg",
-                      transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
-                    )}>
-                      {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
-                    </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Detalhes da Transação</DialogTitle>
-                    <DialogDescription>
-                      Informações completas sobre esta movimentação.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-muted-foreground mb-1">Valor</span>
-                      <span className={cn(
-                        "text-3xl font-bold",
-                        transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
-                      )}>
-                        {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
-                      </span>
-                    </div>
-                    
-                    <div className="grid gap-4">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Receipt className="h-4 w-4" />
-                          <span>Descrição</span>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Detalhes da Transação</DialogTitle>
+                        <DialogDescription>
+                          Informações completas sobre esta movimentação.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-6 py-4">
+                        <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl">
+                          <div className={cn(
+                            "h-16 w-16 rounded-full flex items-center justify-center mb-4",
+                            transaction.type === TransactionType.INCOME 
+                              ? "bg-emerald-100 text-emerald-600" 
+                              : "bg-gray-100 text-gray-600"
+                          )}>
+                            {getCategoryIcon(transaction.category)}
+                          </div>
+                          <span className="text-sm text-muted-foreground mb-1">Valor</span>
+                          <span className={cn(
+                            "text-4xl font-bold tracking-tight",
+                            transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-gray-900"
+                          )}>
+                            {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
+                          </span>
                         </div>
-                        <span className="font-medium">{transaction.description}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Tag className="h-4 w-4" />
-                          <span>Categoria</span>
-                        </div>
-                        <span className="font-medium">{transaction.category}</span>
-                      </div>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-500">Descrição</span>
+                            <span className="font-medium text-gray-900">{transaction.description}</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-500">Categoria</span>
+                            <span className="font-medium text-gray-900">{getCategoryLabel(transaction.category)}</span>
+                          </div>
 
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Wallet className="h-4 w-4" />
-                          <span>Conta</span>
-                        </div>
-                        <span className="font-medium">{getAccountName(transaction.accountId)}</span>
-                      </div>
+                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-500">Conta</span>
+                            <span className="font-medium text-gray-900">{getAccountName(transaction.accountId)}</span>
+                          </div>
 
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>Data</span>
+                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                            <span className="text-gray-500">Data</span>
+                            <span className="font-medium text-gray-900">{formatDateToDDMMYYYY(transaction.date)}</span>
+                          </div>
                         </div>
-                        <span className="font-medium">{formatDateToDDMMYYYY(transaction.date)}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-2 mt-6 pt-4 border-t">
-                      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                        <DialogTrigger asChild>
+                        <div className="flex gap-3 pt-4">
                           <Button 
                             variant="outline" 
-                            size="sm" 
+                            className="flex-1 h-11 rounded-xl border-gray-200 hover:bg-gray-50 hover:text-gray-900"
                             onClick={() => handleEditClick(transaction)}
-                            className="flex-1"
                           >
-                            <Edit className="h-4 w-4 mr-2" />
+                            <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </Button>
-                        </DialogTrigger>
-                        {selectedTransaction && selectedTransaction.id === transaction.id && (
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Editar Transação</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div>
-                                <label className="text-sm font-medium">Descrição</label>
-                                <Input
-                                  value={editingDescription}
-                                  onChange={(e) => setEditingDescription(e.target.value)}
-                                  placeholder="Digite a descrição..."
-                                />
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium">Valor</label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={editingAmount}
-                                  onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
-                                  placeholder="0.00"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium">Categoria</label>
-                                <Select value={editingCategory} onValueChange={setEditingCategory}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecionar categoria" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {selectedTransaction?.type === TransactionType.INCOME && (
-                                      <>
-                                        <SelectItem value="SALARY">Salário</SelectItem>
-                                        <SelectItem value="FREELANCE">Freelance</SelectItem>
-                                        <SelectItem value="INVESTMENT">Investimento</SelectItem>
-                                        <SelectItem value="OTHER_INCOME">Outra Receita</SelectItem>
-                                      </>
-                                    )}
-                                    {selectedTransaction?.type === TransactionType.EXPENSE && (
-                                      <>
-                                        <SelectItem value="FOOD">Alimentação</SelectItem>
-                                        <SelectItem value="TRANSPORT">Transporte</SelectItem>
-                                        <SelectItem value="HOUSING">Moradia</SelectItem>
-                                        <SelectItem value="UTILITIES">Utilidades</SelectItem>
-                                        <SelectItem value="HEALTHCARE">Saúde</SelectItem>
-                                        <SelectItem value="ENTERTAINMENT">Entretenimento</SelectItem>
-                                        <SelectItem value="EDUCATION">Educação</SelectItem>
-                                        <SelectItem value="SHOPPING">Compras</SelectItem>
-                                        <SelectItem value="OTHER_EXPENSE">Outra Despesa</SelectItem>
-                                      </>
-                                    )}
-                                    {selectedTransaction?.type === TransactionType.TRANSFER && (
-                                      <SelectItem value="TRANSFER">Transferência</SelectItem>
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <label className="text-sm font-medium">Data</label>
-                                <Input
-                                  type="date"
-                                  value={editingDate}
-                                  onChange={(e) => setEditingDate(e.target.value)}
-                                />
-                              </div>
-                              <div className="flex gap-2 justify-end">
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => setIsEditDialogOpen(false)}
-                                  disabled={isSubmitting}
-                                >
-                                  Cancelar
-                                </Button>
-                                <Button 
-                                  onClick={handleEditSave}
-                                  disabled={isSubmitting}
-                                >
-                                  {isSubmitting ? 'Salvando...' : 'Salvar'}
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        )}
-                      </Dialog>
-
-                      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                        <DialogTrigger asChild>
                           <Button 
                             variant="destructive" 
-                            size="sm" 
+                            className="flex-1 h-11 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none"
                             onClick={() => handleDeleteClick(transaction)}
-                            className="flex-1"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Deletar
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
                           </Button>
-                        </DialogTrigger>
-                        {selectedTransaction && selectedTransaction.id === transaction.id && (
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Confirmar exclusão</DialogTitle>
-                              <DialogDescription>
-                                Tem certeza que deseja deletar esta transação? Esta ação não pode ser desfeita.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex gap-2 justify-end mt-6">
-                              <Button 
-                                variant="outline" 
-                                onClick={() => setIsDeleteDialogOpen(false)}
-                                disabled={isSubmitting}
-                              >
-                                Cancelar
-                              </Button>
-                              <Button 
-                                variant="destructive"
-                                onClick={handleDeleteConfirm}
-                                disabled={isSubmitting}
-                              >
-                                {isSubmitting ? 'Deletando...' : 'Deletar'}
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        )}
-                      </Dialog>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Transação</DialogTitle>
+            <DialogDescription>
+              Faça as alterações necessárias na transação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descrição</label>
+              <Input
+                value={editingDescription}
+                onChange={(e) => setEditingDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Valor</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editingAmount}
+                onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Categoria</label>
+              <Select value={editingCategory} onValueChange={setEditingCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(selectedTransaction?.type === TransactionType.INCOME ? {
+                    SALARY: 'Salário',
+                    FREELANCE: 'Freelance',
+                    INVESTMENT: 'Investimento',
+                    OTHER_INCOME: 'Outros',
+                  } : {
+                    FOOD: 'Alimentação',
+                    TRANSPORT: 'Transporte',
+                    HOUSING: 'Moradia',
+                    UTILITIES: 'Contas',
+                    HEALTHCARE: 'Saúde',
+                    ENTERTAINMENT: 'Lazer',
+                    EDUCATION: 'Educação',
+                    SHOPPING: 'Compras',
+                    OTHER_EXPENSE: 'Outros',
+                  }).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data</label>
+              <Input
+                type="date"
+                value={editingDate}
+                onChange={(e) => setEditingDate(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleEditSave} disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSubmitting}>
+              {isSubmitting ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
