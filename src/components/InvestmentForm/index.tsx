@@ -33,6 +33,9 @@ const investmentTypeMap: Record<string, string> = {
   'TREASURY': 'Tesouro Direto',
   'STOCKS': 'Ações',
   'FII': 'FIIs',
+  'FOUNDS': 'Fundos',
+  'CP': 'Crédito Privado',
+  'PREVIDENCIA': 'Previdência',
   'CRYPTO': 'Criptomoedas',
   'OTHER': 'Outros',
 };
