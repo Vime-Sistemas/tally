@@ -1,17 +1,18 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, YAxis } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, TrendingUp } from "lucide-react";
-
-const chartData = [
-  { month: "Jan", income: 5000, expense: 3200 },
-  { month: "Fev", income: 4800, expense: 4100 },
-  { month: "Mar", income: 6000, expense: 3500 },
-  { month: "Abr", income: 5500, expense: 2900 },
-  { month: "Mai", income: 7000, expense: 4500 },
-  { month: "Jun", income: 6200, expense: 3800 },
-  { month: "Jul", income: 7500, expense: 4200 },
-];
+import { accountService } from "../../services/accounts";
+import { transactionService } from "../../services/transactions";
+import { equityService } from "../../services/equities";
+import type { Account } from "../../types/account";
+import type { Transaction } from "../../types/transaction";
+import { EQUITY_TYPES } from "../../types/equity";
+import type { Equity } from "../../types/equity";
+import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, parseISO, isBefore } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 const chartConfig = {
   income: {
@@ -23,23 +24,6 @@ const chartConfig = {
     color: "#ef4444", // red-500
   },
 };
-
-const equityEvolutionData = [
-  { month: "Jan", value: 680000 },
-  { month: "Fev", value: 695000 },
-  { month: "Mar", value: 710000 },
-  { month: "Abr", value: 705000 },
-  { month: "Mai", value: 725000 },
-  { month: "Jun", value: 740000 },
-  { month: "Jul", value: 750000 },
-];
-
-const equityCompositionData = [
-  { name: "imoveis", value: 450000, color: "#4f46e5" }, // indigo-600
-  { name: "veiculos", value: 180000, color: "#2563eb" }, // blue-600
-  { name: "investimentos", value: 70000, color: "#10b981" }, // emerald-500
-  { name: "liquidez", value: 50000, color: "#f59e0b" }, // amber-500
-];
 
 const equityConfig = {
   value: {
@@ -62,24 +46,15 @@ const equityConfig = {
     label: "Liquidez",
     color: "#f59e0b",
   },
+  bens: {
+    label: "Bens Pessoais",
+    color: "#8b5cf6",
+  },
+  outros: {
+    label: "Outros",
+    color: "#71717a",
+  }
 };
-
-const investmentAllocationData = [
-  { name: "Renda Fixa", value: 45, color: "#3b82f6" }, // blue-500
-  { name: "Ações BR", value: 25, color: "#10b981" }, // emerald-500
-  { name: "FIIs", value: 15, color: "#f59e0b" }, // amber-500
-  { name: "Stocks", value: 10, color: "#8b5cf6" }, // violet-500
-  { name: "Cripto", value: 5, color: "#6366f1" }, // indigo-500
-];
-
-const investedBalanceData = [
-  { month: "Jan", value: 15000 },
-  { month: "Fev", value: 16200 },
-  { month: "Mar", value: 17500 },
-  { month: "Abr", value: 17100 },
-  { month: "Mai", value: 18500 },
-  { month: "Jun", value: 19800 },
-];
 
 const investmentConfig = {
   value: {
@@ -88,7 +63,149 @@ const investmentConfig = {
   },
 };
 
+const GROUP_COLORS: Record<string, string> = {
+  'Imóveis': "#4f46e5",
+  'Veículos': "#2563eb",
+  'Investimentos': "#10b981",
+  'Liquidez': "#f59e0b",
+  'Bens Pessoais': "#8b5cf6",
+  'Outros': "#71717a",
+};
+
 export function Summary() {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [equities, setEquities] = useState<Equity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [accData, txData, eqData] = await Promise.all([
+          accountService.getAll(),
+          transactionService.getAll(),
+          equityService.getAll()
+        ]);
+        setAccounts(accData);
+        setTransactions(txData);
+        setEquities(eqData);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+        toast.error("Erro ao carregar dados do dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center">Carregando dashboard...</div>;
+  }
+
+  // --- Calculations ---
+
+  const currentDate = new Date();
+  const prevMonthStart = startOfMonth(subMonths(currentDate, 1));
+
+  // 1. Cards Data
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+
+  const currentMonthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), currentDate));
+  const prevMonthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), prevMonthStart));
+
+  const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
+  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+
+  const prevIncome = prevMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
+  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+
+  const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
+  const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
+
+  // 2. Cash Flow Chart (Last 6 months)
+  const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
+    const date = subMonths(currentDate, i);
+    const monthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), date));
+    return {
+      month: format(date, 'MMM', { locale: ptBR }),
+      income: monthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0),
+      expense: monthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0),
+      date: date // for sorting
+    };
+  }).reverse();
+
+  // 3. Equity Evolution (Last 6 months)
+  const equityEvolutionData = Array.from({ length: 6 }).map((_, i) => {
+    const date = subMonths(currentDate, i);
+    const monthEnd = endOfMonth(date);
+    
+    const value = equities
+      .filter(e => isBefore(parseISO(e.acquisitionDate), monthEnd))
+      .reduce((sum, e) => sum + e.value, 0);
+
+    return {
+      month: format(date, 'MMM', { locale: ptBR }),
+      value,
+      date: date
+    };
+  }).reverse();
+
+  // 4. Equity Composition
+  const equityCompositionMap = equities.reduce((acc, item) => {
+    const typeInfo = EQUITY_TYPES.find(t => t.value === item.type);
+    const group = typeInfo?.group || 'Outros';
+    acc[group] = (acc[group] || 0) + item.value;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const equityCompositionData = Object.entries(equityCompositionMap).map(([name, value]) => ({
+    name,
+    value,
+    color: GROUP_COLORS[name] || GROUP_COLORS['Outros']
+  }));
+
+  // 5. Investment Allocation
+  const investmentEquities = equities.filter(e => {
+    const typeInfo = EQUITY_TYPES.find(t => t.value === e.type);
+    return typeInfo?.group === 'Investimentos';
+  });
+
+  const investmentAllocationMap = investmentEquities.reduce((acc, item) => {
+    const typeInfo = EQUITY_TYPES.find(t => t.value === item.type);
+    const label = typeInfo?.label || item.type;
+    acc[label] = (acc[label] || 0) + item.value;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Generate colors for investments
+  const investmentColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#6366f1", "#ec4899"];
+  const investmentAllocationData = Object.entries(investmentAllocationMap).map(([name, value], index) => ({
+    name,
+    value,
+    color: investmentColors[index % investmentColors.length]
+  }));
+
+  // 6. Invested Balance Evolution
+  const investedBalanceData = Array.from({ length: 6 }).map((_, i) => {
+    const date = subMonths(currentDate, i);
+    const monthEnd = endOfMonth(date);
+    
+    const value = equities
+      .filter(e => {
+        const typeInfo = EQUITY_TYPES.find(t => t.value === e.type);
+        return typeInfo?.group === 'Investimentos' && isBefore(parseISO(e.acquisitionDate), monthEnd);
+      })
+      .reduce((sum, e) => sum + e.value, 0);
+
+    return {
+      month: format(date, 'MMM', { locale: ptBR }),
+      value,
+      date: date
+    };
+  }).reverse();
+
+
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -99,46 +216,56 @@ export function Summary() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Saldo em Contas</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 12.450,00</div>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
+            </div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1 text-emerald-500" />
-              +20.1% este mês
+              Saldo atual disponível
             </p>
           </CardContent>
         </Card>
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receitas</CardTitle>
+            <CardTitle className="text-sm font-medium">Receitas (Mês)</CardTitle>
             <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 6.200,00</div>
-            <p className="text-xs text-muted-foreground mt-1">+12% vs mês anterior</p>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}
+            </div>
+            <p className={`text-xs mt-1 ${incomeChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {incomeChange > 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs mês anterior
+            </p>
           </CardContent>
         </Card>
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas</CardTitle>
+            <CardTitle className="text-sm font-medium">Despesas (Mês)</CardTitle>
             <ArrowDownCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 3.800,00</div>
-            <p className="text-xs text-muted-foreground mt-1">-4% vs mês anterior</p>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}
+            </div>
+            <p className={`text-xs mt-1 ${expenseChange <= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {expenseChange > 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs mês anterior
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <Card className="col-span-4 shadow-sm">
         <CardHeader>
-          <CardTitle>Fluxo de Caixa</CardTitle>
+          <CardTitle>Fluxo de Caixa (Últimos 6 meses)</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <ChartContainer config={chartConfig} className="h-[350px] w-full">
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.8}/>
@@ -155,7 +282,6 @@ export function Summary() {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tickFormatter={(value) => value.slice(0, 3)}
               />
               <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
               <ChartLegend content={<ChartLegendContent />} />
@@ -200,7 +326,6 @@ export function Summary() {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value) => value.slice(0, 3)}
                 />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                 <Area
@@ -221,23 +346,29 @@ export function Summary() {
             <CardTitle>Composição do Patrimônio</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={equityConfig} className="mx-auto aspect-square max-h-[300px]">
-              <PieChart>
-                <Pie
-                  data={equityCompositionData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={60}
-                  strokeWidth={5}
-                >
-                  {equityCompositionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2" />
-              </PieChart>
-            </ChartContainer>
+            {equityCompositionData.length > 0 ? (
+              <ChartContainer config={equityConfig} className="mx-auto aspect-square max-h-[300px]">
+                <PieChart>
+                  <Pie
+                    data={equityCompositionData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    strokeWidth={5}
+                  >
+                    {equityCompositionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2" />
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Nenhum patrimônio cadastrado
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -250,25 +381,31 @@ export function Summary() {
               <CardTitle>Alocação por Classe</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
-                <PieChart>
-                  <Pie
-                    data={investmentAllocationData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {investmentAllocationData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2" />
-                </PieChart>
-              </ChartContainer>
+              {investmentAllocationData.length > 0 ? (
+                <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
+                  <PieChart>
+                    <Pie
+                      data={investmentAllocationData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {investmentAllocationData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent nameKey="name" />} className="-translate-y-2 flex-wrap gap-2" />
+                  </PieChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum investimento cadastrado
+                </div>
+              )}
             </CardContent>
           </Card>
 
