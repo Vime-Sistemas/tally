@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { encryptPayload, decryptPayload } from '../utils/crypto';
+// import { encryptPayload, decryptPayload } from '../utils/crypto';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -22,11 +22,11 @@ api.interceptors.request.use(
     }
 
     // Ofusca payload em POST, PUT, PATCH
-    if (config.data && ['post', 'put', 'patch'].includes(config.method?.toLowerCase() || '')) {
-      config.data = {
-        payload: encryptPayload(config.data),
-      };
-    }
+    // if (config.data && ['post', 'put', 'patch'].includes(config.method?.toLowerCase() || '')) {
+    //   config.data = {
+    //     payload: encryptPayload(config.data),
+    //   };
+    // }
 
     return config;
   },
@@ -39,16 +39,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     // Desofusca resposta se necessário
-    if (response.data?.payload) {
-      response.data = decryptPayload(response.data.payload);
-    }
+    // if (response.data?.payload) {
+    //   response.data = decryptPayload(response.data.payload);
+    // }
     return response;
   },
   (error) => {
     // Trata erros de autenticação
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // window.location.href = '/login'; // Let Auth0 handle this
     }
     return Promise.reject(error);
   }

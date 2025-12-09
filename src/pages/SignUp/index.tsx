@@ -50,10 +50,12 @@ export function SignUp({ onNavigate }: SignUpProps) {
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
     // Redirect to Auth0 Universal Login for signup
+    // We force the DB connection so it doesn't try to suggest Google based on the email
     await loginWithRedirect({
       authorizationParams: {
         screen_hint: 'signup',
         login_hint: data.email,
+        connection: 'Username-Password-Authentication',
       }
     });
     setIsLoading(false);

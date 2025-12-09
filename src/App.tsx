@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth0 } from "@auth0/auth0-react"
+import api from './services/api'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Summary } from './pages/Dashboard/Summary'
@@ -16,21 +17,48 @@ import type { Page, AppContext } from './types/navigation'
 import './App.css'
 
 function App() {
-  const { isAuthenticated, isLoading, error } = useAuth0();
+  const { isAuthenticated, isLoading, error, getAccessTokenSilently, user } = useAuth0();
   const [currentPage, setCurrentPage] = useState<Page>('signup');
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      setCurrentPage('dashboard-summary');
-    }
-  }, [isAuthenticated]);
+    const syncUser = async () => {
+      if (isAuthenticated && user) {
+        setIsSyncing(true);
+        try {
+          const token = await getAccessTokenSilently({
+            authorizationParams: {
+              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            }
+          });
+          console.log('Token obtained:', token.substring(0, 20) + '...');
+          localStorage.setItem('token', token);
+          
+          await api.post('/auth/sync', {
+            email: user.email,
+            name: user.name
+          });
+        } catch (err) {
+          console.error('Error syncing user:', err);
+        } finally {
+          setIsSyncing(false);
+          setCurrentPage('dashboard-summary');
+        }
+      }
+    };
 
-  if (isLoading) {
+    if (!isLoading) {
+      syncUser();
+    }
+  }, [isAuthenticated, isLoading, user, getAccessTokenSilently]);
+
+  if (isLoading || isSyncing) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <p className="ml-4 text-gray-600">Carregando...</p>
       </div>
     );
   }
