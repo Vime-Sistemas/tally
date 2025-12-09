@@ -16,6 +16,8 @@ import { Button } from '../ui/button';
 import { AccountType } from '../../types/account';
 import { cn } from '../../lib/utils';
 import { Check } from 'lucide-react';
+import { createAccount } from '../../services/api';
+import { toast } from 'sonner';
 
 const accountSchema = z.object({
   name: z.string().min(1, 'Nome da conta é obrigatório'),
@@ -46,7 +48,7 @@ const colors = [
   { name: 'Indigo', value: 'bg-indigo-600' },
 ];
 
-export function AccountForm() {
+export function AccountForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -70,14 +72,13 @@ export function AccountForm() {
   const onSubmit = async (data: AccountFormData) => {
     try {
       setIsSubmitting(true);
-      // TODO: Implement account service
-      console.log('Account data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await createAccount(data);
       reset();
-      alert('Conta cadastrada com sucesso!');
+      toast.success('Conta cadastrada com sucesso!');
+      onSuccess?.();
     } catch (error) {
       console.error('Erro ao cadastrar conta:', error);
-      alert('Erro ao cadastrar conta. Tente novamente.');
+      toast.error('Erro ao cadastrar conta. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

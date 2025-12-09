@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,9 @@ import {
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { Check } from 'lucide-react';
+import { createCard, getAccounts } from '../../services/api';
+import { toast } from 'sonner';
+import type { Account } from '../../types/account';
 
 const cardSchema = z.object({
   name: z.string().min(1, 'Nome do cartão é obrigatório'),
@@ -26,13 +29,6 @@ const cardSchema = z.object({
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
-
-// Mock accounts for now
-const accounts = [
-  { id: '1', name: 'Nubank' },
-  { id: '2', name: 'Itaú' },
-  { id: '3', name: 'Bradesco' },
-];
 
 const colors = [
   { name: 'Roxo', value: 'bg-purple-600' },
@@ -47,8 +43,25 @@ const colors = [
   { name: 'Indigo', value: 'bg-indigo-600' },
 ];
 
-export function CardForm() {
+export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const data = await getAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Erro ao carregar contas:', error);
+        toast.error('Erro ao carregar contas');
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    loadAccounts();
+  }, []);
 
   const {
     register,
@@ -70,14 +83,13 @@ export function CardForm() {
   const onSubmit = async (data: CardFormData) => {
     try {
       setIsSubmitting(true);
-      // TODO: Implement card service
-      console.log('Card data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await createCard(data);
       reset();
-      alert('Cartão cadastrado com sucesso!');
+      toast.success('Cartão cadastrado com sucesso!');
+      onSuccess?.();
     } catch (error) {
       console.error('Erro ao cadastrar cartão:', error);
-      alert('Erro ao cadastrar cartão. Tente novamente.');
+      toast.error('Erro ao cadastrar cartão. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -134,9 +146,9 @@ export function CardForm() {
                 name="accountId"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
                     <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder="Selecione a conta" />
+                      <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta"} />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
@@ -218,7 +230,7 @@ export function CardForm() {
           <Button
             type="submit"
             className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
-            disabled={isSubmitting}
+            disabled={isSubmitting || loadingAccounts}
           >
             {isSubmitting ? 'Salvando...' : 'Cadastrar Cartão'}
           </Button>
