@@ -10,9 +10,16 @@ import type { Account } from "../../types/account";
 import { TransactionCategory, type Transaction } from "../../types/transaction";
 import { EQUITY_TYPES } from "../../types/equity";
 import type { Equity } from "../../types/equity";
-import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, parseISO, isBefore } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+
+// Helper to parse UTC date string as local date (ignoring time)
+// This prevents timezone shifts (e.g. 2025-12-01T00:00:00Z becoming 2025-11-30 in UTC-3)
+const parseUTCDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+};
 
 const chartConfig = {
   income: {
@@ -123,8 +130,8 @@ export function Summary() {
   // 1. Cards Data
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
-  const currentMonthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), currentDate));
-  const prevMonthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), prevMonthStart));
+  const currentMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), currentDate));
+  const prevMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), prevMonthStart));
 
   const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
   const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
@@ -138,7 +145,7 @@ export function Summary() {
   // 2. Cash Flow Chart (Last 6 months)
   const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
     const date = subMonths(currentDate, i);
-    const monthTxs = transactions.filter(t => isSameMonth(parseISO(t.date), date));
+    const monthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), date));
     return {
       month: format(date, 'MMM', { locale: ptBR }),
       income: monthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0),
@@ -153,7 +160,7 @@ export function Summary() {
     const monthEnd = endOfMonth(date);
     
     const value = equities
-      .filter(e => isBefore(parseISO(e.acquisitionDate), monthEnd))
+      .filter(e => isBefore(parseUTCDate(e.acquisitionDate), monthEnd))
       .reduce((sum, e) => sum + e.value, 0);
 
     return {
@@ -219,7 +226,7 @@ export function Summary() {
     const value = equities
       .filter(e => {
         const typeInfo = EQUITY_TYPES.find(t => t.value === e.type);
-        return typeInfo?.group === 'Investimentos' && isBefore(parseISO(e.acquisitionDate), monthEnd);
+        return typeInfo?.group === 'Investimentos' && isBefore(parseUTCDate(e.acquisitionDate), monthEnd);
       })
       .reduce((sum, e) => sum + e.value, 0);
 
