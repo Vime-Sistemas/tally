@@ -204,7 +204,7 @@ export function MobileTransactionHistory() {
 
       let matchesDate = true;
       if (dateRange?.from) {
-        const transactionDate = new Date(transaction.date);
+        const transactionDate = new Date(transaction.date.substring(0, 10) + 'T12:00:00');
         const from = new Date(dateRange.from);
         from.setHours(0, 0, 0, 0);
         
@@ -218,14 +218,14 @@ export function MobileTransactionHistory() {
       }
 
       return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }).sort((a, b) => new Date(b.date.substring(0, 10) + 'T12:00:00').getTime() - new Date(a.date.substring(0, 10) + 'T12:00:00').getTime());
   }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter, dateRange]);
 
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
     
     filteredTransactions.forEach(transaction => {
-      const date = new Date(transaction.date);
+      const date = new Date(transaction.date.substring(0, 10) + 'T12:00:00');
       let key = format(date, "dd 'de' MMMM", { locale: ptBR });
       
       if (isToday(date)) {
