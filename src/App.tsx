@@ -189,7 +189,7 @@ function AppContent() {
           currentPage={currentPage}
         />
       )}
-      <main>
+      <main className="pb-24 md:pb-0">
         <div key={currentPage}>
           {renderPage()}
         </div>

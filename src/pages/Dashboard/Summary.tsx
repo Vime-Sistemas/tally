@@ -407,7 +407,7 @@ export function Summary() {
             <CardTitle>Fluxo de Caixa (Últimos 6 meses)</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
+            <ChartContainer config={chartConfig} className="h-[250px] md:h-[350px] w-full">
               <AreaChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
@@ -522,7 +522,7 @@ export function Summary() {
           </CardHeader>
           <CardContent>
             {expensesByCategoryData.length > 0 ? (
-              <ChartContainer config={categoryConfig} className="mx-auto aspect-square max-h-[300px]">
+              <ChartContainer config={categoryConfig} className="mx-auto aspect-square max-h-[250px] md:max-h-[300px]">
                 <PieChart>
                   <Pie
                     data={expensesByCategoryData}
@@ -554,7 +554,7 @@ export function Summary() {
             <CardTitle>Evolução Patrimonial</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ChartContainer config={equityConfig} className="h-[300px] w-full">
+            <ChartContainer config={equityConfig} className="h-[250px] md:h-[300px] w-full">
               <AreaChart data={equityEvolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fillEquity" x1="0" y1="0" x2="0" y2="1">
@@ -589,7 +589,7 @@ export function Summary() {
           </CardHeader>
           <CardContent>
             {equityCompositionData.length > 0 ? (
-              <ChartContainer config={equityConfig} className="mx-auto aspect-square max-h-[300px]">
+              <ChartContainer config={equityConfig} className="mx-auto aspect-square max-h-[250px] md:max-h-[300px]">
                 <PieChart>
                   <Pie
                     data={equityCompositionData}
@@ -642,7 +642,7 @@ export function Summary() {
             </CardHeader>
             <CardContent>
               {investmentAllocationData.length > 0 ? (
-                <ChartContainer config={dynamicInvestmentConfig} className="mx-auto aspect-square max-h-[300px]">
+                <ChartContainer config={dynamicInvestmentConfig} className="mx-auto aspect-square max-h-[250px] md:max-h-[300px]">
                   <PieChart>
                     <Pie
                       data={investmentAllocationData}
@@ -674,7 +674,7 @@ export function Summary() {
               <CardTitle>Evolução do Saldo Investido</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={investmentConfig} className="min-h-[300px] w-full">
+              <ChartContainer config={investmentConfig} className="min-h-[250px] md:min-h-[300px] w-full">
                 <AreaChart data={investedBalanceData}>
                   <defs>
                     <linearGradient id="fillInvested" x1="0" y1="0" x2="0" y2="1">

@@ -23,6 +23,8 @@ import { Kbd } from "../ui/kbd";
 import type { Page, AppContext } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 
+import { MobileHeader } from "./Mobile";
+
 interface HeaderProps {
   onNavigate: (page: Page) => void;
   hasBusiness: boolean;
@@ -57,7 +59,7 @@ const ListItem = React.forwardRef<
 })
 ListItem.displayName = "ListItem"
 
-export function Header({ onNavigate, hasBusiness, currentContext, onContextChange }: HeaderProps) {
+export function Header({ onNavigate, hasBusiness, currentContext, onContextChange, currentPage }: HeaderProps) {
   const { user } = useUser();
 
   const getInitials = (name: string) => {
@@ -73,10 +75,11 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
   const displayName = user?.name || user?.email || 'Usuário';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
-      <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
-        <div className="mr-4 hidden md:flex">
-          <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 hidden md:block">
+        <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
+          <div className="mr-4 flex">
+            <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
             <div className="h-6 w-6 bg-black rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-xs">T</span>
             </div>
@@ -294,6 +297,8 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
           </nav>
         </div>
       </div>
-    </header>
+      </header>
+      <MobileHeader onNavigate={onNavigate} currentPage={currentPage} />
+    </>
   );
 }

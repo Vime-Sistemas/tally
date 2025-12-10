@@ -28,8 +28,11 @@ import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account, CreditCard } from "../../types/account";
 import { Button } from "../ui/button";
-import { format, isToday, isYesterday } from "date-fns";
+import { format, isToday, isYesterday, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Calendar } from "../ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import type { DateRange } from "react-day-picker";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +72,10 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [editingCurrentInstallment, setEditingCurrentInstallment] = useState<number | null>(null);
   const [editingTotalInstallments, setEditingTotalInstallments] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -227,7 +234,11 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
           (t.accountId === accountFilter) || 
           (t.cardId === accountFilter);
 
-        return matchesSearch && matchesType && matchesCategory && matchesAccount;
+        const transactionDate = parseUTCDate(t.date);
+        const matchesDate = (!dateRange?.from || transactionDate >= dateRange.from) && 
+                            (!dateRange?.to || transactionDate <= dateRange.to);
+
+        return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -332,6 +343,43 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
         </div>
 
         <div className="flex flex-col md:flex-row gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className={cn(
+                  "w-full md:w-[300px] justify-start text-left font-normal h-11 rounded-xl bg-gray-100/50 border-none",
+                  !dateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarClock className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd/MM/y")} -{" "}
+                      {format(dateRange.to, "dd/MM/y")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd/MM/y")
+                  )
+                ) : (
+                  <span>Selecione uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full md:w-[200px] h-11 rounded-xl bg-gray-100/50 border-none">
               <SelectValue placeholder="Todas Categorias" />
