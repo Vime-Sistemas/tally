@@ -1,7 +1,7 @@
 import {
-  Sheet,
-  SheetContent,
-} from "../../ui/sheet";
+  Drawer,
+  DrawerContent,
+} from "../../ui/drawer";
 import { Button } from "../../ui/button";
 import { type Transaction, TransactionType } from "../../../types/transaction";
 import { format } from "date-fns";
@@ -28,13 +28,8 @@ export function MobileTransactionDialog({
   if (!transaction) return null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-[32px] p-0 bg-white border-none">
-        {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-9 h-1 bg-gray-300 rounded-full" />
-        </div>
-        
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="rounded-t-[32px] p-0 bg-white border-none">
         <div className="px-6 pb-8">
           {/* Header - Centered */}
           <div className="flex flex-col items-center text-center py-6">
@@ -125,7 +120,7 @@ export function MobileTransactionDialog({
             </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }
