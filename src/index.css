@@ -42,6 +42,11 @@
   --font-sans: "Plus Jakarta Sans", sans-serif;
 }
 
+/* Safe area padding for mobile devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
 :root {
   font-family: var(--font-sans);
   --radius: 0.625rem;
