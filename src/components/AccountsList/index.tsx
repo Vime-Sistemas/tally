@@ -10,11 +10,24 @@ import { PayInvoiceDialog } from '../PayInvoiceDialog';
 import { Button } from '../ui/button';
 import type { Page } from '../../types/navigation';
 
+import { MobileAccountsList } from './Mobile';
+import { useIsMobile } from '../../hooks/use-mobile';
+
 interface AccountsListProps {
   onNavigate?: (page: Page) => void;
 }
 
 export function AccountsList({ onNavigate }: AccountsListProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileAccountsList onNavigate={onNavigate} />;
+  }
+
+  return <DesktopAccountsList onNavigate={onNavigate} />;
+}
+
+function DesktopAccountsList({ onNavigate }: AccountsListProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCardType[]>([]);
   const [loading, setLoading] = useState(true);

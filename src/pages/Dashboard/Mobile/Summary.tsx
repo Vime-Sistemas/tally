@@ -18,7 +18,6 @@ import { TransactionCategory, type Transaction } from "../../../types/transactio
 import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { useUser } from "../../../contexts/UserContext";
 import { useAuth0 } from "@auth0/auth0-react";
 
 // Helper to parse UTC date string as local date (ignoring time)
@@ -39,7 +38,6 @@ const chartConfig = {
 };
 
 export function MobileSummary() {
-  const { user } = useUser();
   const { user: auth0User } = useAuth0();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -130,7 +128,7 @@ export function MobileSummary() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
-  const displayName = auth0User?.nickname || user?.name || auth0User?.name || 'Usuário';
+  const displayName = auth0User?.name || 'Usuário';
 
   return (
     <div className="w-full p-4 space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">

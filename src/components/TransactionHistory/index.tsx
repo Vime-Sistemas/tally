@@ -49,11 +49,24 @@ const parseUTCDate = (dateString: string) => {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
+import { MobileTransactionHistory } from "./Mobile";
+import { useIsMobile } from "../../hooks/use-mobile";
+
 interface TransactionHistoryProps {
   onNavigate?: (page: Page) => void;
 }
 
 export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileTransactionHistory />;
+  }
+
+  return <DesktopTransactionHistory onNavigate={onNavigate} />;
+}
+
+function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -175,8 +188,8 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
         amount: editingAmount,
         category: editingCategory as any,
         date: editingDate,
-        currentInstallment: editingCurrentInstallment,
-        totalInstallments: editingTotalInstallments
+        currentInstallment: editingCurrentInstallment ?? undefined,
+        totalInstallments: editingTotalInstallments ?? undefined
       };
 
       await updateTransaction(selectedTransaction.id, updateData);
