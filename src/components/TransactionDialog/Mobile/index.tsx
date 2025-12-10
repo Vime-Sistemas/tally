@@ -58,7 +58,7 @@ export function MobileTransactionDialog({
             <div>
               <p className="text-xs text-gray-500">Data</p>
               <p className="font-medium">
-                {format(new Date(transaction.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {format(new Date(transaction.date.substring(0, 10) + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
             </div>
           </div>
