@@ -32,7 +32,7 @@ export function MobileTransactionDialog({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl pt-6">
+      <SheetContent side="bottom" className="rounded-t-3xl pt-6 pb-24">
         <SheetHeader className="text-left space-y-4">
           <div className="space-y-1">
             <SheetTitle className="text-xl">{transaction.description}</SheetTitle>
@@ -86,7 +86,7 @@ export function MobileTransactionDialog({
           </div>
         </div>
 
-        <SheetFooter className="flex-row gap-3 pb-6">
+        <SheetFooter className="flex-row gap-3">
           <Button 
             variant="outline" 
             className="flex-1 gap-2 h-12 rounded-xl"

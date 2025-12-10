@@ -221,31 +221,31 @@ export function MobileTransactionHistory() {
   };
 
   return (
-    <div className="pb-24 space-y-4">
+    <div className="pb-24">
       {/* Header & Search */}
-      <div className="sticky top-0 bg-white z-10 pb-2 space-y-2">
-        <div className="flex items-center gap-2">
+      <div className="sticky top-0 bg-white z-10 px-4 pt-2 pb-3">
+        <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar..."
-              className="pl-10 bg-gray-100 border-none rounded-xl h-10"
+              className="pl-10 bg-gray-50 border-gray-200 rounded-xl h-11"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl shrink-0">
+              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl shrink-0 border-gray-200">
                 <Filter className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+            <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl pb-24">
               <SheetHeader className="mb-6">
                 <SheetTitle>Filtros</SheetTitle>
               </SheetHeader>
               
-              <div className="space-y-6 overflow-y-auto pb-20">
+              <div className="space-y-6 overflow-y-auto">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Período</label>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
@@ -334,76 +334,75 @@ export function MobileTransactionHistory() {
         </div>
 
         {/* Active Filters Chips */}
-        {(typeFilter !== "ALL" || categoryFilter !== "ALL" || accountFilter !== "ALL" || (dateRange?.from && dateRange?.to)) && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {(typeFilter !== "ALL" || categoryFilter !== "ALL" || accountFilter !== "ALL") && (
+          <div className="flex gap-2 overflow-x-auto pt-2 scrollbar-hide">
             {typeFilter !== "ALL" && (
-              <div className="flex items-center gap-1 px-3 py-1 bg-black text-white rounded-full text-xs whitespace-nowrap">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
                 {typeFilter === TransactionType.INCOME ? "Entradas" : "Saídas"}
                 <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setTypeFilter("ALL")} />
               </div>
             )}
             {categoryFilter !== "ALL" && (
-              <div className="flex items-center gap-1 px-3 py-1 bg-black text-white rounded-full text-xs whitespace-nowrap">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
                 {getCategoryLabel(categoryFilter)}
                 <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setCategoryFilter("ALL")} />
               </div>
             )}
-            {/* Add more chips if needed */}
           </div>
         )}
       </div>
 
       {/* Transactions List */}
-      {loading ? (
-        <div className="text-center py-8 text-gray-500">Carregando...</div>
-      ) : Object.keys(groupedTransactions).length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p>Nenhuma transação encontrada</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedTransactions).map(([date, transactions]) => (
-            <div key={date} className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-500 sticky top-14 bg-white/95 backdrop-blur py-2 z-0">
-                {date}
-              </h3>
-              <div className="space-y-3">
-                {transactions.map((transaction) => (
-                  <div 
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 active:scale-[0.98] transition-transform cursor-pointer"
-                    onClick={() => handleTransactionClick(transaction)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={cn("p-3 rounded-xl", getCategoryColor(transaction.category))}>
+      <div className="px-4">
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">Carregando...</div>
+        ) : Object.keys(groupedTransactions).length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <p>Nenhuma transação encontrada</p>
+          </div>
+        ) : (
+          <div className="space-y-6 mt-4">
+            {Object.entries(groupedTransactions).map(([date, transactions]) => (
+              <div key={date}>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  {date}
+                </h3>
+                <div className="space-y-2">
+                  {transactions.map((transaction) => (
+                    <div 
+                      key={transaction.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl active:scale-[0.98] transition-transform cursor-pointer"
+                      onClick={() => handleTransactionClick(transaction)}
+                    >
+                      <div className={cn("p-2.5 rounded-xl", getCategoryColor(transaction.category))}>
                         {getCategoryIcon(transaction.category)}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{transaction.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
                         <p className="text-xs text-gray-500">{getCategoryLabel(transaction.category)}</p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={cn(
-                        "font-semibold",
-                        transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
-                      )}>
-                        {transaction.type === TransactionType.INCOME ? "+" : "-"} 
-                        R$ {transaction.amount.toFixed(2)}
-                      </p>
-                      {transaction.installments && (
-                        <p className="text-xs text-gray-400">
-                          {transaction.currentInstallment}/{transaction.installments}
+                      <div className="text-right shrink-0">
+                        <p className={cn(
+                          "font-semibold",
+                          transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
+                        )}>
+                          {transaction.type === TransactionType.INCOME ? "+" : "-"}R$
+                          {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
-                      )}
+                        {transaction.installments && (
+                          <p className="text-xs text-gray-400">
+                            {transaction.currentInstallment}/{transaction.installments}x
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       <MobileTransactionDialog 
         transaction={selectedTransaction}
