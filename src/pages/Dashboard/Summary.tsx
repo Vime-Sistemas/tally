@@ -325,10 +325,10 @@ export function Summary() {
     .slice(0, 5);
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Resumo Financeiro</h2>
-        <p className="text-muted-foreground">Acompanhe o fluxo do seu patrimônio.</p>
+    <div className="w-full p-3 md:p-8 space-y-4 md:space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col space-y-1 md:space-y-2">
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Resumo Financeiro</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Acompanhe o fluxo do seu patrimônio.</p>
       </div>
 
       {/* Alerts Section */}
@@ -402,7 +402,7 @@ export function Summary() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 shadow-sm">
+        <Card className="col-span-4 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Fluxo de Caixa (Últimos 6 meses)</CardTitle>
           </CardHeader>
@@ -449,7 +449,7 @@ export function Summary() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 shadow-sm">
+        <Card className="col-span-3 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Uso de Cartões de Crédito</CardTitle>
           </CardHeader>
@@ -490,7 +490,7 @@ export function Summary() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 shadow-sm">
+        <Card className="col-span-4 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Últimas Transações</CardTitle>
           </CardHeader>
@@ -516,7 +516,7 @@ export function Summary() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 shadow-sm">
+        <Card className="col-span-3 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Despesas por Categoria</CardTitle>
           </CardHeader>
@@ -549,7 +549,7 @@ export function Summary() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 shadow-sm">
+        <Card className="col-span-4 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Evolução Patrimonial</CardTitle>
           </CardHeader>
@@ -583,7 +583,7 @@ export function Summary() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 shadow-sm">
+        <Card className="col-span-3 shadow-sm overflow-hidden">
           <CardHeader>
             <CardTitle>Composição do Patrimônio</CardTitle>
           </CardHeader>
