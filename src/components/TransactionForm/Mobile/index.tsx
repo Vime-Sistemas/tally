@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../../ui/button';
+import { Switch } from '../../ui/switch';
 import { MobileInput, MobileDateInput } from '../../ui/mobile-input';
 import { MobilePicker, MobilePickerTrigger, type PickerOption } from '../../ui/mobile-picker';
 import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../../services/api';
@@ -391,7 +392,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
 
         {/* Installments Section (only for expenses) */}
         {selectedType === TransactionType.EXPENSE && (
-          <div className="bg-white rounded-2xl shadow-sm">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-4">
               <div className="space-y-0.5">
                 <span className="text-base font-medium text-gray-900">Parcelado?</span>
@@ -399,25 +400,14 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
                   Habilite para compras parceladas
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsInstallment(!isInstallment)}
-                className={cn(
-                  "w-12 h-7 rounded-full transition-colors relative",
-                  isInstallment ? "bg-black" : "bg-gray-300"
-                )}
-              >
-                <span
-                  className={cn(
-                    "absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-transform",
-                    isInstallment ? "translate-x-5" : "translate-x-0.5"
-                  )}
-                />
-              </button>
+              <Switch
+                checked={isInstallment}
+                onCheckedChange={setIsInstallment}
+              />
             </div>
 
             {isInstallment && (
-              <div className="px-4 pb-4 border-t border-gray-100 pt-4">
+              <div className="px-4 pb-4 border-t border-gray-100 pt-4 animate-in slide-in-from-top-2 duration-200">
                 <MobilePickerTrigger
                   label="Número de Parcelas"
                   value={watchedInstallments?.toString()}
