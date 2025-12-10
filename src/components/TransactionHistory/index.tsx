@@ -18,7 +18,8 @@ import {
   DollarSign,
   TrendingUp,
   MoreHorizontal,
-  ArrowRightLeft
+  ArrowRightLeft,
+  CalendarClock
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
@@ -50,6 +51,8 @@ export function TransactionHistory() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [accountFilter, setAccountFilter] = useState<string>("ALL");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -57,6 +60,8 @@ export function TransactionHistory() {
   const [editingAmount, setEditingAmount] = useState(0);
   const [editingCategory, setEditingCategory] = useState("");
   const [editingDate, setEditingDate] = useState("");
+  const [editingCurrentInstallment, setEditingCurrentInstallment] = useState<number | null>(null);
+  const [editingTotalInstallments, setEditingTotalInstallments] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -142,6 +147,8 @@ export function TransactionHistory() {
     setEditingAmount(transaction.amount);
     setEditingCategory(transaction.category);
     setEditingDate(transaction.date.split('T')[0]);
+    setEditingCurrentInstallment((transaction as any).currentInstallment || null);
+    setEditingTotalInstallments((transaction as any).totalInstallments || null);
     setIsEditDialogOpen(true);
   };
 
@@ -150,16 +157,20 @@ export function TransactionHistory() {
     
     setIsSubmitting(true);
     try {
-      await updateTransaction(selectedTransaction.id, {
+      const updateData = {
         description: editingDescription,
         amount: editingAmount,
         category: editingCategory as any,
         date: editingDate,
-      });
+        currentInstallment: editingCurrentInstallment,
+        totalInstallments: editingTotalInstallments
+      };
+
+      await updateTransaction(selectedTransaction.id, updateData);
       
       setTransactions(transactions.map(t => 
         t.id === selectedTransaction.id 
-          ? { ...t, description: editingDescription, amount: editingAmount, category: editingCategory as any, date: editingDate }
+          ? { ...t, ...updateData }
           : t
       ));
       
@@ -195,16 +206,35 @@ export function TransactionHistory() {
     }
   };
 
-  const groupedTransactions = useMemo(() => {
+  const { groups: groupedTransactions, summary } = useMemo(() => {
     const filtered = transactions
       .filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+        
         const matchesType = typeFilter === "ALL" || 
           t.type === typeFilter || 
           (typeFilter === TransactionType.EXPENSE && t.type === 'INVOICE_PAYMENT');
-        return matchesSearch && matchesType;
+
+        const matchesCategory = categoryFilter === "ALL" || t.category === categoryFilter;
+
+        const matchesAccount = accountFilter === "ALL" || 
+          (t.accountId === accountFilter) || 
+          (t.cardId === accountFilter);
+
+        return matchesSearch && matchesType && matchesCategory && matchesAccount;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Cálculo do Resumo
+    const stats = filtered.reduce((acc, curr) => {
+      acc.count += 1;
+      if (curr.type === TransactionType.INCOME) {
+        acc.income += curr.amount;
+      } else {
+        acc.expense += curr.amount;
+      }
+      return acc;
+    }, { count: 0, income: 0, expense: 0 });
 
     const groups: Record<string, Transaction[]> = {};
 
@@ -224,8 +254,8 @@ export function TransactionHistory() {
       groups[dateKey].push(transaction);
     });
 
-    return groups;
-  }, [transactions, searchTerm, typeFilter]);
+    return { groups, summary: stats };
+  }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter]);
 
   if (loading) {
     return (
@@ -285,6 +315,77 @@ export function TransactionHistory() {
             </Button>
           </div>
         </div>
+
+        <div className="flex flex-col md:flex-row gap-3">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full md:w-[200px] h-11 rounded-xl bg-gray-100/50 border-none">
+              <SelectValue placeholder="Todas Categorias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todas Categorias</SelectItem>
+              <SelectItem value="FOOD">Alimentação</SelectItem>
+              <SelectItem value="TRANSPORT">Transporte</SelectItem>
+              <SelectItem value="HOUSING">Moradia</SelectItem>
+              <SelectItem value="SHOPPING">Compras</SelectItem>
+              <SelectItem value="SALARY">Salário</SelectItem>
+              <SelectItem value="INVESTMENT">Investimento</SelectItem>
+              <SelectItem value="UTILITIES">Contas</SelectItem>
+              <SelectItem value="HEALTHCARE">Saúde</SelectItem>
+              <SelectItem value="ENTERTAINMENT">Lazer</SelectItem>
+              <SelectItem value="EDUCATION">Educação</SelectItem>
+              <SelectItem value="FREELANCE">Freelance</SelectItem>
+              <SelectItem value="OTHER_EXPENSE">Outros (Despesa)</SelectItem>
+              <SelectItem value="OTHER_INCOME">Outros (Receita)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={accountFilter} onValueChange={setAccountFilter}>
+            <SelectTrigger className="w-full md:w-[200px] h-11 rounded-xl bg-gray-100/50 border-none">
+              <SelectValue placeholder="Todas Contas/Cartões" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todas Contas/Cartões</SelectItem>
+              {accounts.map(acc => (
+                <SelectItem key={acc.id} value={acc.id}>Conta: {acc.name}</SelectItem>
+              ))}
+              {cards.map(card => (
+                <SelectItem key={card.id} value={card.id}>Cartão: {card.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {(categoryFilter !== "ALL" || accountFilter !== "ALL" || searchTerm !== "") && (
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-wrap gap-6 items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">Registros:</span>
+              <span className="font-semibold text-gray-900">{summary.count}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {summary.income > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">Entradas:</span>
+                  <span className="font-semibold text-emerald-600">+ R$ {summary.income.toFixed(2)}</span>
+                </div>
+              )}
+              {summary.expense > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">Saídas:</span>
+                  <span className="font-semibold text-red-600">- R$ {summary.expense.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
+                <span className="text-gray-500">Total:</span>
+                <span className={cn(
+                  "font-bold",
+                  (summary.income - summary.expense) >= 0 ? "text-emerald-600" : "text-red-600"
+                )}>
+                  R$ {(summary.income - summary.expense).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-8">
@@ -320,7 +421,15 @@ export function TransactionHistory() {
                             {getCategoryIcon(transaction.category)}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{transaction.description}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-900">{transaction.description}</p>
+                              {(transaction as any).totalInstallments > 1 && (
+                                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                  <CalendarClock className="h-3 w-3" />
+                                  {(transaction as any).currentInstallment}/{(transaction as any).totalInstallments}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">{getCategoryLabel(transaction.category)}</p>
                           </div>
                         </div>
@@ -359,6 +468,11 @@ export function TransactionHistory() {
                           )}>
                             {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
+                          {(transaction as any).totalInstallments > 1 && (
+                            <div className="mt-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full font-medium">
+                              Parcela {(transaction as any).currentInstallment} de {(transaction as any).totalInstallments}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="space-y-4">
@@ -437,6 +551,30 @@ export function TransactionHistory() {
                 onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Parcela Atual</label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Ex: 1"
+                  value={editingCurrentInstallment || ''}
+                  onChange={(e) => setEditingCurrentInstallment(e.target.value ? parseInt(e.target.value) : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Total Parcelas</label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Ex: 12"
+                  value={editingTotalInstallments || ''}
+                  onChange={(e) => setEditingTotalInstallments(e.target.value ? parseInt(e.target.value) : null)}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Categoria</label>
               <Select value={editingCategory} onValueChange={setEditingCategory}>
