@@ -417,7 +417,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
             </div>
 
             {isInstallment && (
-              <div className="px-4 pb-32 border-t border-gray-100 pt-4">
+              <div className="px-4 pb-4 border-t border-gray-100 pt-4">
                 <MobilePickerTrigger
                   label="Número de Parcelas"
                   value={watchedInstallments?.toString()}

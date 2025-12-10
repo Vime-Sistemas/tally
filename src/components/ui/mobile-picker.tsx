@@ -126,7 +126,7 @@ export function MobilePicker({
         </div>
 
         {/* Safe area padding */}
-        <div className="h-8" />
+        <div className="h-24" />
       </DrawerContent>
     </Drawer>
   )
