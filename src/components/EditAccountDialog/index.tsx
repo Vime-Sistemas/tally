@@ -19,10 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
+import { Drawer, DrawerContent, DrawerTitle, DrawerClose } from '../ui/drawer';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateAccount, deleteAccount } from '../../services/api';
 import { AccountType } from '../../types/account';
 import type { Account } from '../../types/account';
+import { useMediaQuery } from '../../lib/useMediaQuery';
 
 const accountSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -62,6 +65,7 @@ export function EditAccountDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const {
     register,
@@ -111,129 +115,257 @@ export function EditAccountDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Conta</DialogTitle>
-            <DialogDescription>
-              Atualize as informações da sua conta
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="text-gray-600">Nome da Conta</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Conta Principal"
-                className="h-10 border-gray-200 focus:border-black focus:ring-black"
-                {...register('name')}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
-              )}
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="pb-24">
+            <div className="flex items-center justify-between px-4 py-4 border-b">
+              <DrawerTitle>Editar Conta</DrawerTitle>
+              <DrawerClose asChild>
+                <button className="p-1 hover:bg-gray-100 rounded-lg">
+                  <X className="h-5 w-5" />
+                </button>
+              </DrawerClose>
             </div>
 
-            <div>
-              <Label htmlFor="type" className="text-gray-600">Tipo de Conta</Label>
-              <Controller
-                name="type"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="type" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={AccountType.CHECKING}>Conta Corrente</SelectItem>
-                      <SelectItem value={AccountType.SAVINGS}>Poupança</SelectItem>
-                      <SelectItem value={AccountType.WALLET}>Dinheiro</SelectItem>
-                      <SelectItem value={AccountType.INVESTMENT}>Investimentos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.type && (
-                <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
-              )}
-            </div>
-
-            {account.type === AccountType.WALLET && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-4 py-4">
               <div>
-                <Label htmlFor="balance" className="text-gray-600">Saldo Atual</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                  <Input
-                    id="balance"
-                    type="number"
-                    step="0.01"
-                    className="pl-10 h-10 border-gray-200 focus:border-black focus:ring-black"
-                    {...register('balance', { valueAsNumber: true })}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Para dinheiro em espécie, você pode ajustar o saldo manualmente.
-                </p>
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="color" className="text-gray-600">Cor</Label>
-              <Controller
-                name="color"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="color" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accountColors.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded ${color.value}`}></div>
-                            {color.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Label htmlFor="name" className="text-gray-600">Nome da Conta</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Conta Principal"
+                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                  {...register('name')}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
                 )}
-              />
-              {errors.color && (
-                <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
-              )}
-            </div>
+              </div>
 
-            <div className="flex gap-2 justify-between pt-4 border-t">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isSubmitting || isDeleting}
-              >
-                Deletar
-              </Button>
-              <div className="flex gap-2">
+              <div>
+                <Label htmlFor="type" className="text-gray-600">Tipo de Conta</Label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="type" className="w-full h-10 border-gray-200 focus:ring-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={AccountType.CHECKING}>Conta Corrente</SelectItem>
+                        <SelectItem value={AccountType.SAVINGS}>Poupança</SelectItem>
+                        <SelectItem value={AccountType.WALLET}>Dinheiro</SelectItem>
+                        <SelectItem value={AccountType.INVESTMENT}>Investimentos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.type && (
+                  <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
+                )}
+              </div>
+
+              {account.type === AccountType.WALLET && (
+                <div>
+                  <Label htmlFor="balance" className="text-gray-600">Saldo Atual</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                    <Input
+                      id="balance"
+                      type="number"
+                      step="0.01"
+                      className="pl-10 h-10 border-gray-200 focus:border-black focus:ring-black"
+                      {...register('balance', { valueAsNumber: true })}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Para dinheiro em espécie, você pode ajustar o saldo manualmente.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="color" className="text-gray-600">Cor</Label>
+                <Controller
+                  name="color"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="color" className="w-full h-10 border-gray-200 focus:ring-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accountColors.map((color) => (
+                          <SelectItem key={color.value} value={color.value}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-4 h-4 rounded ${color.value}`}></div>
+                              {color.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.color && (
+                  <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
+                )}
+              </div>
+
+              <div className="flex gap-2 justify-between pt-4 border-t">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isSubmitting || isDeleting}
                 >
-                  Cancelar
+                  Deletar
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Salvando...' : 'Salvar'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Conta</DialogTitle>
+              <DialogDescription>
+                Atualize as informações da sua conta
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <Label htmlFor="name" className="text-gray-600">Nome da Conta</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Conta Principal"
+                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                  {...register('name')}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="type" className="text-gray-600">Tipo de Conta</Label>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="type" className="w-full h-10 border-gray-200 focus:ring-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={AccountType.CHECKING}>Conta Corrente</SelectItem>
+                        <SelectItem value={AccountType.SAVINGS}>Poupança</SelectItem>
+                        <SelectItem value={AccountType.WALLET}>Dinheiro</SelectItem>
+                        <SelectItem value={AccountType.INVESTMENT}>Investimentos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.type && (
+                  <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
+                )}
+              </div>
+
+              {account.type === AccountType.WALLET && (
+                <div>
+                  <Label htmlFor="balance" className="text-gray-600">Saldo Atual</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                    <Input
+                      id="balance"
+                      type="number"
+                      step="0.01"
+                      className="pl-10 h-10 border-gray-200 focus:border-black focus:ring-black"
+                      {...register('balance', { valueAsNumber: true })}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Para dinheiro em espécie, você pode ajustar o saldo manualmente.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="color" className="text-gray-600">Cor</Label>
+                <Controller
+                  name="color"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="color" className="w-full h-10 border-gray-200 focus:ring-black">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accountColors.map((color) => (
+                          <SelectItem key={color.value} value={color.value}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-4 h-4 rounded ${color.value}`}></div>
+                              {color.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.color && (
+                  <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
+                )}
+              </div>
+
+              <div className="flex gap-2 justify-between pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isSubmitting || isDeleting}
+                >
+                  Deletar
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
