@@ -24,4 +24,5 @@ export interface CreditCard {
   dueDay: number;
   color?: string;
   currentInvoice: number;
+  limitUsed?: number;
 }

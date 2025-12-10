@@ -135,7 +135,7 @@ export function AccountsList() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs opacity-80">Limite Disponível</p>
-                      <p className="font-medium">R$ {(card.limit - card.currentInvoice).toFixed(2).replace('.', ',')}</p>
+                      <p className="font-medium">R$ {(card.limit - (card.limitUsed || 0)).toFixed(2).replace('.', ',')}</p>
                     </div>
                   </div>
                   <div className="mt-6 flex justify-between items-center">
