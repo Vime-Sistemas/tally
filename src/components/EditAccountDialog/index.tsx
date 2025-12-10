@@ -27,6 +27,7 @@ import type { Account } from '../../types/account';
 const accountSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   type: z.enum([AccountType.CHECKING, AccountType.SAVINGS, AccountType.WALLET, AccountType.INVESTMENT]),
+  balance: z.number().optional(),
   color: z.string().min(1, 'Cor é obrigatória'),
 });
 
@@ -41,6 +42,8 @@ const accountColors = [
   { value: 'bg-red-500', label: 'Vermelho' },
   { value: 'bg-slate-500', label: 'Cinza' },
   { value: 'bg-indigo-500', label: 'Índigo' },
+  { value: 'bg-yellow-500', label: 'Amarelo' },
+  { value: 'bg-gray-900', label: 'Preto' },
 ];
 
 interface EditAccountDialogProps {
@@ -70,6 +73,7 @@ export function EditAccountDialog({
     defaultValues: {
       name: account.name,
       type: account.type,
+      balance: account.balance,
       color: account.color,
     },
   });
@@ -143,7 +147,7 @@ export function EditAccountDialog({
                     <SelectContent>
                       <SelectItem value={AccountType.CHECKING}>Conta Corrente</SelectItem>
                       <SelectItem value={AccountType.SAVINGS}>Poupança</SelectItem>
-                      <SelectItem value={AccountType.WALLET}>Carteira</SelectItem>
+                      <SelectItem value={AccountType.WALLET}>Dinheiro</SelectItem>
                       <SelectItem value={AccountType.INVESTMENT}>Investimentos</SelectItem>
                     </SelectContent>
                   </Select>
@@ -153,6 +157,25 @@ export function EditAccountDialog({
                 <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
               )}
             </div>
+
+            {account.type === AccountType.WALLET && (
+              <div>
+                <Label htmlFor="balance" className="text-gray-600">Saldo Atual</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                  <Input
+                    id="balance"
+                    type="number"
+                    step="0.01"
+                    className="pl-10 h-10 border-gray-200 focus:border-black focus:ring-black"
+                    {...register('balance', { valueAsNumber: true })}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Para dinheiro em espécie, você pode ajustar o saldo manualmente.
+                </p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="color" className="text-gray-600">Cor</Label>

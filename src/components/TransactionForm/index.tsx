@@ -361,7 +361,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                         <SelectLabel>Contas</SelectLabel>
                         {accounts.map((account) => (
                           <SelectItem key={account.id} value={`account:${account.id}`}>
-                            {account.name}
+                            {account.name} {account.type === 'WALLET' && '(Dinheiro)'}
                           </SelectItem>
                         ))}
                       </SelectGroup>
