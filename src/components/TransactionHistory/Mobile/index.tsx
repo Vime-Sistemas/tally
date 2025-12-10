@@ -56,7 +56,7 @@ import type { DateRange } from "react-day-picker";
 import { MobileTransactionDialog } from "../../TransactionDialog/Mobile";
 import { TransactionForm } from "../../TransactionForm";
 
-const getCategoryIcon = (category: string) => {
+export const getCategoryIcon = (category: string) => {
   switch (category) {
     case 'FOOD': return <Coffee className="h-5 w-5" />;
     case 'TRANSPORT': return <Car className="h-5 w-5" />;
@@ -74,7 +74,7 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-const getCategoryColor = (category: string) => {
+export const getCategoryColor = (category: string) => {
   switch (category) {
     case 'FOOD': return 'bg-orange-100 text-orange-600';
     case 'TRANSPORT': return 'bg-blue-100 text-blue-600';
@@ -92,7 +92,7 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const getCategoryLabel = (category: string) => {
+export const getCategoryLabel = (category: string) => {
   const labels: Record<string, string> = {
     FOOD: 'Alimentação',
     TRANSPORT: 'Transporte',
