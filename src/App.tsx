@@ -58,6 +58,49 @@ function AppContent() {
     }
   }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, setUser]);
 
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Alt + Key shortcuts
+      if (e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'd': // Dashboard
+            e.preventDefault();
+            setCurrentPage('dashboard-summary');
+            break;
+          case 't': // Transaction (New)
+            e.preventDefault();
+            setCurrentPage('transactions-new');
+            break;
+          case 'h': // History
+            e.preventDefault();
+            setCurrentPage('transactions-history');
+            break;
+          case 'c': // Contas (Accounts)
+            e.preventDefault();
+            setCurrentPage('accounts-list');
+            break;
+          case 'm': // Metas (Goals)
+            e.preventDefault();
+            setCurrentPage('dashboard-goals');
+            break;
+          case 'p': // Patrimônio (Equity)
+            e.preventDefault();
+            setCurrentPage('equity-list');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (isLoading || isSyncing) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
@@ -147,7 +190,7 @@ function AppContent() {
         />
       )}
       <main>
-        <div key={currentPage} className="animate-page-enter">
+        <div key={currentPage}>
           {renderPage()}
         </div>
       </main>

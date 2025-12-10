@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TransactionForm } from '../../components/TransactionForm';
 import { TransferForm } from '../../components/TransferForm';
 import { InvestmentForm } from '../../components/InvestmentForm';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { List } from 'lucide-react';
+import { Kbd } from '../../components/ui/kbd';
 import type { Page } from '../../types/navigation';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
@@ -15,6 +16,35 @@ interface TransactionsProps {
 
 export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.altKey) {
+        switch (e.key) {
+          case '1':
+            e.preventDefault();
+            setActiveTab('TRANSACTION');
+            break;
+          case '2':
+            e.preventDefault();
+            setActiveTab('TRANSFER');
+            break;
+          case '3':
+            e.preventDefault();
+            setActiveTab('INVESTMENT');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="p-4 md:p-8">
@@ -52,35 +82,38 @@ export function Transactions({ onNavigate }: TransactionsProps) {
             <button
               onClick={() => setActiveTab('TRANSACTION')}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-2",
                 activeTab === 'TRANSACTION'
                   ? "bg-white text-black shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               Transação
+              {activeTab !== 'TRANSACTION' && <Kbd className="bg-gray-200">Alt+1</Kbd>}
             </button>
             <button
               onClick={() => setActiveTab('TRANSFER')}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-2",
                 activeTab === 'TRANSFER'
                   ? "bg-white text-black shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               Transferência
+              {activeTab !== 'TRANSFER' && <Kbd className="bg-gray-200">Alt+2</Kbd>}
             </button>
             <button
               onClick={() => setActiveTab('INVESTMENT')}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center gap-2",
                 activeTab === 'INVESTMENT'
                   ? "bg-white text-black shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               Aplicação
+              {activeTab !== 'INVESTMENT' && <Kbd className="bg-gray-200">Alt+3</Kbd>}
             </button>
           </div>
         </div>

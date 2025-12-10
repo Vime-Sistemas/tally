@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Kbd } from '../ui/kbd';
 import {
   Select,
   SelectContent,
@@ -51,6 +52,18 @@ export function TransferForm() {
       date: new Date().toISOString().split('T')[0],
     },
   });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit(onSubmit)();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSubmit]);
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -241,10 +254,11 @@ export function TransferForm() {
 
           <Button
             type="submit"
-            className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
+            className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Processando...' : 'Realizar Transferência'}
+            {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600">Ctrl+Enter</Kbd>}
           </Button>
         </form>
       </CardContent>

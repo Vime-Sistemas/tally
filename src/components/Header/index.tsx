@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Kbd } from "../ui/kbd";
 import type { Page, AppContext } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 
@@ -93,15 +94,21 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 w-[260px]">
                     <ListItem href="#" title="Resumo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
-                      <div className="flex items-center gap-2">
-                        <PieChart className="h-4 w-4" />
-                        <span>Visão resumo</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <PieChart className="h-4 w-4" />
+                          <span>Visão resumo</span>
+                        </div>
+                        <Kbd>Alt + D</Kbd>
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}>
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4" />
-                        <span>Analisar metas</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4" />
+                          <span>Analisar metas</span>
+                        </div>
+                        <Kbd>Alt + M</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -133,15 +140,21 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                       </NavigationMenuLink>
                     </li>
                     <ListItem href="#" title="Nova Transação" onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}>
-                      <div className="flex items-center gap-2">
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Registrar nova movimentação</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <PlusCircle className="h-4 w-4" />
+                          <span>Registrar nova movimentação</span>
+                        </div>
+                        <Kbd>Alt + T</Kbd>
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Histórico" onClick={(e) => { e.preventDefault(); onNavigate('transactions-history'); }}>
-                      <div className="flex items-center gap-2">
-                        <List className="h-4 w-4" />
-                        <span>Ver todas as transações</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <List className="h-4 w-4" />
+                          <span>Ver todas as transações</span>
+                        </div>
+                        <Kbd>Alt + H</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -179,9 +192,12 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
-                      <div className="flex items-center gap-2">
-                        <CardIcon className="h-4 w-4" />
-                        <span>Gerenciar contas e cartões</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CardIcon className="h-4 w-4" />
+                          <span>Gerenciar contas e cartões</span>
+                        </div>
+                        <Kbd>Alt + C</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -219,9 +235,12 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}>
-                      <div className="flex items-center gap-2">
-                        <CardIcon className="h-4 w-4" />
-                        <span>Gerenciar os bens cadastrados</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CardIcon className="h-4 w-4" />
+                          <span>Gerenciar os bens cadastrados</span>
+                        </div>
+                        <Kbd>Alt + P</Kbd>
                       </div>
                     </ListItem>
                   </ul>
