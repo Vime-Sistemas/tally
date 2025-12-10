@@ -14,6 +14,7 @@ import {
   SelectGroup,
   SelectLabel,
 } from '../ui/select';
+import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
 import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../services/api';
 import { equityService } from '../../services/equities';
@@ -31,6 +32,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, 'Data é obrigatória'),
   paymentMethod: z.string().min(1, 'Selecione uma conta ou cartão'),
   equityId: z.string().optional(),
+  installments: z.number().min(2, 'Mínimo de 2 parcelas').optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -62,6 +64,7 @@ interface TransactionFormProps {
 export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE);
+  const [isInstallment, setIsInstallment] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -124,6 +127,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
         equityId: data.equityId,
         accountId: methodType === 'account' ? methodId : undefined,
         cardId: methodType === 'card' ? methodId : undefined,
+        installments: isInstallment ? data.installments : undefined,
       };
 
       await createTransaction(payload);
@@ -304,6 +308,40 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                 <p className="text-xs text-gray-500">
                   Se vazio, será adicionado a "Investimentos Gerais".
                 </p>
+              </div>
+            )}
+
+            {/* Parcelamento (Apenas Despesas) */}
+            {selectedType === TransactionType.EXPENSE && (
+              <div className="space-y-4 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is-installment" className="text-gray-600 font-medium">Parcelar esta despesa?</Label>
+                  <Switch
+                    id="is-installment"
+                    checked={isInstallment}
+                    onCheckedChange={setIsInstallment}
+                  />
+                </div>
+
+                {isInstallment && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                    <Label htmlFor="installments" className="text-gray-600">Número de Parcelas</Label>
+                    <Input
+                      id="installments"
+                      type="number"
+                      min="2"
+                      placeholder="Ex: 12"
+                      className="border-gray-200 focus:border-black focus:ring-black"
+                      {...register('installments', { valueAsNumber: true })}
+                    />
+                    {errors.installments && (
+                      <p className="text-sm text-red-600">{errors.installments.message}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      O valor total será dividido pelo número de parcelas e lançado nos meses subsequentes.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
