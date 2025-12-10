@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../types/account";
-import { CreditCard, Wallet } from "lucide-react";
+import { CreditCard, Wallet, Banknote } from "lucide-react";
 import { getAccounts, getCards } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
@@ -56,7 +56,7 @@ export function AccountsList() {
       case AccountType.SAVINGS:
         return 'Poupança';
       case AccountType.WALLET:
-        return 'Carteira';
+        return 'Dinheiro';
       case AccountType.INVESTMENT:
         return 'Investimentos';
       default:
@@ -86,7 +86,11 @@ export function AccountsList() {
                 onClick={() => setEditingAccount(account)}
               >
                 <div className="flex justify-between items-start mb-8">
-                  <Wallet className="h-6 w-6 opacity-80" />
+                  {account.type === AccountType.WALLET ? (
+                    <Banknote className="h-6 w-6 opacity-80" />
+                  ) : (
+                    <Wallet className="h-6 w-6 opacity-80" />
+                  )}
                   <span className="text-sm font-medium opacity-80">{getTypeLabel(account.type)}</span>
                 </div>
                 <div>

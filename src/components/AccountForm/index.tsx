@@ -31,7 +31,7 @@ type AccountFormData = z.infer<typeof accountSchema>;
 const accountTypes = [
   { value: AccountType.CHECKING, label: 'Conta Corrente' },
   { value: AccountType.SAVINGS, label: 'Poupança' },
-  { value: AccountType.WALLET, label: 'Carteira' },
+  { value: AccountType.WALLET, label: 'Dinheiro' },
   { value: AccountType.INVESTMENT, label: 'Investimentos' },
 ];
 

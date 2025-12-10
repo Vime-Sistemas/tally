@@ -15,7 +15,7 @@ import { accountService } from "../../services/accounts";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
 import { getCards } from "../../services/api";
-import type { Account, CreditCard } from "../../types/account";
+import { AccountType, type Account, type CreditCard } from "../../types/account";
 import { TransactionCategory, type Transaction } from "../../types/transaction";
 import { EQUITY_TYPES } from "../../types/equity";
 import type { Equity } from "../../types/equity";
@@ -141,6 +141,8 @@ export function Summary() {
 
   // 1. Cards Data
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const walletBalance = accounts.filter(a => a.type === AccountType.WALLET).reduce((sum, acc) => sum + acc.balance, 0);
+  const bankBalance = totalBalance - walletBalance;
 
   const currentMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), currentDate));
   const prevMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), prevMonthStart));
@@ -348,17 +350,25 @@ export function Summary() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo em Contas</CardTitle>
+            <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
             </div>
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1 text-emerald-500" />
-              Saldo atual disponível
-            </p>
+            <div className="flex flex-col gap-1 mt-1">
+              <p className="text-xs text-muted-foreground flex items-center">
+                <TrendingUp className="h-3 w-3 mr-1 text-emerald-500" />
+                Saldo atual disponível
+              </p>
+              {walletBalance > 0 && (
+                 <p className="text-xs text-muted-foreground">
+                   (Em conta: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(bankBalance)} | 
+                   Dinheiro: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(walletBalance)})
+                 </p>
+              )}
+            </div>
           </CardContent>
         </Card>
         <Card className="shadow-sm hover:shadow-md transition-shadow">
