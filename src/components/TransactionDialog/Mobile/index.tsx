@@ -1,6 +1,8 @@
 import {
   Drawer,
   DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
 } from "../../ui/drawer";
 import { Button } from "../../ui/button";
 import { type Transaction, TransactionType } from "../../../types/transaction";
@@ -28,9 +30,11 @@ export function MobileTransactionDialog({
   if (!transaction) return null;
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="rounded-t-[32px] p-0 bg-white border-none">
-        <div className="px-6 pb-8">
+    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.6, 0.95]}>
+      <DrawerContent className="mt-0 rounded-t-[32px] p-0 bg-white border-none max-h-[150vh]">
+        <DrawerTitle className="sr-only">Detalhes da Transação</DrawerTitle>
+        <DrawerDescription className="sr-only">Detalhes da transação selecionada</DrawerDescription>
+        <div className="px-6 pb-64 h-full overflow-y-auto">
           {/* Header - Centered */}
           <div className="flex flex-col items-center text-center py-6">
             <div className={cn(

@@ -15,7 +15,7 @@ import { transactionService } from "../../../services/transactions";
 import { getCards } from "../../../services/api";
 import { type Account, type CreditCard } from "../../../types/account";
 import { TransactionCategory, type Transaction } from "../../../types/transaction";
-import { format, subMonths, startOfMonth, isSameMonth } from "date-fns";
+import { format, subMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -75,22 +75,15 @@ export function MobileSummary() {
 
   // --- Calculations ---
   const currentDate = new Date();
-  const prevMonthStart = startOfMonth(subMonths(currentDate, 1));
 
   // 1. Cards Data
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
   const currentMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), currentDate));
-  const prevMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), prevMonthStart));
 
   const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
   const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
 
-  const prevIncome = prevMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
-
-  const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
-  const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
 
   // 2. Cash Flow Chart (Last 6 months)
   const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
@@ -148,6 +141,7 @@ export function MobileSummary() {
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
           </div>
           <div className="flex gap-4 text-xs text-gray-300">
+            <span className="text-sm font-medium text-gray-300">Movimentações</span>
             <div className="flex items-center gap-1">
               <ArrowUpCircle className="h-3 w-3 text-emerald-400" />
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}</span>
@@ -176,32 +170,6 @@ export function MobileSummary() {
           ))}
         </div>
       )}
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1">Receitas (Mês)</div>
-            <div className="text-lg font-bold text-emerald-600">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}
-            </div>
-            <div className={`text-[10px] mt-1 ${incomeChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {incomeChange > 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs mês anterior
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground mb-1">Despesas (Mês)</div>
-            <div className="text-lg font-bold text-red-600">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}
-            </div>
-            <div className={`text-[10px] mt-1 ${expenseChange <= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {expenseChange > 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs mês anterior
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Simplified Cash Flow Chart */}
       <div className="space-y-3">
