@@ -29,6 +29,8 @@ const cardSchema = z.object({
   closingDay: z.number().min(1).max(31, 'Dia deve estar entre 1 e 31'),
   dueDay: z.number().min(1).max(31, 'Dia deve estar entre 1 e 31'),
   color: z.string().min(1, 'Cor é obrigatória'),
+  currentInvoice: z.number().optional(),
+  limitUsed: z.number().optional(),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
@@ -74,6 +76,8 @@ export function EditCardDialog({
       closingDay: card.closingDay,
       dueDay: card.dueDay,
       color: card.color,
+      currentInvoice: card.currentInvoice,
+      limitUsed: (card as any).limitUsed || 0,
     },
   });
 
@@ -147,6 +151,30 @@ export function EditCardDialog({
                 {errors.limit && (
                   <p className="text-sm text-red-600 mt-1">{errors.limit.message}</p>
                 )}
+              </div>
+
+              <div>
+                <Label htmlFor="currentInvoice" className="text-gray-600">Fatura Atual</Label>
+                <Input
+                  id="currentInvoice"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                  {...register('currentInvoice', { valueAsNumber: true })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="limitUsed" className="text-gray-600">Limite Utilizado</Label>
+                <Input
+                  id="limitUsed"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                  {...register('limitUsed', { valueAsNumber: true })}
+                />
               </div>
 
               <div>
