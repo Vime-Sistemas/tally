@@ -92,22 +92,22 @@ function AppContent() {
       case 'login':
         return <Login onNavigate={setCurrentPage} />;
       case 'transactions-new':
-        return <Transactions />;
+        return <Transactions onNavigate={setCurrentPage} />;
       case 'transactions-history':
         return (
           <div className="p-4 md:p-8">
             <div className="mx-auto max-w-5xl">
-              <TransactionHistory />
+              <TransactionHistory onNavigate={setCurrentPage} />
             </div>
           </div>
         );
       case 'accounts-new':
-        return <Accounts />;
+        return <Accounts onNavigate={setCurrentPage} />;
       case 'accounts-list':
         return (
           <div className="p-4 md:p-8">
             <div className="mx-auto max-w-5xl">
-              <AccountsList />
+              <AccountsList onNavigate={setCurrentPage} />
             </div>
           </div>
         );
@@ -131,7 +131,7 @@ function AppContent() {
           </div>
         );
       default:
-        return <Transactions />;
+        return <Transactions onNavigate={setCurrentPage} />;
     }
   };
 
@@ -147,7 +147,9 @@ function AppContent() {
         />
       )}
       <main>
-        {renderPage()}
+        <div key={currentPage} className="animate-page-enter">
+          {renderPage()}
+        </div>
       </main>
       <Toaster />
     </div>

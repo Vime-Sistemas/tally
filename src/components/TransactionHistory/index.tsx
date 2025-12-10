@@ -19,7 +19,8 @@ import {
   TrendingUp,
   MoreHorizontal,
   ArrowRightLeft,
-  CalendarClock
+  CalendarClock,
+  Plus
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
@@ -37,6 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import type { Page } from "../../types/navigation";
 
 // Helper to parse UTC date string as local date (ignoring time)
 const parseUTCDate = (dateString: string) => {
@@ -44,7 +46,11 @@ const parseUTCDate = (dateString: string) => {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
-export function TransactionHistory() {
+interface TransactionHistoryProps {
+  onNavigate?: (page: Page) => void;
+}
+
+export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -275,6 +281,15 @@ export function TransactionHistory() {
       <div className="sticky top-0 backdrop-blur-md z-10 pb-4 pt-2 space-y-4">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Histórico</h2>
+          {onNavigate && (
+            <Button 
+              onClick={() => onNavigate('transactions-new')}
+              className="rounded-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Transação
+            </Button>
+          )}
         </div>
         
         <div className="flex flex-col md:flex-row gap-3">

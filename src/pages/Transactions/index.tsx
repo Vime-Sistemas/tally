@@ -3,19 +3,47 @@ import { TransactionForm } from '../../components/TransactionForm';
 import { TransferForm } from '../../components/TransferForm';
 import { InvestmentForm } from '../../components/InvestmentForm';
 import { cn } from '../../lib/utils';
+import { Button } from '../../components/ui/button';
+import { List } from 'lucide-react';
+import type { Page } from '../../types/navigation';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
 
-export function Transactions() {
+interface TransactionsProps {
+  onNavigate?: (page: Page) => void;
+}
+
+export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
 
   return (
     <div className="p-4 md:p-8">
       <div className="mx-auto max-w-2xl">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center relative">
+          {onNavigate && (
+            <Button 
+              variant="ghost" 
+              className="absolute right-0 top-0 hidden md:flex"
+              onClick={() => onNavigate('transactions-history')}
+            >
+              <List className="mr-2 h-4 w-4" />
+              Ver Histórico
+            </Button>
+          )}
           <h1 className="text-3xl font-bold text-black mb-2 tracking-tight">Nova Movimentação</h1>
           <p className="text-gray-500">Registre suas transações, transferências e aplicações</p>
+          
+          {onNavigate && (
+            <Button 
+              variant="outline" 
+              className="mt-4 md:hidden w-full"
+              onClick={() => onNavigate('transactions-history')}
+            >
+              <List className="mr-2 h-4 w-4" />
+              Ver Histórico
+            </Button>
+          )}
         </div>
 
         {/* Tabs */}
