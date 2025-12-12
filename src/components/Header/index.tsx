@@ -80,8 +80,8 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
         <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
           <div className="mr-4 flex">
             <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
-            <div className="h-6 w-6 bg-black rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-xs">T</span>
+            <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
+              <img src="/icon.svg"></img>
             </div>
             <span className="hidden font-bold sm:inline-block">
               Cérebro de Finanças

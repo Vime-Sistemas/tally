@@ -291,7 +291,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Preferências do Sistema</CardTitle>
-                            <CardDescription>Personalize sua experiência no Tally.</CardDescription>
+                            <CardDescription>Personalize sua experiência no CDF.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex items-center justify-between space-x-2">
