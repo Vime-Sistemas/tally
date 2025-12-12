@@ -47,35 +47,35 @@ const chartConfig = {
 const equityConfig: Record<string, { label: string; color: string }> = {
   value: {
     label: "Patrimônio",
-    color: "#4f46e5",
+    color: "#009FE3",
   },
   'Imóveis': {
     label: "Imóveis",
-    color: "#4f46e5",
+    color: "#009FE3",
   },
   'Veículos': {
     label: "Veículos",
-    color: "#2563eb",
+    color: "#007bb3",
   },
   'Investimentos': {
     label: "Investimentos",
-    color: "#009FE3",
+    color: "#33b2e9",
   },
   'Liquidez': {
     label: "Liquidez",
-    color: "#f59e0b",
+    color: "#005f9e",
   },
   'Bens Pessoais': {
     label: "Bens Pessoais",
-    color: "#8b5cf6",
+    color: "#66c5ee",
   },
   'Participações': {
     label: "Participações",
-    color: "#db2777",
+    color: "#008b9e",
   },
   'Outros': {
     label: "Outros",
-    color: "#71717a",
+    color: "#99d9f4",
   }
 };
 
@@ -91,13 +91,13 @@ const investmentConfig = {
 };
 
 const GROUP_COLORS: Record<string, string> = {
-  'Imóveis': "#4f46e5",
-  'Veículos': "#2563eb",
-  'Investimentos': "#009FE3",
-  'Liquidez': "#f59e0b",
-  'Bens Pessoais': "#8b5cf6",
-  'Participações': "#db2777",
-  'Outros': "#71717a",
+  'Imóveis': "#009FE3", // Base
+  'Veículos': "#007bb3", // Darker
+  'Investimentos': "#33b2e9", // Lighter
+  'Liquidez': "#005f9e", // Indigo-ish
+  'Bens Pessoais': "#66c5ee", // Even lighter
+  'Participações': "#008b9e", // Teal-ish
+  'Outros': "#99d9f4", // Very light
 };
 
 export function Summary() {
@@ -215,7 +215,7 @@ export function Summary() {
   }, {} as Record<string, number>);
 
   // Generate colors for investments
-  const investmentColors = ["#3b82f6", "#009FE3", "#f59e0b", "#8b5cf6", "#6366f1", "#ec4899"];
+  const investmentColors = ["#009FE3", "#007bb3", "#33b2e9", "#005f9e", "#66c5ee", "#008b9e"];
   
   const investmentAllocationData = Object.entries(investmentAllocationMap).map(([name, value], index) => ({
     name,
@@ -281,15 +281,15 @@ export function Summary() {
     }, {} as Record<string, number>);
 
   const CATEGORY_COLORS: Record<string, string> = {
-    'HOUSING': "#ef4444", // red
-    'TRANSPORT': "#f97316", // orange
-    'FOOD': "#eab308", // yellow
-    'UTILITIES': "#3b82f6", // blue
-    'HEALTHCARE': "#10b981", // emerald
-    'ENTERTAINMENT': "#ec4899", // pink
-    'EDUCATION': "#06b6d4", // cyan
-    'SHOPPING': "#f43f5e", // rose
-    'OTHER_EXPENSE': "#71717a", // zinc
+    'HOUSING': "#009FE3", // Base Blue
+    'TRANSPORT': "#007bb3", // Darker Blue
+    'FOOD': "#33b2e9", // Lighter Blue
+    'UTILITIES': "#005f9e", // Indigo Blue
+    'HEALTHCARE': "#66c5ee", // Even Lighter Blue
+    'ENTERTAINMENT': "#008b9e", // Teal Blue
+    'EDUCATION': "#99d9f4", // Very Light Blue
+    'SHOPPING': "#5f8a9e", // Greyish Blue
+    'OTHER_EXPENSE': "#ccecf9", // Pale Blue
   };
 
   const CATEGORY_LABELS: Record<string, string> = {
