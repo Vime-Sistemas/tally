@@ -33,7 +33,7 @@ const parseUTCDate = (dateString: string) => {
 const chartConfig = {
   income: {
     label: "Receitas",
-    color: "#10b981", // emerald-500
+    color: "#009FE3", // brand blue
   },
   expense: {
     label: "Despesas",
@@ -59,7 +59,7 @@ const equityConfig: Record<string, { label: string; color: string }> = {
   },
   'Investimentos': {
     label: "Investimentos",
-    color: "#10b981",
+    color: "#009FE3",
   },
   'Liquidez': {
     label: "Liquidez",
@@ -82,7 +82,7 @@ const equityConfig: Record<string, { label: string; color: string }> = {
 const investmentConfig = {
   value: {
     label: "Saldo Atual",
-    color: "#10b981",
+    color: "#009FE3",
   },
   cost: {
     label: "Total Investido",
@@ -93,7 +93,7 @@ const investmentConfig = {
 const GROUP_COLORS: Record<string, string> = {
   'Imóveis': "#4f46e5",
   'Veículos': "#2563eb",
-  'Investimentos': "#10b981",
+  'Investimentos': "#009FE3",
   'Liquidez': "#f59e0b",
   'Bens Pessoais': "#8b5cf6",
   'Participações': "#db2777",
@@ -215,7 +215,7 @@ export function Summary() {
   }, {} as Record<string, number>);
 
   // Generate colors for investments
-  const investmentColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#6366f1", "#ec4899"];
+  const investmentColors = ["#3b82f6", "#009FE3", "#f59e0b", "#8b5cf6", "#6366f1", "#ec4899"];
   
   const investmentAllocationData = Object.entries(investmentAllocationMap).map(([name, value], index) => ({
     name,
@@ -359,7 +359,7 @@ export function Summary() {
             </div>
             <div className="flex flex-col gap-1 mt-1">
               <p className="text-xs text-muted-foreground flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1 text-emerald-500" />
+                <TrendingUp className="h-3 w-3 mr-1 text-[#009FE3]" />
                 Saldo atual disponível
               </p>
               {walletBalance > 0 && (
@@ -374,13 +374,13 @@ export function Summary() {
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receitas (Mês)</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
+            <ArrowUpCircle className="h-4 w-4 text-[#009FE3]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}
             </div>
-            <p className={`text-xs mt-1 ${incomeChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-xs mt-1 ${incomeChange >= 0 ? 'text-[#009FE3]' : 'text-red-600'}`}>
               {incomeChange > 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs mês anterior
             </p>
           </CardContent>
@@ -394,7 +394,7 @@ export function Summary() {
             <div className="text-2xl font-bold">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}
             </div>
-            <p className={`text-xs mt-1 ${expenseChange <= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-xs mt-1 ${expenseChange <= 0 ? 'text-[#009FE3]' : 'text-red-600'}`}>
               {expenseChange > 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs mês anterior
             </p>
           </CardContent>
@@ -499,7 +499,7 @@ export function Summary() {
               {recentTransactions.map(t => (
                 <div key={t.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-[#009FE3]/10 text-[#009FE3]' : 'bg-red-100 text-red-600'}`}>
                       {t.type === 'INCOME' ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
                     </div>
                     <div>
@@ -507,7 +507,7 @@ export function Summary() {
                       <p className="text-xs text-muted-foreground">{format(parseUTCDate(t.date), "dd 'de' MMMM", { locale: ptBR })}</p>
                     </div>
                   </div>
-                  <div className={`font-medium ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <div className={`font-medium ${t.type === 'INCOME' ? 'text-[#009FE3]' : 'text-red-600'}`}>
                     {t.type === 'INCOME' ? '+' : '-'} {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
                   </div>
                 </div>

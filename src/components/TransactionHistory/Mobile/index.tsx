@@ -84,7 +84,7 @@ export const getCategoryColor = (category: string) => {
     case 'HEALTHCARE': return 'bg-red-100 text-red-600';
     case 'ENTERTAINMENT': return 'bg-purple-100 text-purple-600';
     case 'EDUCATION': return 'bg-cyan-100 text-cyan-600';
-    case 'SALARY': return 'bg-emerald-100 text-emerald-600';
+    case 'SALARY': return 'bg-[#009FE3]/10 text-[#009FE3]';
     case 'FREELANCE': return 'bg-teal-100 text-teal-600';
     case 'INVESTMENT': return 'bg-lime-100 text-lime-600';
     case 'TRANSFER': return 'bg-gray-100 text-gray-600';
@@ -299,7 +299,7 @@ export function MobileTransactionHistory() {
                         onClick={() => setTypeFilter(TransactionType.INCOME)}
                         className={cn(
                           "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
-                          typeFilter === TransactionType.INCOME ? "bg-emerald-500 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                          typeFilter === TransactionType.INCOME ? "bg-[#009FE3] text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
                         )}
                       >
                         Entradas

@@ -29,7 +29,7 @@ const parseUTCDate = (dateString: string) => {
 const chartConfig = {
   income: {
     label: "Receitas",
-    color: "#10b981", // emerald-500
+    color: "#009FE3", // brand blue
   },
   expense: {
     label: "Despesas",
@@ -143,7 +143,7 @@ export function MobileSummary() {
           <div className="flex gap-4 text-xs text-gray-300">
             <span className="text-sm font-medium text-gray-300">Movimentações</span>
             <div className="flex items-center gap-1">
-              <ArrowUpCircle className="h-3 w-3 text-emerald-400" />
+              <ArrowUpCircle className="h-3 w-3 text-[#009FE3]" />
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}</span>
             </div>
             <div className="flex items-center gap-1">
@@ -262,7 +262,7 @@ export function MobileSummary() {
               {recentTransactions.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-[#009FE3]/10 text-[#009FE3]' : 'bg-red-50 text-red-600'}`}>
                       {t.type === 'INCOME' ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
                     </div>
                     <div>
@@ -270,7 +270,7 @@ export function MobileSummary() {
                       <p className="text-xs text-muted-foreground">{format(parseUTCDate(t.date), "dd 'de' MMM", { locale: ptBR })}</p>
                     </div>
                   </div>
-                  <div className={`text-sm font-medium whitespace-nowrap ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <div className={`text-sm font-medium whitespace-nowrap ${t.type === 'INCOME' ? 'text-[#009FE3]' : 'text-red-600'}`}>
                     {t.type === 'INCOME' ? '+' : '-'} {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
                   </div>
                 </div>

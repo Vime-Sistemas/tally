@@ -441,7 +441,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               {summary.income > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500">Entradas:</span>
-                  <span className="font-semibold text-emerald-600">+ R$ {summary.income.toFixed(2)}</span>
+                  <span className="font-semibold text-[#009FE3]">+ R$ {summary.income.toFixed(2)}</span>
                 </div>
               )}
               {summary.expense > 0 && (
@@ -454,7 +454,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                 <span className="text-gray-500">Total:</span>
                 <span className={cn(
                   "font-bold",
-                  (summary.income - summary.expense) >= 0 ? "text-emerald-600" : "text-red-600"
+                  (summary.income - summary.expense) >= 0 ? "text-[#009FE3]" : "text-red-600"
                 )}>
                   R$ {(summary.income - summary.expense).toFixed(2)}
                 </span>
@@ -491,7 +491,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
                             transaction.type === TransactionType.INCOME 
-                              ? "bg-emerald-100 text-emerald-600" 
+                              ? "bg-[#009FE3]/10 text-[#009FE3]" 
                               : "bg-gray-100 text-gray-600"
                           )}>
                             {getCategoryIcon(transaction.category)}
@@ -512,7 +512,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                         <div className="flex flex-col items-end">
                           <span className={cn(
                             "font-semibold",
-                            transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-gray-900"
+                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
                           )}>
                             {transaction.type === TransactionType.INCOME ? '+' : ''} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
@@ -532,7 +532,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           <div className={cn(
                             "h-16 w-16 rounded-full flex items-center justify-center mb-4",
                             transaction.type === TransactionType.INCOME 
-                              ? "bg-emerald-100 text-emerald-600" 
+                              ? "bg-[#009FE3]/10 text-[#009FE3]" 
                               : "bg-gray-100 text-gray-600"
                           )}>
                             {getCategoryIcon(transaction.category)}
@@ -540,7 +540,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           <span className="text-sm text-muted-foreground mb-1">Valor</span>
                           <span className={cn(
                             "text-4xl font-bold tracking-tight",
-                            transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-gray-900"
+                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
                           )}>
                             {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
