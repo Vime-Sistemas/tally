@@ -88,7 +88,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
       {/* Left Side - Carousel */}
       <div className="hidden lg:flex w-1/2 bg-zinc-50 text-zinc-900 relative flex-col justify-between p-12">
         <div className="z-10">
-          <h1 className="text-2xl font-bold tracking-tighter">tally.</h1>
+          <h1 className="text-2xl font-bold tracking-tighter">Cérebro de Finanças.</h1>
         </div>
 
         <div className="z-10 w-full max-w-5xl mx-auto">
