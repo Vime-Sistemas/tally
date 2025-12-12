@@ -458,7 +458,7 @@ export function MobileTransactionHistory() {
                       <div className="text-right shrink-0">
                         <p className={cn(
                           "font-semibold",
-                          transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
+                          transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-red-600"
                         )}>
                           {transaction.type === TransactionType.INCOME ? "+" : "-"}R$
                           {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

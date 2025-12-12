@@ -52,7 +52,7 @@ export function MobileTransactionDialog({
               <span className="text-lg text-gray-400">R$</span>
               <span className={cn(
                 "text-4xl font-semibold",
-                transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-gray-900"
+                transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
               )}>
                 {Math.abs(transaction.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>

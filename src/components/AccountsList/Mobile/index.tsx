@@ -95,7 +95,7 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
       >
         <div className="flex items-center justify-between mb-4">
           <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-            <TrendingUp className="h-6 w-6 text-emerald-400" />
+            <TrendingUp className="h-6 w-6 text-[#009FE3]" />
           </div>
           <span className="text-xs font-medium bg-white/10 px-3 py-1 rounded-full text-gray-300">
             Patrimônio
