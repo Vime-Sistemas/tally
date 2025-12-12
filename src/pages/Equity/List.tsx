@@ -66,7 +66,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
             </p>
           </div>
           <Button 
-            className="bg-black hover:bg-gray-800 text-white gap-2"
+            className="bg-blue-400 hover:bg-gray-800 text-white gap-2"
             onClick={() => onNavigate('equity-new')}
           >
             <Plus className="h-4 w-4" />

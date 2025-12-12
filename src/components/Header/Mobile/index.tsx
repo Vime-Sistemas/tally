@@ -37,7 +37,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           onClick={() => onNavigate('transactions-new')}
           className="flex flex-col items-center justify-center w-full h-full -mt-6"
         >
-          <div className="bg-black text-white rounded-full p-3 shadow-lg">
+          <div className="bg-blue-400 text-white rounded-full p-3 shadow-lg">
             <PlusCircle className="w-6 h-6" />
           </div>
           <span className="text-[10px] font-medium mt-1">Novo</span>

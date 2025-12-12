@@ -162,13 +162,13 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
           <div className="relative">
             <Avatar className="h-24 w-24 border-4 border-gray-50 shadow-xl">
               <AvatarImage src={user?.picture} />
-              <AvatarFallback className="text-2xl bg-gray-100 text-gray-400">
+              <AvatarFallback className="text-2xl bg-blue-400 text-white">
                 {user?.name?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <button 
               onClick={() => profileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md bg-black text-white flex items-center justify-center"
+              className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md bg-blue-400 text-white flex items-center justify-center"
             >
               <Camera className="h-4 w-4" />
             </button>
@@ -198,7 +198,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all",
               !hasBusiness 
-                ? "bg-black text-white shadow-md" 
+                ? "bg-blue-400 text-white shadow-md" 
                 : "text-gray-500 hover:bg-gray-50"
             )}
           >
@@ -210,7 +210,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all",
               hasBusiness 
-                ? "bg-black text-white shadow-md" 
+                ? "bg-blue-400 text-white shadow-md" 
                 : "text-gray-500 hover:bg-gray-50"
             )}
           >
@@ -300,7 +300,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
                             )}
 
                             <div className="pt-4 pb-8">
-                              <Button type="submit" className="w-full h-12 rounded-xl gap-2" disabled={isLoading}>
+                              <Button type="submit" className="w-full h-12 bg-blue-400 rounded-xl gap-2" disabled={isLoading}>
                                 <Save className="h-4 w-4" />
                                 {isLoading ? "Salvando..." : "Salvar Alterações"}
                               </Button>
@@ -313,7 +313,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
                         <div className="h-full flex flex-col">
                           <SheetHeader className="px-4 py-4 border-b">
                             <div className="flex items-center gap-3">
-                              <button onClick={() => setActiveSheet(null)} className="p-2 -ml-2 hover:bg-gray-100 rounded-lg">
+                              <button onClick={() => setActiveSheet(null)} className="p-2 -ml-2 hover:bg-blue-400 rounded-lg">
                                 <ChevronLeft className="h-5 w-5" />
                               </button>
                               <SheetTitle>Notificações</SheetTitle>
@@ -366,7 +366,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
                             <div className="p-4 bg-gray-50 rounded-xl space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Plano</span>
-                                <span className="text-sm font-bold text-black bg-gray-200 px-2 py-1 rounded-md">PRO</span>
+                                <span className="text-sm font-bold text-white bg-blue-400 px-2 py-1 rounded-md">PRO</span>
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Membro desde</span>

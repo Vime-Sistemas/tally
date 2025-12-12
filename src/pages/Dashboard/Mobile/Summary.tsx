@@ -131,23 +131,23 @@ export function MobileSummary() {
       </div>
 
       {/* Main Balance Card */}
-      <Card className="bg-black text-white border-none shadow-lg">
+      <Card className="bg-blue-400 text-white border-none shadow-lg">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-gray-300">Saldo Total</span>
-            <Wallet className="h-4 w-4 text-gray-300" />
+            <span className="text-sm font-medium text-white">Saldo Total</span>
+            <Wallet className="h-4 w-4 text-white" />
           </div>
           <div className="text-3xl font-bold mb-2">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
           </div>
-          <div className="flex gap-4 text-xs text-gray-300">
-            <span className="text-sm font-medium text-gray-300">Movimentações</span>
+          <div className="flex gap-4 text-xs text-white">
+            <span className="text-sm font-medium text-white">Movimentações</span>
             <div className="flex items-center gap-1">
-              <ArrowUpCircle className="h-3 w-3 text-[#009FE3]" />
+              <ArrowUpCircle className="h-3 w-3 text-white" />
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}</span>
             </div>
             <div className="flex items-center gap-1">
-              <ArrowDownCircle className="h-3 w-3 text-red-400" />
+              <ArrowDownCircle className="h-3 w-3 text-white" />
               <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}</span>
             </div>
           </div>
@@ -159,10 +159,10 @@ export function MobileSummary() {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Atenção</h3>
           {upcomingBills.map(bill => (
-            <Alert key={bill.id} className="bg-yellow-50 border-yellow-200">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <AlertTitle className="text-yellow-800 text-sm">Conta a vencer</AlertTitle>
-              <AlertDescription className="text-yellow-700 text-xs">
+            <Alert key={bill.id} className="bg-blue-50 border-blue-100">
+              <AlertTriangle className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800 text-sm">Conta a vencer</AlertTitle>
+              <AlertDescription className="text-blue-700 text-xs">
                 {bill.description} - R$ {bill.amount.toFixed(2)} <br/>
                 Vence em {format(parseUTCDate(bill.date), "dd/MM")}
               </AlertDescription>
@@ -238,7 +238,7 @@ export function MobileSummary() {
                   </div>
                   <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
                     <div 
-                      className="h-full bg-black transition-all duration-500"
+                      className="h-full bg-blue-300 transition-all duration-500"
                       style={{ width: `${Math.min((card.used / card.limit) * 100, 100)}%` }}
                     />
                   </div>

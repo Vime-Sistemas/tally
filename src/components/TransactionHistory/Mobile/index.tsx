@@ -258,7 +258,7 @@ export function MobileTransactionHistory() {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
-                  <Filter className="h-5 w-5 text-gray-600" />
+                  <Filter className="h-5 w-5 text-blue-600" />
                 </Button>
               </SheetTrigger>
             <SheetContent side="bottom" className="h-[95vh] rounded-t-[32px] p-0 bg-[#F2F2F7]">
@@ -290,7 +290,7 @@ export function MobileTransactionHistory() {
                         onClick={() => setTypeFilter("ALL")}
                         className={cn(
                           "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
-                          typeFilter === "ALL" ? "bg-black text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                          typeFilter === "ALL" ? "bg-blue-400 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
                         )}
                       >
                         Todos
@@ -328,11 +328,11 @@ export function MobileTransactionHistory() {
                         locale={ptBR}
                         className="w-full flex justify-center p-3"
                         classNames={{
-                          head_cell: "text-gray-400 font-normal text-[0.8rem]",
+                          head_cell: "text-blue-400 font-normal text-[0.8rem]",
                           cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-100 rounded-full",
-                          day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
-                          day_today: "bg-gray-100 text-gray-900",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-blue-400 rounded-full",
+                          day_selected: "bg-blue-400 text-white hover:bg-blue-400 hover:text-white focus:bg-blue-400 focus:text-white",
+                          day_today: "bg-gray-100 text-blue-400",
                         }}
                       />
                     </div>

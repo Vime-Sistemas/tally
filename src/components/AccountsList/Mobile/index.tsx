@@ -90,20 +90,20 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
 
       {/* Equity Shortcut */}
       <div 
-        className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl cursor-pointer active:scale-[0.98] transition-transform"
+        className="bg-gradient-to-br from-blue-500 to-blue-400 rounded-3xl p-6 text-white shadow-xl cursor-pointer active:scale-[0.98] transition-transform"
         onClick={() => onNavigate?.('equity-list')}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-            <TrendingUp className="h-6 w-6 text-[#009FE3]" />
+            <TrendingUp className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xs font-medium bg-white/10 px-3 py-1 rounded-full text-gray-300">
+          <span className="text-xs font-medium bg-white/10 px-3 py-1 rounded-full text-white">
             Patrimônio
           </span>
         </div>
         <div>
           <h3 className="text-lg font-semibold mb-1">Meus Investimentos</h3>
-          <p className="text-sm text-gray-400">Gerencie seus ativos e patrimônio</p>
+          <p className="text-sm text-white">Gerencie seus ativos e patrimônio</p>
         </div>
       </div>
 

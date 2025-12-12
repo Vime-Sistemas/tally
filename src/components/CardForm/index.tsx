@@ -229,7 +229,7 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
 
           <Button
             type="submit"
-            className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
+            className="w-full bg-blue-400 hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
             disabled={isSubmitting || loadingAccounts}
           >
             {isSubmitting ? 'Salvando...' : 'Cadastrar Cartão'}

@@ -259,7 +259,7 @@ export function MobileInvestmentForm() {
         {/* Submit Button */}
         <Button 
           type="submit" 
-          className="w-full h-14 text-base font-semibold rounded-2xl bg-black hover:bg-gray-800" 
+          className="w-full h-14 text-base font-semibold rounded-2xl bg-blue-400 hover:bg-gray-800" 
           disabled={isSubmitting}
         >
           {isSubmitting ? (
