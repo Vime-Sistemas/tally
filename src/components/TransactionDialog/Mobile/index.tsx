@@ -102,7 +102,7 @@ export function MobileTransactionDialog({
           <div className="flex gap-3">
             <Button 
               variant="outline" 
-              className="flex-1 h-12 rounded-xl border-gray-200 hover:bg-gray-50"
+              className="flex-1 h-12 rounded-xl border-gray-200 hover:bg-gray-50 bg-blue-400 text-white"
               onClick={() => {
                 onOpenChange(false);
                 onEdit(transaction);

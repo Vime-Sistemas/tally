@@ -84,7 +84,10 @@ export function Login({ onNavigate }: LoginProps) {
       {/* Left Side - Carousel */}
       <div className="hidden lg:flex w-1/2 bg-zinc-50 text-zinc-900 relative flex-col justify-between p-12">
         <div className="z-10">
-          <h1 className="text-2xl font-bold tracking-tighter">Cérebro de Finanças.</h1>
+          <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
+              <img src="/icon.svg"></img>
+            </div>
+          <h1 className="text-2xl font-bold tracking-tighter text-blue-400">Cérebro de Finanças.</h1>
         </div>
 
         <div className="z-10 w-full max-w-5xl mx-auto">
@@ -108,7 +111,7 @@ export function Login({ onNavigate }: LoginProps) {
                          <img src={feature.image} alt={feature.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                       </div>
                       <div className="space-y-2">
-                        <h2 className="text-3xl font-semibold tracking-tight">{feature.title}</h2>
+                        <h2 className="text-3xl font-semibold tracking-tight text-blue-400">{feature.title}</h2>
                         <p className="text-zinc-500 text-lg leading-relaxed max-w-lg">
                           {feature.description}
                         </p>

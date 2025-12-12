@@ -40,12 +40,12 @@ const getCategoryIcon = (category: string) => {
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'travel': return "#3b82f6"; // blue-500
-    case 'electronics': return "#8b5cf6"; // violet-500
-    case 'vehicle': return "#ef4444"; // red-500
-    case 'home': return "#f59e0b"; // amber-500
-    case 'emergency': return "#009FE3"; // brand blue
-    case 'investment': return "#06b6d4"; // cyan-500
+    case 'travel': return "#33b2e9"; // Lighter Blue
+    case 'electronics': return "#007bb3"; // Darker Blue
+    case 'vehicle': return "#005f9e"; // Indigo Blue
+    case 'home': return "#66c5ee"; // Even Lighter Blue
+    case 'emergency': return "#009FE3"; // Brand Blue
+    case 'investment': return "#008b9e"; // Teal Blue
     default: return "#6b7280"; // gray-500
   }
 };

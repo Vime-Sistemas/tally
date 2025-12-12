@@ -100,7 +100,7 @@ export function Dashboard() {
                   <div className="text-muted-foreground">R$ 3.000 / R$ 5.000</div>
                 </div>
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-black w-[60%]" />
+                  <div className="h-full bg-[#009FE3] w-[60%]" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -109,7 +109,7 @@ export function Dashboard() {
                   <div className="text-muted-foreground">R$ 8.500 / R$ 10.000</div>
                 </div>
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-black w-[85%]" />
+                  <div className="h-full bg-[#009FE3] w-[85%]" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -118,7 +118,7 @@ export function Dashboard() {
                   <div className="text-muted-foreground">R$ 2.000 / R$ 12.000</div>
                 </div>
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-black w-[16%]" />
+                  <div className="h-full bg-[#009FE3] w-[16%]" />
                 </div>
               </div>
             </div>

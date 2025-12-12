@@ -76,19 +76,19 @@ export const getCategoryIcon = (category: string) => {
 
 export const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'FOOD': return 'bg-orange-100 text-orange-600';
-    case 'TRANSPORT': return 'bg-blue-100 text-blue-600';
-    case 'HOUSING': return 'bg-indigo-100 text-indigo-600';
-    case 'SHOPPING': return 'bg-pink-100 text-pink-600';
-    case 'UTILITIES': return 'bg-yellow-100 text-yellow-600';
-    case 'HEALTHCARE': return 'bg-red-100 text-red-600';
-    case 'ENTERTAINMENT': return 'bg-purple-100 text-purple-600';
-    case 'EDUCATION': return 'bg-cyan-100 text-cyan-600';
-    case 'SALARY': return 'bg-[#009FE3]/10 text-[#009FE3]';
-    case 'FREELANCE': return 'bg-teal-100 text-teal-600';
-    case 'INVESTMENT': return 'bg-lime-100 text-lime-600';
-    case 'TRANSFER': return 'bg-gray-100 text-gray-600';
-    default: return 'bg-gray-100 text-gray-600';
+    case 'FOOD': return 'bg-blue-400 text-white';
+    case 'TRANSPORT': return 'bg-blue-400 text-white';
+    case 'HOUSING': return 'bg-blue-400 text-white';
+    case 'SHOPPING': return 'bg-blue-400 text-white';
+    case 'UTILITIES': return 'bg-blue-400 text-white';
+    case 'HEALTHCARE': return 'bg-blue-400 text-white';
+    case 'ENTERTAINMENT': return 'bg-blue-400 text-white';
+    case 'EDUCATION': return 'bg-blue-400 text-white';
+    case 'SALARY': return 'bg-blue-400 text-white';
+    case 'FREELANCE': return 'bg-blue-400 text-white';
+    case 'INVESTMENT': return 'bg-blue-400 text-white';
+    case 'TRANSFER': return 'bg-blue-400 text-white';
+    default: return 'bg-blue-400 text-white';
   }
 };
 

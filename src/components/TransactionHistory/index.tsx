@@ -308,7 +308,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
           {onNavigate && (
             <Button 
               onClick={() => onNavigate('transactions-new')}
-              className="rounded-full"
+              className="rounded-full bg-blue-400"
             >
               <Plus className="mr-2 h-4 w-4" />
               Nova Transação
@@ -321,7 +321,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar transações..."
-              className="pl-10 bg-gray-100/50 border-none rounded-xl h-11 focus-visible:ring-1 focus-visible:ring-gray-900 transition-all"
+              className="pl-10 bg-gray-100/50 border-none rounded-xl h-11 focus-visible:ring-1 focus-visible:ring-blue-900 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -492,7 +492,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                             "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
                             transaction.type === TransactionType.INCOME 
                               ? "bg-[#009FE3]/10 text-[#009FE3]" 
-                              : "bg-gray-100 text-gray-600"
+                              : "bg-blue-400 text-white"
                           )}>
                             {getCategoryIcon(transaction.category)}
                           </div>
@@ -528,12 +528,12 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-6 py-4">
-                        <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl">
+                        <div className="flex flex-col items-center justify-center p-8 rounded-2xl">
                           <div className={cn(
                             "h-16 w-16 rounded-full flex items-center justify-center mb-4",
                             transaction.type === TransactionType.INCOME 
                               ? "bg-[#009FE3]/10 text-[#009FE3]" 
-                              : "bg-gray-100 text-gray-600"
+                              : "bg-blue-400 text-white"
                           )}>
                             {getCategoryIcon(transaction.category)}
                           </div>
@@ -576,7 +576,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                         <div className="flex gap-3 pt-4">
                           <Button 
                             variant="outline" 
-                            className="flex-1 h-11 rounded-xl border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                            className="flex-1 h-11 rounded-xl border-gray-200 hover:bg-gray-50 hover:text-gray-900 bg-blue-400 text-white"
                             onClick={() => handleEditClick(transaction)}
                           >
                             <Edit className="mr-2 h-4 w-4" />
@@ -689,7 +689,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleEditSave} disabled={isSubmitting}>
+              <Button onClick={handleEditSave} disabled={isSubmitting} className="bg-blue-400 text-white">
                 {isSubmitting ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>

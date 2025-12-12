@@ -469,7 +469,7 @@ export function Summary() {
                      </div>
                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                        <div 
-                         className="h-full bg-primary transition-all duration-500"
+                         className="h-full bg-[#009FE3] transition-all duration-500"
                          style={{ width: `${Math.min((card.used / card.limit) * 100, 100)}%` }}
                        />
                      </div>
