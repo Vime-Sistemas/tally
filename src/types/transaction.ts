@@ -43,6 +43,9 @@ export interface Transaction {
   destinationAccountId?: string; // For transfers
   equityId?: string;
   goalId?: string;
+  installments?: number;
+  currentInstallment?: number;
+  totalInstallments?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -58,6 +61,9 @@ export interface CreateTransactionDTO {
   destinationAccountId?: string;
   equityId?: string;
   goalId?: string;
+  installments?: number;
+  currentInstallment?: number;
+  totalInstallments?: number;
 }
 
 export interface UpdateTransactionDTO extends Partial<CreateTransactionDTO> {

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Kbd } from '../ui/kbd';
 import {
   Select,
   SelectContent,
@@ -17,8 +18,9 @@ import {
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
 import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../services/api';
+import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
-import { TransactionType, type TransactionCategory } from '../../types/transaction';
+import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../types/account';
 import type { Equity } from '../../types/equity';
@@ -59,12 +61,17 @@ const expenseCategoriesLabels: Record<string, string> = {
 
 interface TransactionFormProps {
   onSuccess?: () => void;
+  initialData?: Transaction;
 }
 
-export function TransactionForm({ onSuccess }: TransactionFormProps) {
+export function TransactionForm({ onSuccess, initialData }: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE);
-  const [isInstallment, setIsInstallment] = useState(false);
+  const [selectedType, setSelectedType] = useState<TransactionType>(
+    initialData?.type || TransactionType.EXPENSE
+  );
+  const [isInstallment, setIsInstallment] = useState(
+    !!initialData?.installments && initialData.installments > 1
+  );
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -105,14 +112,34 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: TransactionType.EXPENSE,
-      date: new Date().toISOString().split('T')[0],
+      type: (initialData?.type as any) || TransactionType.EXPENSE,
+      category: initialData?.category || '',
+      amount: initialData ? Math.abs(initialData.amount) : undefined,
+      description: initialData?.description || '',
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      paymentMethod: initialData 
+        ? (initialData.cardId ? `card:${initialData.cardId}` : `account:${initialData.accountId}`)
+        : '',
+      equityId: initialData?.equityId || undefined,
+      installments: initialData?.installments || undefined,
     },
   });
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit(onSubmit)();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSubmit]);
+
   const selectedCategory = watch('category');
 
-  const onSubmit = async (data: TransactionFormData) => {
+  const onSubmit: SubmitHandler<TransactionFormData> = async (data) => {
     try {
       setIsSubmitting(true);
       
@@ -130,9 +157,18 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
         installments: isInstallment ? data.installments : undefined,
       };
 
-      await createTransaction(payload);
-      reset();
-      toast.success('Movimentação registrada com sucesso!');
+      if (initialData) {
+        await transactionService.update({
+          id: initialData.id,
+          ...payload
+        });
+        toast.success('Transação atualizada com sucesso!');
+      } else {
+        await createTransaction(payload);
+        reset();
+        toast.success('Movimentação registrada com sucesso!');
+      }
+      
       onSuccess?.();
     } catch (error: any) {
       // Check if it's an insufficient balance error
@@ -204,7 +240,9 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     <>
       <Card className="w-full shadow-sm border-gray-100">
         <CardHeader className="pb-6">
-          <CardTitle className="text-xl font-semibold text-center text-black">Nova Transação</CardTitle>
+          <CardTitle className="text-xl font-semibold text-center text-black">
+            {initialData ? 'Editar Transação' : 'Nova Transação'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -414,10 +452,11 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
 
             <Button
               type="submit"
-              className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
+              className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Salvando...' : 'Salvar Transação'}
+              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar Transação' : 'Salvar Transação')}
+              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600">Ctrl+Enter</Kbd>}
             </Button>
           </form>
         </CardContent>

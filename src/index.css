@@ -42,6 +42,11 @@
   --font-sans: "Plus Jakarta Sans", sans-serif;
 }
 
+/* Safe area padding for mobile devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
 :root {
   font-family: var(--font-sans);
   --radius: 0.625rem;
@@ -119,4 +124,21 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.99) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }

@@ -4,6 +4,7 @@ import api, { setAuthToken } from './services/api'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Summary } from './pages/Dashboard/Summary'
+import { MobileSummary } from './pages/Dashboard/Mobile/Summary'
 import { Goals } from './pages/Dashboard/Goals'
 import { EquityNew } from './pages/Equity/New'
 import { EquityList } from './pages/Equity/List'
@@ -16,6 +17,7 @@ import { Header } from './components/Header'
 import type { Page, AppContext } from './types/navigation'
 import { UserProvider, useUser } from './contexts/UserContext'
 import { Toaster } from "./components/ui/sonner"
+import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
 
 function AppContent() {
@@ -25,6 +27,7 @@ function AppContent() {
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
   const [isSyncing, setIsSyncing] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const syncUser = async () => {
@@ -57,6 +60,49 @@ function AppContent() {
       syncUser();
     }
   }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, setUser]);
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Alt + Key shortcuts
+      if (e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'd': // Dashboard
+            e.preventDefault();
+            setCurrentPage('dashboard-summary');
+            break;
+          case 't': // Transaction (New)
+            e.preventDefault();
+            setCurrentPage('transactions-new');
+            break;
+          case 'h': // History
+            e.preventDefault();
+            setCurrentPage('transactions-history');
+            break;
+          case 'c': // Contas (Accounts)
+            e.preventDefault();
+            setCurrentPage('accounts-list');
+            break;
+          case 'm': // Metas (Goals)
+            e.preventDefault();
+            setCurrentPage('dashboard-goals');
+            break;
+          case 'p': // Patrimônio (Equity)
+            e.preventDefault();
+            setCurrentPage('equity-list');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   if (isLoading || isSyncing) {
     return (
@@ -92,22 +138,22 @@ function AppContent() {
       case 'login':
         return <Login onNavigate={setCurrentPage} />;
       case 'transactions-new':
-        return <Transactions />;
+        return <Transactions onNavigate={setCurrentPage} />;
       case 'transactions-history':
         return (
           <div className="p-4 md:p-8">
             <div className="mx-auto max-w-5xl">
-              <TransactionHistory />
+              <TransactionHistory onNavigate={setCurrentPage} />
             </div>
           </div>
         );
       case 'accounts-new':
-        return <Accounts />;
+        return <Accounts onNavigate={setCurrentPage} />;
       case 'accounts-list':
         return (
           <div className="p-4 md:p-8">
             <div className="mx-auto max-w-5xl">
-              <AccountsList />
+              <AccountsList onNavigate={setCurrentPage} />
             </div>
           </div>
         );
@@ -118,7 +164,7 @@ function AppContent() {
       case 'profile':
         return <Profile hasBusiness={hasBusiness} setHasBusiness={setHasBusiness} />;
       case 'dashboard-summary':
-        return <Summary />;
+        return isMobile ? <MobileSummary /> : <Summary />;
       case 'dashboard-goals':
         return <Goals />;
       case 'reports':
@@ -131,12 +177,12 @@ function AppContent() {
           </div>
         );
       default:
-        return <Transactions />;
+        return <Transactions onNavigate={setCurrentPage} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
       {!['signup', 'login'].includes(currentPage) && (
         <Header 
           onNavigate={setCurrentPage} 
@@ -146,8 +192,10 @@ function AppContent() {
           currentPage={currentPage}
         />
       )}
-      <main>
-        {renderPage()}
+      <main className="w-full pb-24 md:pb-0">
+        <div key={currentPage}>
+          {renderPage()}
+        </div>
       </main>
       <Toaster />
     </div>

@@ -1,0 +1,524 @@
+import { useState, useEffect, useMemo } from "react";
+import { Input } from "../../ui/input";
+import { TransactionType } from "../../../types/transaction";
+import { 
+  Search, 
+  ShoppingBag,
+  Coffee,
+  Home,
+  Car,
+  Zap,
+  Heart,
+  Gamepad2,
+  GraduationCap,
+  Briefcase,
+  DollarSign,
+  TrendingUp,
+  ArrowRightLeft,
+  Filter,
+  X,
+  CreditCard as CreditCardIcon,
+  Tag
+} from "lucide-react";
+import { cn } from "../../../lib/utils";
+import { getTransactions, getAccounts, getCards } from "../../../services/api";
+import { transactionService } from "../../../services/transactions";
+import { toast } from "sonner";
+import type { Transaction } from "../../../types/transaction";
+import type { Account, CreditCard } from "../../../types/account";
+import { Button } from "../../ui/button";
+import { format, isToday, isYesterday, startOfMonth, endOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar } from "../../ui/calendar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../../ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
+import type { DateRange } from "react-day-picker";
+import { MobileTransactionDialog } from "../../TransactionDialog/Mobile";
+import { TransactionForm } from "../../TransactionForm";
+
+export const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'FOOD': return <Coffee className="h-5 w-5" />;
+    case 'TRANSPORT': return <Car className="h-5 w-5" />;
+    case 'HOUSING': return <Home className="h-5 w-5" />;
+    case 'SHOPPING': return <ShoppingBag className="h-5 w-5" />;
+    case 'UTILITIES': return <Zap className="h-5 w-5" />;
+    case 'HEALTHCARE': return <Heart className="h-5 w-5" />;
+    case 'ENTERTAINMENT': return <Gamepad2 className="h-5 w-5" />;
+    case 'EDUCATION': return <GraduationCap className="h-5 w-5" />;
+    case 'SALARY': return <DollarSign className="h-5 w-5" />;
+    case 'FREELANCE': return <Briefcase className="h-5 w-5" />;
+    case 'INVESTMENT': return <TrendingUp className="h-5 w-5" />;
+    case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5" />;
+    default: return <DollarSign className="h-5 w-5" />;
+  }
+};
+
+export const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'FOOD': return 'bg-orange-100 text-orange-600';
+    case 'TRANSPORT': return 'bg-blue-100 text-blue-600';
+    case 'HOUSING': return 'bg-indigo-100 text-indigo-600';
+    case 'SHOPPING': return 'bg-pink-100 text-pink-600';
+    case 'UTILITIES': return 'bg-yellow-100 text-yellow-600';
+    case 'HEALTHCARE': return 'bg-red-100 text-red-600';
+    case 'ENTERTAINMENT': return 'bg-purple-100 text-purple-600';
+    case 'EDUCATION': return 'bg-cyan-100 text-cyan-600';
+    case 'SALARY': return 'bg-emerald-100 text-emerald-600';
+    case 'FREELANCE': return 'bg-teal-100 text-teal-600';
+    case 'INVESTMENT': return 'bg-lime-100 text-lime-600';
+    case 'TRANSFER': return 'bg-gray-100 text-gray-600';
+    default: return 'bg-gray-100 text-gray-600';
+  }
+};
+
+export const getCategoryLabel = (category: string) => {
+  const labels: Record<string, string> = {
+    FOOD: 'Alimentação',
+    TRANSPORT: 'Transporte',
+    HOUSING: 'Moradia',
+    SHOPPING: 'Compras',
+    UTILITIES: 'Contas',
+    HEALTHCARE: 'Saúde',
+    ENTERTAINMENT: 'Lazer',
+    EDUCATION: 'Educação',
+    SALARY: 'Salário',
+    FREELANCE: 'Freelance',
+    INVESTMENT: 'Investimento',
+    TRANSFER: 'Transferência',
+    OTHER_EXPENSE: 'Outros',
+    OTHER_INCOME: 'Outros',
+  };
+  return labels[category] || category;
+};
+
+export function MobileTransactionHistory() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [cards, setCards] = useState<CreditCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [accountFilter, setAccountFilter] = useState<string>("ALL");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [transactionsData, accountsData, cardsData] = await Promise.all([
+          getTransactions(),
+          getAccounts(),
+          getCards(),
+        ]);
+        setTransactions(transactionsData);
+        setAccounts(accountsData);
+        setCards(cardsData);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        toast.error('Erro ao carregar transações');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditSheetOpen(true);
+    setDetailsOpen(false);
+  };
+
+  const handleDelete = (transaction: Transaction) => {
+    setDeletingTransaction(transaction);
+    setIsDeleteDialogOpen(true);
+    setDetailsOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingTransaction) return;
+    try {
+      await transactionService.delete(deletingTransaction.id);
+      setTransactions(prev => prev.filter(t => t.id !== deletingTransaction.id));
+      toast.success("Transação excluída com sucesso");
+      setIsDeleteDialogOpen(false);
+      setDeletingTransaction(null);
+    } catch (error) {
+      console.error("Erro ao excluir transação:", error);
+      toast.error("Erro ao excluir transação");
+    }
+  };
+
+  const handleEditSuccess = async () => {
+    setIsEditSheetOpen(false);
+    setEditingTransaction(null);
+    // Reload transactions
+    const transactionsData = await getTransactions();
+    setTransactions(transactionsData);
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(transaction => {
+      const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === "ALL" || transaction.type === typeFilter;
+      const matchesCategory = categoryFilter === "ALL" || transaction.category === categoryFilter;
+      
+      let matchesAccount = true;
+      if (accountFilter !== "ALL") {
+        if (accountFilter.startsWith('card_')) {
+          matchesAccount = transaction.cardId === accountFilter.replace('card_', '');
+        } else {
+          matchesAccount = transaction.accountId === accountFilter;
+        }
+      }
+
+      let matchesDate = true;
+      if (dateRange?.from) {
+        const transactionDate = new Date(transaction.date.substring(0, 10) + 'T12:00:00');
+        const from = new Date(dateRange.from);
+        from.setHours(0, 0, 0, 0);
+        
+        if (dateRange.to) {
+          const to = new Date(dateRange.to);
+          to.setHours(23, 59, 59, 999);
+          matchesDate = transactionDate >= from && transactionDate <= to;
+        } else {
+          matchesDate = transactionDate >= from;
+        }
+      }
+
+      return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
+    }).sort((a, b) => new Date(b.date.substring(0, 10) + 'T12:00:00').getTime() - new Date(a.date.substring(0, 10) + 'T12:00:00').getTime());
+  }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter, dateRange]);
+
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    
+    filteredTransactions.forEach(transaction => {
+      const date = new Date(transaction.date.substring(0, 10) + 'T12:00:00');
+      let key = format(date, "dd 'de' MMMM", { locale: ptBR });
+      
+      if (isToday(date)) {
+        key = "Hoje";
+      } else if (isYesterday(date)) {
+        key = "Ontem";
+      }
+
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(transaction);
+    });
+
+    return groups;
+  }, [filteredTransactions]);
+
+  const handleTransactionClick = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setDetailsOpen(true);
+  };
+
+  return (
+    <div className="pb-24 bg-white min-h-screen">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Extrato</h1>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+                  <Filter className="h-5 w-5 text-gray-600" />
+                </Button>
+              </SheetTrigger>
+            <SheetContent side="bottom" className="h-[95vh] rounded-t-[32px] p-0 bg-[#F2F2F7]">
+              <div className="flex flex-col h-full">
+                <SheetHeader className="px-6 pt-6 pb-4 bg-white rounded-t-[32px] border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <SheetTitle className="text-xl font-bold">Filtros</SheetTitle>
+                    <Button 
+                      variant="ghost" 
+                      className="text-blue-500 font-medium hover:bg-transparent hover:text-blue-600 p-0 h-auto"
+                      onClick={() => {
+                        setTypeFilter("ALL");
+                        setCategoryFilter("ALL");
+                        setAccountFilter("ALL");
+                        setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+                      }}
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                </SheetHeader>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                  {/* Tipo de Transação - Segmented Control Style */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase ml-3">Tipo</label>
+                    <div className="bg-white p-1 rounded-xl flex shadow-sm">
+                      <button
+                        onClick={() => setTypeFilter("ALL")}
+                        className={cn(
+                          "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
+                          typeFilter === "ALL" ? "bg-black text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        Todos
+                      </button>
+                      <button
+                        onClick={() => setTypeFilter(TransactionType.INCOME)}
+                        className={cn(
+                          "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
+                          typeFilter === TransactionType.INCOME ? "bg-emerald-500 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        Entradas
+                      </button>
+                      <button
+                        onClick={() => setTypeFilter(TransactionType.EXPENSE)}
+                        className={cn(
+                          "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
+                          typeFilter === TransactionType.EXPENSE ? "bg-red-500 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        Saídas
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Período */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase ml-3">Período</label>
+                    <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={1}
+                        locale={ptBR}
+                        className="w-full flex justify-center p-3"
+                        classNames={{
+                          head_cell: "text-gray-400 font-normal text-[0.8rem]",
+                          cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-100 rounded-full",
+                          day_selected: "bg-black text-white hover:bg-black hover:text-white focus:bg-black focus:text-white",
+                          day_today: "bg-gray-100 text-gray-900",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Filtros de Seleção */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase ml-3">Detalhes</label>
+                    <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+                      <div className="p-1">
+                        <Select value={accountFilter} onValueChange={setAccountFilter}>
+                          <SelectTrigger className="w-full border-none shadow-none h-12 text-base focus:ring-0">
+                            <div className="flex items-center gap-3 text-gray-500">
+                              <CreditCardIcon className="h-5 w-5" />
+                              <span className="text-gray-900">Conta / Cartão</span>
+                            </div>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ALL">Todas as contas</SelectItem>
+                            {accounts.map(account => (
+                              <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
+                            ))}
+                            {cards.map(card => (
+                              <SelectItem key={`card_${card.id}`} value={`card_${card.id}`}>Cartão {card.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="p-1">
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                          <SelectTrigger className="w-full border-none shadow-none h-12 text-base focus:ring-0">
+                            <div className="flex items-center gap-3 text-gray-500">
+                              <Tag className="h-5 w-5" />
+                              <span className="text-gray-900">Categoria</span>
+                            </div>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ALL">Todas as categorias</SelectItem>
+                            <SelectItem value="FOOD">Alimentação</SelectItem>
+                            <SelectItem value="TRANSPORT">Transporte</SelectItem>
+                            <SelectItem value="HOUSING">Moradia</SelectItem>
+                            <SelectItem value="SHOPPING">Compras</SelectItem>
+                            <SelectItem value="SALARY">Salário</SelectItem>
+                            <SelectItem value="INVESTMENT">Investimento</SelectItem>
+                            <SelectItem value="UTILITIES">Contas</SelectItem>
+                            <SelectItem value="HEALTHCARE">Saúde</SelectItem>
+                            <SelectItem value="ENTERTAINMENT">Lazer</SelectItem>
+                            <SelectItem value="EDUCATION">Educação</SelectItem>
+                            <SelectItem value="FREELANCE">Freelance</SelectItem>
+                            <SelectItem value="OTHER_EXPENSE">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar transações..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-gray-50 border-gray-200 rounded-xl h-10"
+            />
+          </div>
+
+        {/* Active Filters Chips */}
+        {(typeFilter !== "ALL" || categoryFilter !== "ALL" || accountFilter !== "ALL") && (
+          <div className="flex gap-2 overflow-x-auto pt-2 scrollbar-hide">
+            {typeFilter !== "ALL" && (
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+                {typeFilter === TransactionType.INCOME ? "Entradas" : "Saídas"}
+                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setTypeFilter("ALL")} />
+              </div>
+            )}
+            {categoryFilter !== "ALL" && (
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+                {getCategoryLabel(categoryFilter)}
+                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setCategoryFilter("ALL")} />
+              </div>
+            )}
+          </div>
+        )}
+        </div>
+      </div>
+
+      {/* Transactions List */}
+      <div className="px-4">
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">Carregando...</div>
+        ) : Object.keys(groupedTransactions).length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <p>Nenhuma transação encontrada</p>
+          </div>
+        ) : (
+          <div className="space-y-6 mt-4">
+            {Object.entries(groupedTransactions).map(([date, transactions]) => (
+              <div key={date}>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  {date}
+                </h3>
+                <div className="space-y-2">
+                  {transactions.map((transaction) => (
+                    <div 
+                      key={transaction.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl active:scale-[0.98] transition-transform cursor-pointer"
+                      onClick={() => handleTransactionClick(transaction)}
+                    >
+                      <div className={cn("p-2.5 rounded-xl", getCategoryColor(transaction.category))}>
+                        {getCategoryIcon(transaction.category)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
+                        <p className="text-xs text-gray-500">{getCategoryLabel(transaction.category)}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={cn(
+                          "font-semibold",
+                          transaction.type === TransactionType.INCOME ? "text-emerald-600" : "text-red-600"
+                        )}>
+                          {transaction.type === TransactionType.INCOME ? "+" : "-"}R$
+                          {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        {transaction.installments && (
+                          <p className="text-xs text-gray-400">
+                            {transaction.currentInstallment}/{transaction.installments}x
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <MobileTransactionDialog 
+        transaction={selectedTransaction}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {/* Edit Sheet */}
+      <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0">
+          <div className="h-full overflow-y-auto p-4 pb-24">
+            {editingTransaction && (
+              <TransactionForm 
+                initialData={editingTransaction}
+                onSuccess={handleEditSuccess}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="w-[90%] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Excluir Transação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row gap-2 justify-end">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../types/account";
-import { CreditCard, Wallet, Banknote } from "lucide-react";
+import { CreditCard, Wallet, Banknote, Plus } from "lucide-react";
 import { getAccounts, getCards } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
@@ -8,8 +8,26 @@ import { EditAccountDialog } from '../EditAccountDialog';
 import { EditCardDialog } from '../EditCardDialog';
 import { PayInvoiceDialog } from '../PayInvoiceDialog';
 import { Button } from '../ui/button';
+import type { Page } from '../../types/navigation';
 
-export function AccountsList() {
+import { MobileAccountsList } from './Mobile';
+import { useIsMobile } from '../../hooks/use-mobile';
+
+interface AccountsListProps {
+  onNavigate?: (page: Page) => void;
+}
+
+export function AccountsList({ onNavigate }: AccountsListProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileAccountsList onNavigate={onNavigate} />;
+  }
+
+  return <DesktopAccountsList onNavigate={onNavigate} />;
+}
+
+function DesktopAccountsList({ onNavigate }: AccountsListProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCardType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +86,15 @@ export function AccountsList() {
     <div className="space-y-8">
       {/* Contas */}
       <section>
-        <h2 className="text-xl font-semibold text-black mb-4">Minhas Contas</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-black">Minhas Contas</h2>
+          {onNavigate && (
+            <Button onClick={() => onNavigate('accounts-new')} size="sm" variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Conta
+            </Button>
+          )}
+        </div>
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
         ) : accounts.length === 0 ? (
@@ -106,7 +132,15 @@ export function AccountsList() {
 
       {/* Cartões */}
       <section>
-        <h2 className="text-xl font-semibold text-black mb-4">Meus Cartões</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-black">Meus Cartões</h2>
+          {onNavigate && (
+            <Button onClick={() => onNavigate('accounts-new')} size="sm" variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cartão
+            </Button>
+          )}
+        </div>
         {loading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
         ) : cards.length === 0 ? (
