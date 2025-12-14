@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../../types/account";
-import { Wallet, Plus, TrendingUp, CreditCard as CreditCardIcon, ArrowUpRight, MoreHorizontal } from "lucide-react";
+import { Wallet, Plus, TrendingUp, CreditCard as CreditCardIcon, ArrowUpRight } from "lucide-react";
 import { getAccounts, getCards } from '../../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../../types/account';
