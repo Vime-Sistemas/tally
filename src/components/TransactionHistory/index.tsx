@@ -492,7 +492,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                             "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
                             transaction.type === TransactionType.INCOME 
                               ? "bg-[#009FE3]/10 text-[#009FE3]" 
-                              : "bg-blue-400 text-white"
+                              : "bg-red-100 text-red-600"
                           )}>
                             {getCategoryIcon(transaction.category)}
                           </div>
@@ -512,9 +512,9 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                         <div className="flex flex-col items-end">
                           <span className={cn(
                             "font-semibold",
-                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
+                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-red-600"
                           )}>
-                            {transaction.type === TransactionType.INCOME ? '+' : ''} R$ {transaction.amount.toFixed(2).replace('.', ',')}
+                            {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
                           <span className="text-xs text-gray-400">{getSourceName(transaction)}</span>
                         </div>
@@ -533,14 +533,14 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                             "h-16 w-16 rounded-full flex items-center justify-center mb-4",
                             transaction.type === TransactionType.INCOME 
                               ? "bg-[#009FE3]/10 text-[#009FE3]" 
-                              : "bg-blue-400 text-white"
+                              : "bg-red-100 text-red-600"
                           )}>
                             {getCategoryIcon(transaction.category)}
                           </div>
                           <span className="text-sm text-muted-foreground mb-1">Valor</span>
                           <span className={cn(
                             "text-4xl font-bold tracking-tight",
-                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
+                            transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-red-600"
                           )}>
                             {transaction.type === TransactionType.INCOME ? '+' : '-'} R$ {transaction.amount.toFixed(2).replace('.', ',')}
                           </span>
