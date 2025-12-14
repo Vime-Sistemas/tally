@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../types/account';
 import type { Equity } from '../../types/equity';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
+import { CurrencyInput } from '../ui/currency-input';
 
 const transactionSchema = z.object({
   type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
@@ -248,24 +249,27 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             
             {/* Valor em destaque */}
-            <div className="flex flex-col items-center space-y-3">
-              <Label htmlFor="amount" className="text-gray-500 font-medium">Valor</Label>
-              <div className="relative w-full max-w-[240px]">
-                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg font-medium">
-                    R$
-                 </div>
-                 <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  className="text-center text-3xl h-16 pl-10 font-semibold border-gray-200 focus:border-black focus:ring-black rounded-xl shadow-sm"
-                  {...register('amount', { valueAsNumber: true })}
+            <div className="flex flex-col items-center space-y-3 w-full">
+              <Label className="text-gray-500 font-medium">Valor</Label>
+              <div className="w-full flex justify-center">
+                <Controller
+                  name="amount"
+                  control={control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      value={field.value || 0}
+                      onValueChange={field.onChange}
+                      placeholder="0,00"
+                      className="text-3xl font-semibold"
+                      symbolClassName="text-3xl font-semibold text-gray-400"
+                      autoResize
+                    />
+                  )}
                 />
               </div>
-               {errors.amount && (
-                  <p className="text-sm text-red-600 text-center">{errors.amount.message}</p>
-                )}
+              {errors.amount && (
+                <p className="text-sm text-red-600 text-center">{errors.amount.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
