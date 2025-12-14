@@ -6,10 +6,10 @@ import type { CreateTransactionDTO } from '../types/transaction';
 import type { Goal, CreateGoalDTO, UpdateGoalDTO } from '../types/goal';
 // import { encryptPayload, decryptPayload } from '../utils/crypto';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const api: AxiosInstance = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: API_BASE_URL ? `${API_BASE_URL}/api` : '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

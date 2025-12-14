@@ -30,8 +30,11 @@ export const createTransactionWithValidation = async (
         if (confirmed) {
           // Retry with confirmation flag
           try {
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+            const apiUrl = API_BASE_URL ? `${API_BASE_URL}/api/transactions/confirm` : '/api/transactions/confirm';
+            
             const transaction = await fetch(
-              `${import.meta.env.VITE_API_URL}/api/transactions/confirm`,
+              apiUrl,
               {
                 method: 'POST',
                 headers: {
