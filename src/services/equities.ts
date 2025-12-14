@@ -21,9 +21,8 @@ export const equityService = {
   },
 
   // Update equity
-  update: async (data: UpdateEquityDTO): Promise<Equity> => {
-    const { id, ...updateData } = data;
-    const response = await api.put<Equity>(`/equities/${id}`, updateData);
+  update: async (id: string, data: Omit<UpdateEquityDTO, 'id'>): Promise<Equity> => {
+    const response = await api.put<Equity>(`/equities/${id}`, data);
     return response.data;
   },
 

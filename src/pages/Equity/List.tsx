@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote, MoreHorizontal } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import { Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote } from "lucide-react";
 import { type Equity, EQUITY_TYPES } from "../../types/equity";
 import { cn } from "../../lib/utils";
 import { equityService } from "../../services/equities";
 import { toast } from "sonner";
 import type { Page } from "../../types/navigation";
+import { EditEquityDialog } from "../../components/EditEquityDialog";
+import { EquityCardMenu } from "../../components/EquityCardMenu";
 
 const getIconForType = (type: string) => {
   if (type.startsWith("real-estate")) return Home;
@@ -28,6 +39,9 @@ interface EquityListProps {
 export function EquityList({ onNavigate }: EquityListProps) {
   const [equities, setEquities] = useState<Equity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingEquity, setEditingEquity] = useState<Equity | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Equity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadEquities();
@@ -42,6 +56,23 @@ export function EquityList({ onNavigate }: EquityListProps) {
       toast.error("Erro ao carregar patrimônio");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+
+    try {
+      setIsDeleting(true);
+      await equityService.delete(deleteConfirm.id);
+      toast.success("Patrimônio deletado com sucesso!");
+      setEquities(equities.filter((e) => e.id !== deleteConfirm.id));
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error("Failed to delete equity:", error);
+      toast.error("Erro ao deletar patrimônio");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -94,7 +125,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
               key={item.id} 
               className={cn(
                 "relative overflow-hidden rounded-xl p-6 text-white shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer group h-[200px] flex flex-col justify-between",
-                item.color || "bg-zinc-900"
+                item.color || "bg-blue-400"
               )}
             >
               {/* Background Pattern/Gradient Overlay */}
@@ -105,9 +136,10 @@ export function EquityList({ onNavigate }: EquityListProps) {
                 <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg">
                   <Icon className="h-6 w-6 text-white" />
                 </div>
-                <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/20 h-8 w-8">
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
+                <EquityCardMenu
+                  onEdit={() => setEditingEquity(item)}
+                  onDelete={() => setDeleteConfirm(item)}
+                />
               </div>
 
               <div className="relative z-10 space-y-1">
@@ -143,6 +175,48 @@ export function EquityList({ onNavigate }: EquityListProps) {
           <span className="font-medium">Adicionar novo bem</span>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      {editingEquity && (
+        <EditEquityDialog
+          open={!!editingEquity}
+          equity={editingEquity}
+          onOpenChange={(open) => !open && setEditingEquity(null)}
+          onSuccess={() => {
+            loadEquities();
+            setEditingEquity(null);
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar Patrimônio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar "{deleteConfirm?.name}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="bg-gray-50 p-3 rounded-lg text-sm">
+            <p className="text-gray-600">
+              Valor: <span className="font-semibold text-gray-900">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(deleteConfirm?.value || 0)}
+              </span>
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Deletando..." : "Deletar"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
