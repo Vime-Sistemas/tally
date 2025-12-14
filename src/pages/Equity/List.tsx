@@ -10,7 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
-import { Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote } from "lucide-react";
+import { 
+  Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote, 
+  Building2, LandPlot, Bike, TrendingUp, Wallet, Zap, Palette
+} from "lucide-react";
 import { type Equity, EQUITY_TYPES } from "../../types/equity";
 import { cn } from "../../lib/utils";
 import { equityService } from "../../services/equities";
@@ -19,13 +22,95 @@ import type { Page } from "../../types/navigation";
 import { EditEquityDialog } from "../../components/EditEquityDialog";
 import { EquityCardMenu } from "../../components/EquityCardMenu";
 
-const getIconForType = (type: string) => {
-  if (type.startsWith("real-estate")) return Home;
-  if (type.startsWith("vehicle")) return Car;
-  if (type === "business" || type === "stocks") return Briefcase;
-  if (type === "jewelry" || type === "art") return Gem;
-  if (type === "electronics") return Smartphone;
-  return Banknote;
+const getCardStyle = (type: string) => {
+  // Real Estate
+  if (type === 'real-estate-house') return {
+    gradient: "bg-gradient-to-br from-stone-500 to-stone-700",
+    icon: Home,
+    shadow: "shadow-stone-500/20",
+    pattern: "radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent 50%)"
+  };
+  if (type === 'real-estate-apt') return {
+    gradient: "bg-gradient-to-br from-slate-500 to-slate-700",
+    icon: Building2,
+    shadow: "shadow-slate-500/20",
+    pattern: "linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)"
+  };
+  if (type === 'real-estate-land') return {
+    gradient: "bg-gradient-to-br from-emerald-600 to-teal-700",
+    icon: LandPlot,
+    shadow: "shadow-emerald-500/20",
+    pattern: "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 10px, transparent 10px, transparent 20px)"
+  };
+
+  // Vehicles
+  if (type === 'vehicle-car') return {
+    gradient: "bg-gradient-to-br from-blue-600 to-indigo-700",
+    icon: Car,
+    shadow: "shadow-blue-500/20",
+    pattern: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%)"
+  };
+  if (type === 'vehicle-motorcycle') return {
+    gradient: "bg-gradient-to-br from-red-600 to-orange-700",
+    icon: Bike,
+    shadow: "shadow-red-500/20",
+    pattern: "radial-gradient(circle at bottom left, rgba(255,255,255,0.2), transparent 60%)"
+  };
+
+  // Investments
+  if (type === 'stocks') return {
+    gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
+    icon: TrendingUp,
+    shadow: "shadow-green-500/20",
+    pattern: "repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.1) 20px)"
+  };
+  if (type === 'crypto') return {
+    gradient: "bg-gradient-to-br from-violet-600 to-fuchsia-700",
+    icon: Zap,
+    shadow: "shadow-violet-500/20",
+    pattern: "radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0 / 10px 10px"
+  };
+  if (type === 'business') return {
+    gradient: "bg-gradient-to-br from-amber-500 to-orange-600",
+    icon: Briefcase,
+    shadow: "shadow-amber-500/20",
+    pattern: "linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0 / 20px 100%"
+  };
+
+  // Personal
+  if (type === 'electronics') return {
+    gradient: "bg-gradient-to-br from-zinc-700 to-black",
+    icon: Smartphone,
+    shadow: "shadow-zinc-500/20",
+    pattern: "linear-gradient(to bottom right, rgba(255,255,255,0.1), transparent)"
+  };
+  if (type === 'jewelry') return {
+    gradient: "bg-gradient-to-br from-pink-500 to-rose-600",
+    icon: Gem,
+    shadow: "shadow-pink-500/20",
+    pattern: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent)"
+  };
+  if (type === 'art') return {
+    gradient: "bg-gradient-to-br from-purple-500 to-indigo-600",
+    icon: Palette,
+    shadow: "shadow-purple-500/20",
+    pattern: "conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0.1), transparent)"
+  };
+
+  // Cash/Other
+  if (type === 'cash') return {
+    gradient: "bg-gradient-to-br from-teal-500 to-cyan-600",
+    icon: Wallet,
+    shadow: "shadow-teal-500/20",
+    pattern: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 5px, transparent 5px, transparent 10px)"
+  };
+
+  return {
+    gradient: "bg-gradient-to-br from-blue-500 to-blue-600",
+    icon: Banknote,
+    shadow: "shadow-blue-500/20",
+    pattern: ""
+  };
 };
 
 const getLabelForType = (type: string) => {
@@ -118,22 +203,32 @@ export function EquityList({ onNavigate }: EquityListProps) {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {equities.map((item) => {
-          const Icon = getIconForType(item.type);
+          const style = getCardStyle(item.type);
+          const Icon = style.icon;
           
           return (
             <div 
               key={item.id} 
               className={cn(
-                "relative overflow-hidden rounded-xl p-6 text-white shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer group h-[200px] flex flex-col justify-between",
-                item.color || "bg-blue-400"
+                "relative overflow-hidden rounded-2xl p-6 text-white shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer group h-[220px] flex flex-col justify-between border border-white/10",
+                style.gradient,
+                style.shadow
               )}
             >
-              {/* Background Pattern/Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
+              {/* Background Pattern */}
+              <div 
+                className="absolute inset-0 opacity-30 pointer-events-none mix-blend-overlay" 
+                style={{ backgroundImage: style.pattern }}
+              />
               
+              {/* Large Background Icon Watermark */}
+              <div className="absolute -right-6 -bottom-6 text-white/10 transform rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-500">
+                <Icon className="h-48 w-48" strokeWidth={1} />
+              </div>
+              
+              {/* Header */}
               <div className="relative z-10 flex justify-between items-start">
-                <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg">
+                <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-xl border border-white/20 shadow-sm">
                   <Icon className="h-6 w-6 text-white" />
                 </div>
                 <EquityCardMenu
@@ -142,21 +237,31 @@ export function EquityList({ onNavigate }: EquityListProps) {
                 />
               </div>
 
-              <div className="relative z-10 space-y-1">
-                <p className="text-white/80 text-sm font-medium tracking-wide uppercase">
-                  {getLabelForType(item.type)}
-                </p>
-                <h3 className="text-2xl font-bold tracking-tight truncate" title={item.name}>
-                  {item.name}
-                </h3>
-                <div className="flex justify-between items-end pt-2">
-                  <p className="text-lg font-semibold">
-                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.value)}
+              {/* Content */}
+              <div className="relative z-10 space-y-2">
+                <div>
+                  <p className="text-white/70 text-xs font-semibold tracking-wider uppercase mb-1">
+                    {getLabelForType(item.type)}
                   </p>
-                  {item.acquisitionDate && (
-                    <p className="text-xs text-white/60">
-                      Desde {new Date(item.acquisitionDate).getFullYear()}
+                  <h3 className="text-2xl font-bold tracking-tight truncate leading-tight" title={item.name}>
+                    {item.name}
+                  </h3>
+                </div>
+                
+                <div className="pt-3 border-t border-white/10 flex justify-between items-end">
+                  <div>
+                    <p className="text-xs text-white/60 mb-0.5">Valor Atual</p>
+                    <p className="text-xl font-bold tracking-tight">
+                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.value)}
                     </p>
+                  </div>
+                  {item.acquisitionDate && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-white/50 uppercase tracking-wider">Desde</p>
+                      <p className="text-sm font-medium text-white/80">
+                        {new Date(item.acquisitionDate).getFullYear()}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -166,13 +271,13 @@ export function EquityList({ onNavigate }: EquityListProps) {
 
         {/* Add New Card Placeholder */}
         <div 
-          className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer h-[200px] gap-4 group"
+          className="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer h-[220px] gap-4 group"
           onClick={() => onNavigate('equity-new')}
         >
-          <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all">
-            <Plus className="h-6 w-6" />
+          <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:shadow-md transition-all duration-300">
+            <Plus className="h-7 w-7" />
           </div>
-          <span className="font-medium">Adicionar novo bem</span>
+          <span className="font-medium text-lg">Adicionar novo bem</span>
         </div>
       </div>
 
