@@ -11,25 +11,6 @@ interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
   autoResize?: boolean;
 }
 
-// Formata o display value enquanto digita
-const formatDisplayValue = (input: string): string => {
-  // Remove tudo que não é número
-  const numbersOnly = input.replace(/\D/g, '');
-  
-  if (!numbersOnly) return '';
-  
-  // Se tem 2 ou menos dígitos, mostra como 0,XX
-  if (numbersOnly.length <= 2) {
-    return `0,${numbersOnly.padStart(2, '0')}`;
-  }
-  
-  // Se tem 3 ou mais, coloca vírgula antes dos últimos 2
-  const reais = numbersOnly.slice(0, -2);
-  const centavos = numbersOnly.slice(-2);
-  
-  return `${reais},${centavos}`;
-};
-
 export function CurrencyInput({ value, onValueChange, className, error, label, symbolClassName, autoResize, ...props }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = useState('');
 
