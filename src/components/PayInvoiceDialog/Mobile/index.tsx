@@ -11,6 +11,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '../../ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../ui/alert-dialog';
 import { toast } from 'sonner';
 import { createTransaction, getAccounts } from '../../../services/api';
 import type { CreditCard, Account } from '../../../types/account';
@@ -37,6 +45,11 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
+  const [validationDialog, setValidationDialog] = useState<{
+    type: 'zero-value' | 'insufficient-balance';
+    currentBalance?: number;
+    requiredAmount?: number;
+  } | null>(null);
 
   const {
     handleSubmit,
@@ -54,6 +67,7 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
   });
 
   const selectedAccountId = watch('accountId');
+  const amount = watch('amount');
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
   useEffect(() => {
@@ -81,7 +95,31 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
     }));
   }, [accounts]);
 
+  const canSubmit = () => {
+    // Check if amount is zero
+    if (!amount || amount <= 0) {
+      setValidationDialog({ type: 'zero-value' });
+      return false;
+    }
+
+    // Check if account has sufficient balance
+    if (selectedAccount && selectedAccount.balance < amount) {
+      setValidationDialog({
+        type: 'insufficient-balance',
+        currentBalance: selectedAccount.balance,
+        requiredAmount: amount,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const onSubmit = async (data: PayInvoiceFormData) => {
+    if (!canSubmit()) {
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -98,9 +136,19 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
       toast.success('Pagamento registrado com sucesso!');
       onSuccess?.();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao registrar pagamento:', error);
-      toast.error('Erro ao registrar pagamento');
+      
+      // Handle insufficient balance error from backend
+      if (error?.response?.status === 400 && error?.response?.data?.error === 'Insufficient balance') {
+        setValidationDialog({
+          type: 'insufficient-balance',
+          currentBalance: error?.response?.data?.currentBalance,
+          requiredAmount: error?.response?.data?.requiredAmount,
+        });
+      } else {
+        toast.error('Erro ao registrar pagamento');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -162,7 +210,7 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
                 <Button 
                     type="submit" 
                     className="w-full h-12 text-base font-medium rounded-xl bg-blue-400 text-white hover:bg-gray-800"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !amount || amount <= 0 || (selectedAccount && selectedAccount.balance < amount)}
                 >
                     {isSubmitting ? (
                         <>
@@ -185,6 +233,45 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
         options={accountOptions}
         title="Selecione a Conta"
       />
+
+      {/* Validation Dialogs */}
+      <AlertDialog open={validationDialog?.type === 'zero-value'} onOpenChange={(open) => !open && setValidationDialog(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valor Inválido</AlertDialogTitle>
+            <AlertDialogDescription>
+              É necessário informar um valor maior que zero para pagar a fatura.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setValidationDialog(null)}>
+            OK
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={validationDialog?.type === 'insufficient-balance'} onOpenChange={(open) => !open && setValidationDialog(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Saldo Insuficiente</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                A conta selecionada não possui saldo suficiente para realizar este pagamento.
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg mt-3 space-y-1 text-sm">
+                <p className="text-gray-600">
+                  Saldo disponível: <span className="font-semibold text-gray-900">R$ {validationDialog?.currentBalance?.toFixed(2).replace('.', ',')}</span>
+                </p>
+                <p className="text-gray-600">
+                  Valor necessário: <span className="font-semibold text-gray-900">R$ {validationDialog?.requiredAmount?.toFixed(2).replace('.', ',')}</span>
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setValidationDialog(null)}>
+            OK
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
