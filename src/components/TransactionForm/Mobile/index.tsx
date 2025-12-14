@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Button } from '../../ui/button';
 import { Switch } from '../../ui/switch';
 import { MobileInput, MobileDateInput } from '../../ui/mobile-input';
+import { CurrencyInput } from '../../ui/currency-input';
 import { MobilePicker, MobilePickerTrigger, type PickerOption } from '../../ui/mobile-picker';
 import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../../services/api';
 import { equityService } from '../../../services/equities';
@@ -301,25 +302,14 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
             name="amount"
             control={control}
             render={({ field }) => (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Valor</label>
-                <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 focus-within:border-gray-400 transition-colors">
-                  <span className="pl-4 text-gray-500 font-medium">R$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    className="flex-1 px-2 py-4 bg-transparent text-xl font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    enterKeyHint="done"
-                  />
-                </div>
-                {errors.amount && (
-                  <span className="text-sm text-red-500">{errors.amount.message}</span>
-                )}
-              </div>
+              <CurrencyInput
+                label="Valor"
+                value={field.value}
+                onValueChange={field.onChange}
+                placeholder="0,00"
+                error={errors.amount?.message}
+                enterKeyHint="done"
+              />
             )}
           />
         </div>

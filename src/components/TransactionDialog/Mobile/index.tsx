@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { Pencil, Trash2, CreditCard, Tag, Layers } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { getCategoryColor, getCategoryIcon, getCategoryLabel } from "../../TransactionHistory/Mobile";
+import { formatCurrencyValue } from "../../../utils/formatters";
 
 interface TransactionDialogProps {
   transaction: Transaction | null;
@@ -54,7 +55,7 @@ export function MobileTransactionDialog({
                 "text-4xl font-semibold",
                 transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-gray-900"
               )}>
-                {Math.abs(transaction.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {formatCurrencyValue(Math.abs(transaction.amount))}
               </span>
             </div>
             

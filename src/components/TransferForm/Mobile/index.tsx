@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../../ui/button';
 import { MobileInput, MobileDateInput } from '../../ui/mobile-input';
+import { CurrencyInput } from '../../ui/currency-input';
+import { formatCurrency } from '../../../utils/formatters';
 import { MobilePicker, type PickerOption } from '../../ui/mobile-picker';
 import { toast } from 'sonner';
 import { getAccounts, createTransaction, confirmTransaction } from '../../../services/api';
@@ -147,25 +149,14 @@ export function MobileTransferForm() {
             name="amount"
             control={control}
             render={({ field }) => (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Valor da Transferência</label>
-                <div className="flex items-center bg-gray-50 rounded-xl border border-gray-200 focus-within:border-gray-400 transition-colors">
-                  <span className="pl-4 text-gray-500 font-medium">R$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    className="flex-1 px-2 py-4 bg-transparent text-xl font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    enterKeyHint="done"
-                  />
-                </div>
-                {errors.amount && (
-                  <span className="text-sm text-red-500">{errors.amount.message}</span>
-                )}
-              </div>
+              <CurrencyInput
+                label="Valor da Transferência"
+                value={field.value}
+                onValueChange={field.onChange}
+                placeholder="0,00"
+                error={errors.amount?.message}
+                enterKeyHint="done"
+              />
             )}
           />
         </div>
@@ -188,7 +179,7 @@ export function MobileTransferForm() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{sourceAccount.name}</p>
-                      <p className="text-sm text-gray-500">R$ {sourceAccount.balance.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">{formatCurrency(sourceAccount.balance)}</p>
                     </div>
                   </>
                 ) : (
@@ -227,7 +218,7 @@ export function MobileTransferForm() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{destinationAccount.name}</p>
-                      <p className="text-sm text-gray-500">R$ {destinationAccount.balance.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">{formatCurrency(destinationAccount.balance)}</p>
                     </div>
                   </>
                 ) : (

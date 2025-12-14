@@ -19,6 +19,7 @@ import { format, subMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth0 } from "@auth0/auth0-react";
+import { formatCurrency } from "../../../utils/formatters";
 
 // Helper to parse UTC date string as local date (ignoring time)
 const parseUTCDate = (dateString: string) => {
@@ -138,17 +139,17 @@ export function MobileSummary() {
             <Wallet className="h-4 w-4 text-white" />
           </div>
           <div className="text-3xl font-bold mb-2">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
+            {formatCurrency(totalBalance)}
           </div>
           <div className="flex gap-4 text-xs text-white">
             <span className="text-sm font-medium text-white">Movimentações</span>
             <div className="flex items-center gap-1">
               <ArrowUpCircle className="h-3 w-3 text-white" />
-              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}</span>
+              <span>{formatCurrency(currentIncome)}</span>
             </div>
             <div className="flex items-center gap-1">
               <ArrowDownCircle className="h-3 w-3 text-white" />
-              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}</span>
+              <span>{formatCurrency(currentExpense)}</span>
             </div>
           </div>
         </CardContent>
@@ -163,7 +164,7 @@ export function MobileSummary() {
               <AlertTriangle className="h-4 w-4 text-blue-600" />
               <AlertTitle className="text-blue-800 text-sm">Conta a vencer</AlertTitle>
               <AlertDescription className="text-blue-700 text-xs">
-                {bill.description} - R$ {bill.amount.toFixed(2)} <br/>
+                {bill.description} - {formatCurrency(bill.amount)} <br/>
                 Vence em {format(parseUTCDate(bill.date), "dd/MM")}
               </AlertDescription>
             </Alert>

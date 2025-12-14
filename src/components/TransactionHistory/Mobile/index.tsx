@@ -55,6 +55,7 @@ import {
 import type { DateRange } from "react-day-picker";
 import { MobileTransactionDialog } from "../../TransactionDialog/Mobile";
 import { TransactionForm } from "../../TransactionForm";
+import { formatCurrency } from "../../../utils/formatters";
 
 export const getCategoryIcon = (category: string) => {
   switch (category) {
@@ -460,8 +461,7 @@ export function MobileTransactionHistory() {
                           "font-semibold",
                           transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-red-600"
                         )}>
-                          {transaction.type === TransactionType.INCOME ? "+" : "-"}R$
-                          {transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {transaction.type === TransactionType.INCOME ? "+" : "-"}{formatCurrency(transaction.amount)}
                         </p>
                         {transaction.installments && (
                           <p className="text-xs text-gray-400">
