@@ -252,7 +252,7 @@ export function MobileTransactionHistory() {
   return (
     <div className="pb-24 bg-white min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-white backdrop-blur-md">
         <div className="px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Extrato</h1>

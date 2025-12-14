@@ -264,6 +264,7 @@ export function EditCardDialog({
                   <Button
                     type="submit"
                     disabled={isSubmitting}
+                    className='bg-blue-400'
                   >
                     {isSubmitting ? 'Salvando...' : 'Salvar'}
                   </Button>

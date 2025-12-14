@@ -24,6 +24,8 @@ import { toast } from 'sonner';
 import { createTransaction, getAccounts } from '../../services/api';
 import type { CreditCard, Account } from '../../types/account';
 import { TransactionType, TransactionCategory } from '../../types/transaction';
+import { useIsMobile } from '../../hooks/use-mobile';
+import { MobilePayInvoiceDialog } from './Mobile';
 
 const payInvoiceSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
@@ -41,7 +43,17 @@ interface PayInvoiceDialogProps {
   onSuccess?: () => void;
 }
 
-export function PayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInvoiceDialogProps) {
+export function PayInvoiceDialog(props: PayInvoiceDialogProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobilePayInvoiceDialog {...props} />;
+  }
+
+  return <DesktopPayInvoiceDialog {...props} />;
+}
+
+function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInvoiceDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
