@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../../types/account";
-import { Wallet, Plus, TrendingUp, CreditCard as CreditCardIcon, ArrowUpRight } from "lucide-react";
+import { Wallet, Plus, TrendingUp, CreditCard as CreditCardIcon, ArrowUpRight, Layers, LayoutGrid } from "lucide-react";
 import { getAccounts, getCards } from '../../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../../types/account';
@@ -23,6 +23,8 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [payingCard, setPayingCard] = useState<CreditCard | null>(null);
+  const [accountsStacked, setAccountsStacked] = useState(false);
+  const [cardsStacked, setCardsStacked] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -114,6 +116,29 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
       <section className="space-y-5">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">Minhas Contas</h2>
+          {accounts.length > 1 && (
+            <button
+              onClick={() => setAccountsStacked(!accountsStacked)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
+                accountsStacked 
+                  ? "bg-black text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+            >
+              {accountsStacked ? (
+                <>
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Expandir
+                </>
+              ) : (
+                <>
+                  <Layers className="h-3.5 w-3.5" />
+                  Agrupar
+                </>
+              )}
+            </button>
+          )}
         </div>
         {loading ? (
           <div className="flex justify-center py-12">
@@ -125,36 +150,71 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
             <p className="text-sm font-medium">Nenhuma conta cadastrada</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {accounts.map((account) => (
-              <div 
-                key={account.id} 
-                className={cn(
-                  "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-300 hover:shadow-2xl active:scale-[0.98] group cursor-pointer",
-                  account.color
-                )}
-                onClick={() => setEditingAccount(account)}
-              >
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors" />
-                <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
+          <div 
+            className={cn(
+              "relative transition-all duration-500 ease-out",
+              accountsStacked ? "h-[200px]" : ""
+            )}
+            style={accountsStacked ? { height: `${Math.min(200 + (accounts.length - 1) * 12, 260)}px` } : undefined}
+          >
+            {accounts.map((account, index) => {
+              const stackOffset = accountsStacked ? index * 12 : 0;
+              const stackScale = accountsStacked ? 1 - (index * 0.03) : 1;
+              const isTopCard = index === 0;
+              
+              return (
+                <div 
+                  key={account.id} 
+                  className={cn(
+                    "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-500 ease-out group cursor-pointer",
+                    account.color,
+                    accountsStacked 
+                      ? "absolute left-0 right-0" 
+                      : "mb-4 last:mb-0 hover:shadow-2xl active:scale-[0.98]"
+                  )}
+                  style={accountsStacked ? {
+                    top: `${stackOffset}px`,
+                    transform: `scale(${stackScale})`,
+                    transformOrigin: 'top center',
+                    zIndex: accounts.length - index,
+                    opacity: index > 2 ? 0 : 1,
+                  } : undefined}
+                  onClick={() => {
+                    if (accountsStacked && isTopCard) {
+                      setAccountsStacked(false);
+                    } else if (!accountsStacked) {
+                      setEditingAccount(account);
+                    }
+                  }}
+                >
+                  {/* Background decoration */}
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors" />
+                  <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 rounded-full blur-2xl" />
 
-                <div className="relative flex justify-between items-start mb-8">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-lg tracking-wide">{account.name}</h3>
-                    <p className="text-white/80 text-xs font-bold uppercase tracking-wider">{getTypeLabel(account.type)}</p>
+                  <div className="relative flex justify-between items-start mb-8">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-lg tracking-wide">{account.name}</h3>
+                      <p className="text-white/80 text-xs font-bold uppercase tracking-wider">{getTypeLabel(account.type)}</p>
+                    </div>
+                    <div className="p-2.5 bg-white/10 rounded-full backdrop-blur-md border border-white/10">
+                      <Wallet className="h-5 w-5 text-white" />
+                    </div>
                   </div>
-                  <div className="p-2.5 bg-white/10 rounded-full backdrop-blur-md border border-white/10">
-                    <Wallet className="h-5 w-5 text-white" />
+                  
+                  <div className="relative">
+                    <p className="text-white/80 text-xs font-medium mb-1">Saldo Disponível</p>
+                    <p className="text-3xl font-bold tracking-tight">{formatCurrency(account.balance)}</p>
                   </div>
+                  
+                  {/* Stack indicator when stacked */}
+                  {accountsStacked && isTopCard && accounts.length > 1 && (
+                    <div className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                      <span className="text-xs font-bold">{accounts.length} contas</span>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="relative">
-                  <p className="text-white/80 text-xs font-medium mb-1">Saldo Disponível</p>
-                  <p className="text-3xl font-bold tracking-tight">{formatCurrency(account.balance)}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -163,6 +223,29 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
       <section className="space-y-5">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">Meus Cartões</h2>
+          {cards.length > 1 && (
+            <button
+              onClick={() => setCardsStacked(!cardsStacked)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
+                cardsStacked 
+                  ? "bg-black text-white" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+            >
+              {cardsStacked ? (
+                <>
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Expandir
+                </>
+              ) : (
+                <>
+                  <Layers className="h-3.5 w-3.5" />
+                  Agrupar
+                </>
+              )}
+            </button>
+          )}
         </div>
         {loading ? (
           <div className="flex justify-center py-12">
@@ -174,67 +257,104 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
             <p className="text-sm font-medium">Nenhum cartão cadastrado</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {cards.map((card) => (
-              <div 
-                key={card.id} 
-                className={cn(
-                  "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-300 hover:shadow-2xl active:scale-[0.98] group cursor-pointer",
-                  card.color
-                )}
-                onClick={() => setEditingCard(card)}
-              >
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors" />
-                
-                <div className="relative flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
-                      <CreditCardIcon className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg tracking-wide">{card.name}</h3>
-                      <p className="text-white/70 text-xs font-medium">Final ****</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                     <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider mb-0.5">Limite</p>
-                     <p className="text-white font-semibold">{formatCurrency(card.limit)}</p>
-                  </div>
-                </div>
-
-                <div className="relative mt-auto pt-5 border-t border-white/10">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-white/80 text-xs font-medium mb-1">Fatura Atual</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm text-white/80 font-medium">R$</span>
-                        <span className="text-3xl font-bold tracking-tight">
-                          {card.currentInvoice?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
-                        </span>
+          <div 
+            className={cn(
+              "relative transition-all duration-500 ease-out",
+              cardsStacked ? "" : ""
+            )}
+            style={cardsStacked ? { height: `${Math.min(240 + (cards.length - 1) * 12, 300)}px` } : undefined}
+          >
+            {cards.map((card, index) => {
+              const stackOffset = cardsStacked ? index * 12 : 0;
+              const stackScale = cardsStacked ? 1 - (index * 0.03) : 1;
+              const isTopCard = index === 0;
+              
+              return (
+                <div 
+                  key={card.id} 
+                  className={cn(
+                    "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-500 ease-out group cursor-pointer",
+                    card.color,
+                    cardsStacked 
+                      ? "absolute left-0 right-0" 
+                      : "mb-4 last:mb-0 hover:shadow-2xl active:scale-[0.98]"
+                  )}
+                  style={cardsStacked ? {
+                    top: `${stackOffset}px`,
+                    transform: `scale(${stackScale})`,
+                    transformOrigin: 'top center',
+                    zIndex: cards.length - index,
+                    opacity: index > 2 ? 0 : 1,
+                  } : undefined}
+                  onClick={() => {
+                    if (cardsStacked && isTopCard) {
+                      setCardsStacked(false);
+                    } else if (!cardsStacked) {
+                      setEditingCard(card);
+                    }
+                  }}
+                >
+                  {/* Background decoration */}
+                  <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-colors" />
+                  
+                  <div className="relative flex justify-between items-start mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
+                        <CreditCardIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg tracking-wide">{card.name}</h3>
+                        <p className="text-white/70 text-xs font-medium">Final ****</p>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-col items-end gap-3">
-                      <span className="text-xs text-white/80 font-medium bg-black/20 px-2 py-1 rounded-md backdrop-blur-sm">
-                        Vence dia {card.closingDay}
-                      </span>
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="bg-white text-black hover:bg-gray-100 border-0 h-9 px-5 rounded-full text-xs font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPayingCard(card);
-                        }}
-                      >
-                        Pagar
-                      </Button>
+                    <div className="text-right">
+                       <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider mb-0.5">Limite</p>
+                       <p className="text-white font-semibold">{formatCurrency(card.limit)}</p>
                     </div>
                   </div>
+
+                  <div className="relative mt-auto pt-5 border-t border-white/10">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-white/80 text-xs font-medium mb-1">Fatura Atual</p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm text-white/80 font-medium">R$</span>
+                          <span className="text-3xl font-bold tracking-tight">
+                            {card.currentInvoice?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {!cardsStacked && (
+                        <div className="flex flex-col items-end gap-3">
+                          <span className="text-xs text-white/80 font-medium bg-black/20 px-2 py-1 rounded-md backdrop-blur-sm">
+                            Vence dia {card.closingDay}
+                          </span>
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            className="bg-white text-black hover:bg-gray-100 border-0 h-9 px-5 rounded-full text-xs font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPayingCard(card);
+                            }}
+                          >
+                            Pagar
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Stack indicator when stacked */}
+                  {cardsStacked && isTopCard && cards.length > 1 && (
+                    <div className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+                      <span className="text-xs font-bold">{cards.length} cartões</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
