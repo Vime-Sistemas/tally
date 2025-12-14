@@ -32,16 +32,16 @@ const cardSchema = z.object({
 type CardFormData = z.infer<typeof cardSchema>;
 
 const colors = [
-  { name: 'Roxo', value: 'bg-purple-600' },
-  { name: 'Azul', value: 'bg-blue-600' },
-  { name: 'Verde', value: 'bg-green-600' },
-  { name: 'Vermelho', value: 'bg-red-600' },
-  { name: 'Laranja', value: 'bg-orange-600' },
-  { name: 'Preto', value: 'bg-gray-900' },
-  { name: 'Cinza', value: 'bg-gray-600' },
-  { name: 'Rosa', value: 'bg-pink-600' },
-  { name: 'Amarelo', value: 'bg-yellow-500' },
-  { name: 'Indigo', value: 'bg-indigo-600' },
+  { value: 'bg-blue-500', name: 'Azul' },
+  { value: 'bg-green-500', name: 'Verde' },
+  { value: 'bg-purple-500', name: 'Roxo' },
+  { value: 'bg-pink-500', name: 'Rosa' },
+  { value: 'bg-orange-500', name: 'Laranja' },
+  { value: 'bg-red-500', name: 'Vermelho' },
+  { value: 'bg-slate-500', name: 'Cinza' },
+  { value: 'bg-indigo-500', name: 'Índigo' },
+  { value: 'bg-slate-900', name: 'Preto'},
+  { value: 'bg-gradient-to-br from-yellow-600 to-yellow-700', name: 'Gold'}
 ];
 
 export function CardForm({ onSuccess }: { onSuccess?: () => void }) {

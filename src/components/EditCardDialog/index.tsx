@@ -47,6 +47,8 @@ const cardColors = [
   { value: 'bg-red-500', label: 'Vermelho' },
   { value: 'bg-slate-500', label: 'Cinza' },
   { value: 'bg-indigo-500', label: 'Índigo' },
+  { value: 'bg-slate-900', label: 'Preto'},
+  { value: 'bg-gradient-to-br from-yellow-600 to-yellow-700', label: 'Gold'}
 ];
 
 interface EditCardDialogProps {
