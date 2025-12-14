@@ -80,6 +80,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
+  const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -100,6 +101,9 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
       }
     };
     loadData();
+    
+    // Detectar SO
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
   }, []);
   
 
@@ -456,11 +460,11 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
 
             <Button
               type="submit"
-              className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-blue-400 hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar Transação' : 'Salvar Transação')}
-              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600">Ctrl+Enter</Kbd>}
+              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600">{isMac ? '⌘' : 'Ctrl'}+Enter</Kbd>}
             </Button>
           </form>
         </CardContent>

@@ -158,7 +158,7 @@ export function MobileInvestmentForm() {
     <div className="pb-24 bg-[#F2F2F7] min-h-full -mx-4 -mt-4 px-4 pt-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Amount Section */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
+        <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-col items-center">
           <Controller
             name="amount"
             control={control}
@@ -170,6 +170,9 @@ export function MobileInvestmentForm() {
                 placeholder="0,00"
                 error={errors.amount?.message}
                 enterKeyHint="done"
+                className="text-3xl font-semibold"
+                symbolClassName="text-3xl font-semibold text-gray-400"
+                autoResize
               />
             )}
           />

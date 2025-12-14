@@ -18,6 +18,7 @@ import { Check } from 'lucide-react';
 import { createCard, getAccounts } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account } from '../../types/account';
+import { CurrencyInput } from '../ui/currency-input';
 
 const cardSchema = z.object({
   name: z.string().min(1, 'Nome do cartão é obrigatório'),
@@ -104,19 +105,22 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           
           {/* Limite em destaque */}
-          <div className="flex flex-col items-center space-y-3">
+          <div className="flex flex-col items-center space-y-3 w-full">
             <Label htmlFor="limit" className="text-gray-500 font-medium">Limite do Cartão</Label>
-            <div className="relative w-full max-w-[240px]">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg font-medium">
-                  R$
-               </div>
-               <Input
-                id="limit"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                className="text-center text-3xl h-16 pl-10 font-semibold border-gray-200 focus:border-black focus:ring-black rounded-xl shadow-sm"
-                {...register('limit', { valueAsNumber: true })}
+            <div className="w-full flex justify-center">
+              <Controller
+                name="limit"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    value={field.value || 0}
+                    onValueChange={field.onChange}
+                    placeholder="0,00"
+                    className="text-3xl font-semibold"
+                    symbolClassName="text-3xl font-semibold text-gray-400"
+                    autoResize
+                  />
+                )}
               />
             </div>
              {errors.limit && (
