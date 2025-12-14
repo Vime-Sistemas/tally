@@ -67,6 +67,15 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
 
   return (
     <div className="pb-24 space-y-8 px-1">
+      <style>{`
+        .wallet-card {
+          position: absolute;
+          left: 0;
+          right: 0;
+          transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+          will-change: transform, opacity;
+        }
+      `}</style>
       {/* Header Actions */}
       <div className="grid grid-cols-2 gap-4">
         <button 
@@ -151,38 +160,36 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
           </div>
         ) : (
           <div 
-            className={cn(
-              "relative transition-all duration-500 ease-out",
-              accountsStacked ? "h-[200px]" : ""
-            )}
-            style={accountsStacked ? { height: `${Math.min(200 + (accounts.length - 1) * 12, 260)}px` } : undefined}
+            className="relative transition-all duration-500 ease-out"
+            style={{ 
+              height: accountsStacked 
+                ? `${208 + (accounts.length - 1) * 10}px` 
+                : `${accounts.length * 224}px` 
+            }}
           >
             {accounts.map((account, index) => {
-              const stackOffset = accountsStacked ? index * 12 : 0;
-              const stackScale = accountsStacked ? 1 - (index * 0.03) : 1;
               const isTopCard = index === 0;
+              const yOffset = accountsStacked ? index * 10 : index * 224;
+              const scale = accountsStacked ? 1 - (index * 0.05) : 1;
+              const opacity = accountsStacked && index > 2 ? 0 : 1;
               
               return (
                 <div 
                   key={account.id} 
                   className={cn(
-                    "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-500 ease-out group cursor-pointer",
-                    account.color,
-                    accountsStacked 
-                      ? "absolute left-0 right-0" 
-                      : "mb-4 last:mb-0 hover:shadow-2xl active:scale-[0.98]"
+                    "wallet-card overflow-hidden p-6 rounded-[2rem] text-white shadow-xl group cursor-pointer h-52",
+                    account.color
                   )}
-                  style={accountsStacked ? {
-                    top: `${stackOffset}px`,
-                    transform: `scale(${stackScale})`,
-                    transformOrigin: 'top center',
+                  style={{
+                    transform: `translate3d(0, ${yOffset}px, 0) scale(${scale})`,
                     zIndex: accounts.length - index,
-                    opacity: index > 2 ? 0 : 1,
-                  } : undefined}
+                    opacity,
+                    transformOrigin: 'top center'
+                  }}
                   onClick={() => {
-                    if (accountsStacked && isTopCard) {
+                    if (accountsStacked) {
                       setAccountsStacked(false);
-                    } else if (!accountsStacked) {
+                    } else {
                       setEditingAccount(account);
                     }
                   }}
@@ -258,38 +265,36 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
           </div>
         ) : (
           <div 
-            className={cn(
-              "relative transition-all duration-500 ease-out",
-              cardsStacked ? "" : ""
-            )}
-            style={cardsStacked ? { height: `${Math.min(240 + (cards.length - 1) * 12, 300)}px` } : undefined}
+            className="relative transition-all duration-500 ease-out"
+            style={{ 
+              height: cardsStacked 
+                ? `${256 + (cards.length - 1) * 10}px` 
+                : `${cards.length * 272}px` 
+            }}
           >
             {cards.map((card, index) => {
-              const stackOffset = cardsStacked ? index * 12 : 0;
-              const stackScale = cardsStacked ? 1 - (index * 0.03) : 1;
               const isTopCard = index === 0;
+              const yOffset = cardsStacked ? index * 10 : index * 272;
+              const scale = cardsStacked ? 1 - (index * 0.05) : 1;
+              const opacity = cardsStacked && index > 2 ? 0 : 1;
               
               return (
                 <div 
                   key={card.id} 
                   className={cn(
-                    "relative overflow-hidden p-6 rounded-[2rem] text-white shadow-xl transition-all duration-500 ease-out group cursor-pointer",
-                    card.color,
-                    cardsStacked 
-                      ? "absolute left-0 right-0" 
-                      : "mb-4 last:mb-0 hover:shadow-2xl active:scale-[0.98]"
+                    "wallet-card overflow-hidden p-6 rounded-[2rem] text-white shadow-xl group cursor-pointer h-64",
+                    card.color
                   )}
-                  style={cardsStacked ? {
-                    top: `${stackOffset}px`,
-                    transform: `scale(${stackScale})`,
-                    transformOrigin: 'top center',
+                  style={{
+                    transform: `translate3d(0, ${yOffset}px, 0) scale(${scale})`,
                     zIndex: cards.length - index,
-                    opacity: index > 2 ? 0 : 1,
-                  } : undefined}
+                    opacity,
+                    transformOrigin: 'top center'
+                  }}
                   onClick={() => {
-                    if (cardsStacked && isTopCard) {
+                    if (cardsStacked) {
                       setCardsStacked(false);
-                    } else if (!cardsStacked) {
+                    } else {
                       setEditingCard(card);
                     }
                   }}
