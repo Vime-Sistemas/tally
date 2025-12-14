@@ -1,9 +1,10 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { CurrencyInput } from "../../components/ui/currency-input";
 import {
   Select,
   SelectContent,
@@ -58,6 +59,7 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
     handleSubmit,
     setValue,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EquityFormValues>({
     resolver: zodResolver(equitySchema),
@@ -118,6 +120,31 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
         <Card className="w-full shadow-lg">
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              
+              {/* Valor Estimado - Highlighted */}
+              <div className="flex flex-col items-center space-y-3 w-full">
+                <Label htmlFor="value" className="text-gray-500 font-medium">Valor Estimado</Label>
+                <div className="w-full flex justify-center">
+                  <Controller
+                    name="value"
+                    control={control}
+                    render={({ field }) => (
+                      <CurrencyInput
+                        value={field.value || 0}
+                        onValueChange={field.onChange}
+                        placeholder="0,00"
+                        className="text-3xl font-semibold"
+                        symbolClassName="text-3xl font-semibold text-gray-400"
+                        autoResize
+                      />
+                    )}
+                  />
+                </div>
+                {errors.value && (
+                  <p className="text-sm text-red-500 text-center">{errors.value.message}</p>
+                )}
+              </div>
+
               <div className="grid gap-6 md:grid-cols-2">
                 {/* Nome */}
                 <div className="space-y-2">
@@ -157,30 +184,19 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
                   )}
                 </div>
 
-                {/* Valor */}
-                <div className="space-y-2">
-                  <Label htmlFor="value">Valor Estimado (R$)</Label>
-                  <Input
-                    id="value"
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    {...register('value', { valueAsNumber: true })}
-                  />
-                  {errors.value && (
-                    <p className="text-sm text-red-500">{errors.value.message}</p>
-                  )}
-                </div>
-
                 {/* Custo */}
                 <div className="space-y-2">
-                  <Label htmlFor="cost">Custo de Aquisição (R$)</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    {...register('cost', { valueAsNumber: true })}
+                  <Label htmlFor="cost">Custo de Aquisição</Label>
+                  <Controller
+                    name="cost"
+                    control={control}
+                    render={({ field }) => (
+                      <CurrencyInput
+                        value={field.value || 0}
+                        onValueChange={field.onChange}
+                        placeholder="0,00"
+                      />
+                    )}
                   />
                   <p className="text-xs text-muted-foreground">Opcional. Se vazio, será igual ao valor atual.</p>
                 </div>
