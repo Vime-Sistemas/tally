@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -70,15 +70,7 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
   const amount = watch('amount');
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
 
-  useEffect(() => {
-    if (open) {
-      setValue('amount', card.currentInvoice);
-      setValue('description', `Pagamento Fatura ${card.name}`);
-      loadAccounts();
-    }
-  }, [open, card, setValue]);
-
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     try {
       const data = await getAccounts();
       setAccounts(data);
@@ -86,7 +78,15 @@ export function MobilePayInvoiceDialog({ open, card, onOpenChange, onSuccess }: 
       console.error('Erro ao carregar contas:', error);
       toast.error('Erro ao carregar contas');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      setValue('amount', card.currentInvoice);
+      setValue('description', `Pagamento Fatura ${card.name}`);
+      loadAccounts();
+    }
+  }, [open, card, setValue, loadAccounts]);
 
   const accountOptions: PickerOption[] = useMemo(() => {
     return accounts.map(acc => ({
