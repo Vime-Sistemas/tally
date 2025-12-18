@@ -13,6 +13,7 @@ import { EquityList } from './pages/Equity/List'
 import { Profile } from './pages/Profile'
 import { SignUp } from './pages/SignUp'
 import { Login } from './pages/Login'
+import { Releases } from './pages/Releases'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
@@ -26,7 +27,16 @@ import './App.css'
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
   const { setUser } = useUser();
-  const [currentPage, setCurrentPage] = useState<Page>('signup');
+  
+  // Detect initial page from pathname
+  const getInitialPage = (): Page => {
+    const pathname = window.location.pathname;
+    if (pathname.includes('/releases')) return 'releases';
+    if (pathname.includes('/login')) return 'login';
+    return 'signup';
+  };
+  
+  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage());
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -174,6 +184,8 @@ function AppContent() {
             </div>
           </div>
         );
+      case 'releases':
+        return <Releases onNavigate={setCurrentPage} />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }
@@ -181,7 +193,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
-      {!['signup', 'login'].includes(currentPage) && (
+      {!['signup', 'login', 'releases'].includes(currentPage) && (
         <Header 
           onNavigate={setCurrentPage} 
           hasBusiness={hasBusiness}

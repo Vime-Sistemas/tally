@@ -10,6 +10,7 @@ export type Page =
   | 'equity-new' 
   | 'profile' 
   | 'signup' 
-  | 'login';
+  | 'login'
+  | 'releases';
 
 export type AppContext = 'PERSONAL' | 'BUSINESS';
