@@ -112,12 +112,6 @@ export function Login({ onNavigate }: LoginProps) {
     });
   };
 
-  const getSocialName = (social: string) => {
-    if (social === 'google-oauth2') return 'Google';
-    if (social === 'facebook') return 'Facebook';
-    return 'Social';
-  };
-
   const clearLastData = () => {
     try {
       localStorage.removeItem('tally_u');
@@ -260,11 +254,6 @@ export function Login({ onNavigate }: LoginProps) {
                     <p className="text-xs sm:text-sm font-medium text-gray-900 truncate" title={lastAccount}>
                       {maskEmail(lastAccount)}
                     </p>
-                    {lastSocial && (
-                      <p className="text-xs text-gray-600 mt-0.5">
-                        Via {getSocialName(lastSocial)}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <button
