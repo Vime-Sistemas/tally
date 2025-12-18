@@ -58,7 +58,8 @@ api.interceptors.response.use(
     // Trata erros de autenticação
     if (error.response?.status === 401) {
       authToken = null;
-      // window.location.href = '/login'; // Let Auth0 handle this
+      // Dispatch custom event for session expiration
+      window.dispatchEvent(new Event('session-expired'));
     }
     return Promise.reject(error);
   }

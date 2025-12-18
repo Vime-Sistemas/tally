@@ -21,6 +21,7 @@ import { LoadingScreen } from './components/LoadingScreen'
 import type { Page, AppContext } from './types/navigation'
 import { UserProvider, useUser } from './contexts/UserContext'
 import { Toaster } from "./components/ui/sonner"
+import { SessionExpiredDialog } from './components/SessionExpiredDialog'
 import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
 
@@ -207,6 +208,7 @@ function AppContent() {
           {renderPage()}
         </div>
       </main>
+      <SessionExpiredDialog onRedirect={() => setCurrentPage('login')} />
       <Toaster />
       <Analytics />
       <SpeedInsights />
