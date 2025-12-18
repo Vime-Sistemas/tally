@@ -16,6 +16,7 @@ import { Login } from './pages/Login'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
+import { LoadingScreen } from './components/LoadingScreen'
 import type { Page, AppContext } from './types/navigation'
 import { UserProvider, useUser } from './contexts/UserContext'
 import { Toaster } from "./components/ui/sonner"
@@ -107,12 +108,7 @@ function AppContent() {
   }, []);
 
   if (isLoading || isSyncing) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-        <p className="ml-4 text-gray-600">Carregando...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (error) {
