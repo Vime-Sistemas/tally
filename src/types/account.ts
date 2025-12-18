@@ -18,7 +18,8 @@ export interface Account {
 export interface CreditCard {
   id: string;
   name: string;
-  accountId: string;
+  accountId?: string | null;
+  lastFourDigits?: string;
   limit: number;
   closingDay: number;
   dueDay: number;

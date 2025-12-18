@@ -22,7 +22,8 @@ import { CurrencyInput } from '../ui/currency-input';
 
 const cardSchema = z.object({
   name: z.string().min(1, 'Nome do cartão é obrigatório'),
-  accountId: z.string().min(1, 'Conta vinculada é obrigatória'),
+  accountId: z.string().optional(),
+  lastFourDigits: z.string().max(4, 'Máximo 4 dígitos').optional(),
   limit: z.number().positive('O limite deve ser positivo'),
   closingDay: z.number().min(1).max(31),
   dueDay: z.number().min(1).max(31),
@@ -84,7 +85,10 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (data: CardFormData) => {
     try {
       setIsSubmitting(true);
-      await createCard({ ...data, currentInvoice: 0 });
+      await createCard({ 
+        ...data, 
+        currentInvoice: 0,
+      } as any);
       reset();
       toast.success('Cartão cadastrado com sucesso!');
       onSuccess?.();
@@ -145,16 +149,17 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
 
             {/* Conta Vinculada */}
             <div className="space-y-2">
-              <Label htmlFor="accountId" className="text-gray-600">Conta Vinculada</Label>
+              <Label htmlFor="accountId" className="text-gray-600">Conta Vinculada (Opcional)</Label>
               <Controller
                 name="accountId"
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
                     <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta"} />
+                      <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta (opcional)"} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">Nenhuma conta</SelectItem>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.name}
@@ -166,6 +171,21 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
               />
               {errors.accountId && (
                 <p className="text-sm text-red-600">{errors.accountId.message}</p>
+              )}
+            </div>
+
+            {/* Últimos 4 dígitos */}
+            <div className="space-y-2">
+              <Label htmlFor="lastFourDigits" className="text-gray-600">Últimos 4 Dígitos (Opcional)</Label>
+              <Input
+                id="lastFourDigits"
+                placeholder="Ex: 1234"
+                maxLength={4}
+                className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                {...register('lastFourDigits')}
+              />
+              {errors.lastFourDigits && (
+                <p className="text-sm text-red-600">{errors.lastFourDigits.message}</p>
               )}
             </div>
 
