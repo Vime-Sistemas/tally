@@ -211,49 +211,53 @@ export function Login({ onNavigate }: LoginProps) {
             <p className="text-gray-500">Entre para acessar suas finanças.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button 
-              variant="outline" 
-              className={`w-full h-11 relative transition-all ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
-              type="button" 
-              onClick={() => handleSocialLogin('google-oauth2')}
-            >
-              <Chromium className="mr-2 h-4 w-4 text-blue-400" />
-              Google
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                className={`w-full h-14 px-6 transition-all text-base ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                type="button" 
+                onClick={() => handleSocialLogin('google-oauth2')}
+              >
+                <Chromium className="mr-2 h-4 w-4 text-blue-400" />
+                Google
+              </Button>
               {lastSocial === 'google-oauth2' && (
-                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full">
+                <div className="absolute -top-4 -right-3 inline-flex items-center gap-1 px-2 py-1 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
                   <Clock className="h-3 w-3" />
-                  Recente
-                </span>
+                  <span className="hidden sm:inline">Recente</span>
+                </div>
               )}
-            </Button>
-            <Button 
-              variant="outline" 
-              className={`w-full h-11 relative transition-all ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
-              type="button" 
-              onClick={() => handleSocialLogin('facebook')}
-            >
-              <Facebook className="mr-2 h-4 w-4 text-blue-400" />
-              Facebook
+            </div>
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                className={`w-full h-14 px-6 transition-all text-base ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                type="button" 
+                onClick={() => handleSocialLogin('facebook')}
+              >
+                <Facebook className="mr-2 h-4 w-4 text-blue-400" />
+                Facebook
+              </Button>
               {lastSocial === 'facebook' && (
-                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full">
+                <div className="absolute -top-4 -right-3 inline-flex items-center gap-1 px-2 py-1 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
                   <Clock className="h-3 w-3" />
-                  Recente
-                </span>
+                  <span className="hidden sm:inline">Recente</span>
+                </div>
               )}
-            </Button>
+            </div>
           </div>
 
           {lastAccount && (
-            <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-400 flex items-center justify-center text-white text-lg">
-                    <Clock className="h-5 w-5" />
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-start justify-between gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-blue-400 flex items-center justify-center text-white text-lg">
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-500 font-semibold tracking-wide uppercase">Última conta</p>
-                    <p className="text-sm font-medium text-gray-900 truncate" title={lastAccount}>
+                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate" title={lastAccount}>
                       {maskEmail(lastAccount)}
                     </p>
                     {lastSocial && (
@@ -273,7 +277,7 @@ export function Login({ onNavigate }: LoginProps) {
                 </button>
               </div>
               <button
-                className="w-full mt-3 px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+                className="w-full mt-2 sm:mt-3 px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
                 onClick={() => form.setValue('email', lastAccount)}
                 type="button"
               >
