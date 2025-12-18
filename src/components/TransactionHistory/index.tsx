@@ -314,7 +314,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
           {onNavigate && (
             <Button 
               onClick={() => onNavigate('transactions-new')}
-              className="rounded-full bg-blue-400"
+              className="rounded-full bg-blue-400 hover:bg-blue-500"
             >
               <Plus className="mr-2 h-4 w-4" />
               Nova Transação

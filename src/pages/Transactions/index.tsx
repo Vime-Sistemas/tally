@@ -59,8 +59,7 @@ export function Transactions({ onNavigate }: TransactionsProps) {
           <div className="mb-8 text-center relative">
             {onNavigate && (
               <Button 
-                variant="ghost" 
-                className="absolute right-0 top-0 hidden md:flex"
+                className="absolute right-0 top-0 hidden md:flex bg-blue-400 hover:bg-blue-500 text-white"
                 onClick={() => onNavigate('transactions-history')}
               >
                 <List className="mr-2 h-4 w-4" />

@@ -145,7 +145,7 @@ export function DepositGoalDialog({ open, onOpenChange, goal, onSuccess }: Depos
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="bg-blue-400 hover:bg-blue-500">
               {isSubmitting ? "Processando..." : "Confirmar Depósito"}
             </Button>
           </div>
