@@ -312,7 +312,7 @@ export function Goals() {
                   <Button type="button" variant="outline" onClick={() => setActiveTab("list")}>
                     Cancelar
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="bg-blue-400 hover:bg-blue-500">
                     Criar Meta
                   </Button>
                 </div>

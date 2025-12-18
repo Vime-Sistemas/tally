@@ -186,7 +186,7 @@ export function AccountForm({ onSuccess }: { onSuccess?: () => void }) {
 
           <Button
             type="submit"
-            className="w-full bg-blue-400 hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
+            className="w-full bg-blue-400 hover:bg-blue-500 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Salvando...' : 'Cadastrar Conta'}

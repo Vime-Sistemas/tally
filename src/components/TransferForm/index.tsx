@@ -254,7 +254,7 @@ export function TransferForm() {
 
           <Button
             type="submit"
-            className="w-full bg-black hover:bg-gray-800 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-blue-400 hover:bg-blue-500 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Processando...' : 'Realizar Transferência'}

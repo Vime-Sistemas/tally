@@ -148,6 +148,12 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     }
   };
 
+  const activeClass = (active: boolean, color: string) =>
+  active
+    ? `${color} text-white hover:${color}`
+    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+
+
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
       FOOD: 'Alimentação',
@@ -329,26 +335,34 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
 
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
             <Button
-              variant={typeFilter === "ALL" ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter("ALL")}
-              className="rounded-full px-4 h-11"
+              className={cn(
+                "rounded-full px-4 h-11",
+                activeClass(typeFilter === "ALL", "bg-blue-400")
+              )}
             >
               Tudo
             </Button>
+
             <Button
-              variant={typeFilter === TransactionType.INCOME ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter(TransactionType.INCOME)}
-              className="rounded-full px-4 h-11"
+              className={cn(
+                "rounded-full px-4 h-11",
+                activeClass(typeFilter === TransactionType.INCOME, "bg-blue-400")
+              )}
             >
               Entradas
             </Button>
+
             <Button
-              variant={typeFilter === TransactionType.EXPENSE ? "default" : "secondary"}
               size="sm"
               onClick={() => setTypeFilter(TransactionType.EXPENSE)}
-              className="rounded-full px-4 h-11"
+              className={cn(
+                "rounded-full px-4 h-11",
+                activeClass(typeFilter === TransactionType.EXPENSE, "bg-blue-400")
+              )}
             >
               Saídas
             </Button>
