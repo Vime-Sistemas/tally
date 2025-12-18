@@ -513,6 +513,12 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">{transaction.description}</p>
+                              {transaction.recurringTransactionId && (
+                                <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                  <CalendarClock className="h-3 w-3" />
+                                  Recorrente
+                                </span>
+                              )}
                               {(transaction as any).totalInstallments > 1 && (
                                 <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1">
                                   <CalendarClock className="h-3 w-3" />
@@ -561,6 +567,11 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           {(transaction as any).totalInstallments > 1 && (
                             <div className="mt-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full font-medium">
                               Parcela {(transaction as any).currentInstallment} de {(transaction as any).totalInstallments}
+                            </div>
+                          )}
+                          {transaction.recurringTransactionId && (
+                            <div className="mt-2 text-sm text-purple-600 bg-purple-50 px-3 py-1 rounded-full font-medium">
+                              Transação Recorrente
                             </div>
                           )}
                         </div>

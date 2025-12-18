@@ -17,7 +17,7 @@ import {
 } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
-import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../services/api';
+import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../services/api';
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
@@ -36,6 +36,9 @@ const transactionSchema = z.object({
   paymentMethod: z.string().min(1, 'Selecione uma conta ou cartão'),
   equityId: z.string().optional(),
   installments: z.number().min(2, 'Mínimo de 2 parcelas').optional(),
+  isRecurring: z.boolean().optional(),
+  frequency: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -73,6 +76,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [isInstallment, setIsInstallment] = useState(
     !!initialData?.installments && initialData.installments > 1
   );
+  const [isRecurring, setIsRecurring] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -150,28 +154,49 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
       
       const [methodType, methodId] = data.paymentMethod.split(':');
       
-      const payload = {
-        type: data.type,
-        category: data.category as TransactionCategory,
-        amount: data.amount,
-        description: data.description,
-        date: data.date,
-        equityId: data.equityId,
-        accountId: methodType === 'account' ? methodId : undefined,
-        cardId: methodType === 'card' ? methodId : undefined,
-        installments: isInstallment ? data.installments : undefined,
-      };
-
-      if (initialData) {
-        await transactionService.update({
-          id: initialData.id,
-          ...payload
+      if (isRecurring && data.frequency) {
+        // Create recurring transaction
+        const result = await createRecurringTransaction({
+          type: data.type === TransactionType.INCOME ? 'INCOME' : 'EXPENSE',
+          category: data.category,
+          amount: data.amount,
+          description: data.description,
+          frequency: data.frequency,
+          startDate: data.date,
+          endDate: data.endDate || null,
+          accountId: methodType === 'account' ? methodId : null,
+          cardId: methodType === 'card' ? methodId : null,
         });
-        toast.success('Transação atualizada com sucesso!');
-      } else {
-        await createTransaction(payload);
+
         reset();
-        toast.success('Movimentação registrada com sucesso!');
+        setIsRecurring(false);
+        const count = result.transactionsGenerated || 1;
+        toast.success(`${count} transação${count > 1 ? 's' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`);
+      } else {
+        // Create single transaction
+        const payload = {
+          type: data.type,
+          category: data.category as TransactionCategory,
+          amount: data.amount,
+          description: data.description,
+          date: data.date,
+          equityId: data.equityId,
+          accountId: methodType === 'account' ? methodId : undefined,
+          cardId: methodType === 'card' ? methodId : undefined,
+          installments: isInstallment ? data.installments : undefined,
+        };
+
+        if (initialData) {
+          await transactionService.update({
+            id: initialData.id,
+            ...payload
+          });
+          toast.success('Transação atualizada com sucesso!');
+        } else {
+          await createTransaction(payload);
+          reset();
+          toast.success('Movimentação registrada com sucesso!');
+        }
       }
       
       onSuccess?.();
@@ -366,10 +391,11 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                     id="is-installment"
                     checked={isInstallment}
                     onCheckedChange={setIsInstallment}
+                    disabled={isRecurring}
                   />
                 </div>
 
-                {isInstallment && (
+                {isInstallment && !isRecurring && (
                   <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                     <Label htmlFor="installments" className="text-gray-600">Número de Parcelas</Label>
                     <Input
@@ -385,6 +411,59 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                     )}
                     <p className="text-xs text-gray-500">
                       O valor total será dividido pelo número de parcelas e lançado nos meses subsequentes.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Recorrência */}
+            {!isInstallment && (
+              <div className="space-y-4 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is-recurring" className="text-gray-600 font-medium">Tornar recorrente?</Label>
+                  <Switch
+                    id="is-recurring"
+                    checked={isRecurring}
+                    onCheckedChange={setIsRecurring}
+                  />
+                </div>
+
+                {isRecurring && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="frequency" className="text-gray-600">Frequência</Label>
+                      <Controller
+                        name="frequency"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="w-full h-10 border-gray-200 focus:ring-black">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="DAILY">Diário</SelectItem>
+                              <SelectItem value="WEEKLY">Semanal</SelectItem>
+                              <SelectItem value="MONTHLY">Mensal</SelectItem>
+                              <SelectItem value="QUARTERLY">Trimestral</SelectItem>
+                              <SelectItem value="SEMI_ANNUAL">Semestral</SelectItem>
+                              <SelectItem value="ANNUAL">Anual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate" className="text-gray-600">Data de Término (Opcional)</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full"
+                        {...register('endDate')}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      A transação será lançada automaticamente na frequência escolhida a partir da data de início.
                     </p>
                   </div>
                 )}

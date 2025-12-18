@@ -46,6 +46,7 @@ export interface Transaction {
   installments?: number;
   currentInstallment?: number;
   totalInstallments?: number;
+  recurringTransactionId?: string; // Reference to recurring transaction
   createdAt?: string;
   updatedAt?: string;
 }

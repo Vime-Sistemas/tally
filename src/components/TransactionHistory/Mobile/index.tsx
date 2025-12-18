@@ -453,7 +453,14 @@ export function MobileTransactionHistory() {
                         {getCategoryIcon(transaction.category)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
+                          {transaction.recurringTransactionId && (
+                            <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap">
+                              Recorrente
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500">{getCategoryLabel(transaction.category)}</p>
                       </div>
                       <div className="text-right shrink-0">
@@ -466,6 +473,11 @@ export function MobileTransactionHistory() {
                         {transaction.installments && (
                           <p className="text-xs text-gray-400">
                             {transaction.currentInstallment}/{transaction.installments}x
+                          </p>
+                        )}
+                        {transaction.recurringTransactionId && !transaction.installments && (
+                          <p className="text-xs text-purple-500">
+                            Recorrente
                           </p>
                         )}
                       </div>

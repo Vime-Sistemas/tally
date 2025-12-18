@@ -7,7 +7,7 @@ import { Switch } from '../../ui/switch';
 import { MobileInput, MobileDateInput } from '../../ui/mobile-input';
 import { CurrencyInput } from '../../ui/currency-input';
 import { MobilePicker, MobilePickerTrigger, type PickerOption } from '../../ui/mobile-picker';
-import { createTransaction, confirmTransaction, getAccounts, getCards } from '../../../services/api';
+import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../../services/api';
 import { equityService } from '../../../services/equities';
 import { TransactionType, type TransactionCategory } from '../../../types/transaction';
 import { toast } from 'sonner';
@@ -26,6 +26,9 @@ const transactionSchema = z.object({
   paymentMethod: z.string().min(1, 'Selecione uma conta ou cartão'),
   equityId: z.string().optional(),
   installments: z.number().min(2, 'Mínimo de 2 parcelas').optional(),
+  isRecurring: z.boolean().optional(),
+  frequency: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -61,6 +64,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
     initialData?.type || TransactionType.EXPENSE
   );
   const [isInstallment, setIsInstallment] = useState(!!initialData?.installments);
+  const [isRecurring, setIsRecurring] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -73,6 +77,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
   const [equityPickerOpen, setEquityPickerOpen] = useState(false);
   const [installmentsPickerOpen, setInstallmentsPickerOpen] = useState(false);
+  const [frequencyPickerOpen, setFrequencyPickerOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -121,6 +126,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   const selectedPaymentMethod = watch('paymentMethod');
   const selectedEquity = watch('equityId');
   const watchedInstallments = watch('installments');
+  const watchedFrequency = watch('frequency');
 
   // Build category options
   const categoryOptions: PickerOption[] = useMemo(() => {
@@ -164,6 +170,16 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
     }));
   }, []);
 
+  // Build frequency options
+  const frequencyOptions: PickerOption[] = [
+    { value: 'DAILY', label: 'Diário' },
+    { value: 'WEEKLY', label: 'Semanal' },
+    { value: 'MONTHLY', label: 'Mensal' },
+    { value: 'QUARTERLY', label: 'Trimestral' },
+    { value: 'SEMI_ANNUAL', label: 'Semestral' },
+    { value: 'ANNUAL', label: 'Anual' },
+  ];
+
   const onSubmit = async (data: TransactionFormData) => {
     try {
       setIsSubmitting(true);
@@ -177,23 +193,47 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
         accountId = data.paymentMethod;
       }
 
-      const payload = {
-        type: data.type,
-        category: data.category as TransactionCategory,
-        amount: data.amount,
-        description: data.description,
-        date: data.date,
-        accountId,
-        cardId,
-        equityId: data.category === 'INVESTMENT' ? data.equityId : undefined,
-        installments: isInstallment ? data.installments : undefined,
-      };
+      if (isRecurring && data.frequency) {
+        // Create recurring transaction
+        const result = await createRecurringTransaction({
+          type: data.type === TransactionType.INCOME ? 'INCOME' : 'EXPENSE',
+          category: data.category,
+          amount: data.amount,
+          description: data.description,
+          frequency: data.frequency,
+          startDate: data.date,
+          endDate: data.endDate || null,
+          accountId: accountId || null,
+          cardId: cardId || null,
+        });
 
-      await createTransaction(payload);
-      reset();
-      setSelectedType(TransactionType.EXPENSE);
-      setIsInstallment(false);
-      toast.success('Transação registrada com sucesso!');
+        reset();
+        setSelectedType(TransactionType.EXPENSE);
+        setIsInstallment(false);
+        setIsRecurring(false);
+        const count = result.transactionsGenerated || 1;
+        toast.success(`${count} transação${count > 1 ? 's' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`);
+      } else {
+        // Create single transaction
+        const payload = {
+          type: data.type,
+          category: data.category as TransactionCategory,
+          amount: data.amount,
+          description: data.description,
+          date: data.date,
+          accountId,
+          cardId,
+          equityId: data.category === 'INVESTMENT' ? data.equityId : undefined,
+          installments: isInstallment ? data.installments : undefined,
+        };
+
+        await createTransaction(payload);
+        reset();
+        setSelectedType(TransactionType.EXPENSE);
+        setIsInstallment(false);
+        toast.success('Transação registrada com sucesso!');
+      }
+
       if (onSuccess) onSuccess();
     } catch (error: any) {
       if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
@@ -380,6 +420,49 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           </div>
         </div>
 
+        {/* Recurring Section */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div className="space-y-0.5">
+              <span className="text-base font-medium text-gray-900">Recorrente?</span>
+              <p className="text-xs text-gray-500">
+                Habilite para transações recorrentes
+              </p>
+            </div>
+            <Switch
+              checked={isRecurring}
+              onCheckedChange={setIsRecurring}
+              disabled={isInstallment}
+            />
+          </div>
+
+          {isRecurring && (
+            <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+              <MobilePickerTrigger
+                label="Frequência"
+                value={watchedFrequency}
+                options={frequencyOptions}
+                placeholder="Selecione a frequência"
+                onClick={() => setFrequencyPickerOpen(true)}
+                error={errors.frequency?.message}
+              />
+              
+              <Controller
+                name="endDate"
+                control={control}
+                render={({ field }) => (
+                  <MobileDateInput
+                    label="Data Final (Opcional)"
+                    value={field.value || ''}
+                    onValueChange={field.onChange}
+                    error={errors.endDate?.message}
+                  />
+                )}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Installments Section (only for expenses) */}
         {selectedType === TransactionType.EXPENSE && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -393,6 +476,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
               <Switch
                 checked={isInstallment}
                 onCheckedChange={setIsInstallment}
+                disabled={isRecurring}
               />
             </div>
 
@@ -485,6 +569,21 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
             onValueChange={(val) => field.onChange(parseInt(val))}
             options={installmentsOptions}
             title="Parcelas"
+          />
+        )}
+      />
+
+      <Controller
+        name="frequency"
+        control={control}
+        render={({ field }) => (
+          <MobilePicker
+            open={frequencyPickerOpen}
+            onOpenChange={setFrequencyPickerOpen}
+            value={field.value || ''}
+            onValueChange={field.onChange}
+            options={frequencyOptions}
+            title="Frequência"
           />
         )}
       />

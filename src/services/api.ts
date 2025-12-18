@@ -158,4 +158,38 @@ export const deleteGoal = async (id: string): Promise<void> => {
   await api.delete(`/goals/${id}`);
 };
 
+// RECURRING TRANSACTIONS API
+
+export interface CreateRecurringTransactionDTO {
+  type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
+  category: string;
+  amount: number;
+  description: string;
+  frequency: string;
+  startDate: string;
+  endDate?: string | null;
+  accountId?: string | null;
+  cardId?: string | null;
+  destinationAccountId?: string | null;
+}
+
+export const createRecurringTransaction = async (data: CreateRecurringTransactionDTO): Promise<any> => {
+  const response = await api.post('/recurring-transactions', data);
+  return response.data;
+};
+
+export const getRecurringTransactions = async (): Promise<any[]> => {
+  const response = await api.get('/recurring-transactions');
+  return response.data;
+};
+
+export const updateRecurringTransaction = async (id: string, data: Partial<CreateRecurringTransactionDTO>): Promise<any> => {
+  const response = await api.put(`/recurring-transactions/${id}`, data);
+  return response.data;
+};
+
+export const deleteRecurringTransaction = async (id: string): Promise<void> => {
+  await api.delete(`/recurring-transactions/${id}`);
+};
+
 export default api;
