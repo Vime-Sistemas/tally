@@ -421,7 +421,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
       </div>
       
       <div className="mt-8 text-center">
-        <p className="text-xs text-gray-400">Versão 1.3.5</p>
+        <p className="text-xs text-gray-400">Versão 1.5.0</p>
       </div>
     </div>
   );
