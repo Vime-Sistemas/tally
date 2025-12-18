@@ -9,7 +9,7 @@ import {
 import { cn } from "../../lib/utils";
 import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User, LogOut } from "lucide-react";
 import { HousePlus } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 import {
   Select,
@@ -22,6 +22,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Kbd } from "../ui/kbd";
 import type { Page, AppContext } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 
 import { MobileHeader } from "./Mobile";
 
@@ -61,6 +70,7 @@ ListItem.displayName = "ListItem"
 
 export function Header({ onNavigate, hasBusiness, currentContext, onContextChange, currentPage }: HeaderProps) {
   const { user, logout } = useUser();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -285,7 +295,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
             )}
              <div className="hidden md:flex items-center gap-2">
                <button
-                 onClick={logout}
+                 onClick={() => setLogoutOpen(true)}
                  title="Sair"
                  className="ml-2 inline-flex items-center gap-2 px-3 h-9 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                >
@@ -317,6 +327,29 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                </button>
              </div>
           </nav>
+          {/* Logout confirmation dialog */}
+          <AlertDialog open={logoutOpen} onOpenChange={(open) => setLogoutOpen(open)}>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Sair da conta</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja sair da sua conta? Você será redirecionado para a tela de login.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex justify-end gap-3 mt-4">
+                <AlertDialogCancel className="">Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setLogoutOpen(false);
+                    logout();
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Sair
+                </AlertDialogAction>
+              </div>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       </header>

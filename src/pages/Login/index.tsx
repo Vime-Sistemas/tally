@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,7 +14,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { ChevronRight, Facebook, Chromium } from "lucide-react";
+import { ChevronRight, Facebook, Chromium, Clock, X } from "lucide-react";
+import { encryptPayload, decryptPayload } from "@/utils/crypto";
 import type { Page } from "@/types/navigation";
 
 const loginSchema = z.object({
@@ -31,6 +32,53 @@ export function Login({ onNavigate }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { loginWithRedirect } = useAuth0();
 
+  const [lastSocial, setLastSocial] = useState<string | null>(null);
+  const [lastAccount, setLastAccount] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const data = localStorage.getItem('tally_u');
+      if (data) {
+        const decrypted = decryptPayload<{ social?: string; account?: string }>(data);
+        if (decrypted.social) setLastSocial(decrypted.social);
+        if (decrypted.account) setLastAccount(decrypted.account);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const saveLastData = (social?: string, account?: string) => {
+    try {
+      const current = localStorage.getItem('tally_u');
+      let data: { social?: string; account?: string } = {};
+      try {
+        data = decryptPayload<{ social?: string; account?: string }>(current || '{}');
+      } catch (e) {
+        // ignore
+      }
+      if (social !== undefined) data.social = social;
+      if (account !== undefined) data.account = account;
+      localStorage.setItem('tally_u', encryptPayload(data));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const saveLastAccount = (email: string) => {
+    saveLastData(undefined, email);
+    setLastAccount(email);
+  };
+
+  const maskEmail = (email: string) => {
+    const parts = email.split('@');
+    if (parts.length !== 2) return email;
+    const name = parts[0];
+    const domain = parts[1];
+    if (name.length <= 2) return `${name[0]}***@${domain}`;
+    return `${name[0]}***${name[name.length-1]}@${domain}`;
+  };
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,6 +91,7 @@ export function Login({ onNavigate }: LoginProps) {
     // For custom UI with Auth0, we typically redirect to Universal Login
     // passing the email as a hint if possible, or use Resource Owner Password flow (not recommended).
     // Here we will redirect to the standard Auth0 login page for security.
+    saveLastAccount(data.email);
     await loginWithRedirect({
       authorizationParams: {
         login_hint: data.email,
@@ -53,12 +102,30 @@ export function Login({ onNavigate }: LoginProps) {
   };
 
   const handleSocialLogin = (connection: string) => {
+    saveLastData(connection, undefined);
+    setLastSocial(connection);
     loginWithRedirect({ 
       authorizationParams: {
-        connection: connection 
-        ,ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
+        connection: connection,
+        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
       }
     });
+  };
+
+  const getSocialName = (social: string) => {
+    if (social === 'google-oauth2') return 'Google';
+    if (social === 'facebook') return 'Facebook';
+    return 'Social';
+  };
+
+  const clearLastData = () => {
+    try {
+      localStorage.removeItem('tally_u');
+    } catch (e) {
+      // ignore
+    }
+    setLastAccount(null);
+    setLastSocial(null);
   };
 
   const features = [
@@ -147,13 +214,51 @@ export function Login({ onNavigate }: LoginProps) {
           <div className="grid grid-cols-2 gap-4">
             <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
               <Chromium className="mr-2 h-4 w-4 text-blue-400" />
-              Google
+              Google {lastSocial === 'google-oauth2' && <span className="ml-2 text-xs text-gray-400">(Último usado)</span>}
             </Button>
             <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('facebook')}>
               <Facebook className="mr-2 h-4 w-4 text-blue-400" />
-              Facebook
+              Facebook {lastSocial === 'facebook' && <span className="ml-2 text-xs text-gray-400">(Último usado)</span>}
             </Button>
           </div>
+
+          {lastAccount && (
+            <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-400 flex items-center justify-center text-white text-lg">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 font-semibold tracking-wide uppercase">Última conta</p>
+                    <p className="text-sm font-medium text-gray-900 truncate" title={lastAccount}>
+                      {maskEmail(lastAccount)}
+                    </p>
+                    {lastSocial && (
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        Via {getSocialName(lastSocial)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  onClick={() => clearLastData()}
+                  type="button"
+                  title="Remover"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                className="w-full mt-3 px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+                onClick={() => form.setValue('email', lastAccount)}
+                type="button"
+              >
+                Continuar com essa conta
+              </button>
+            </div>
+          )}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
