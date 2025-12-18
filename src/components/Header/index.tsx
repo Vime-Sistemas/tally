@@ -112,7 +112,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <PieChart className="h-4 w-4" />
                           <span>Visão resumo</span>
                         </div>
-                        <Kbd>Alt + D</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + D</Kbd>
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}>
@@ -121,7 +121,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <Target className="h-4 w-4" />
                           <span>Analisar metas</span>
                         </div>
-                        <Kbd>Alt + M</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + M</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -158,7 +158,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <PlusCircle className="h-4 w-4" />
                           <span>Registrar nova movimentação</span>
                         </div>
-                        <Kbd>Alt + T</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + T</Kbd>
                       </div>
                     </ListItem>
                     <ListItem href="#" title="Histórico" onClick={(e) => { e.preventDefault(); onNavigate('transactions-history'); }}>
@@ -167,7 +167,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <List className="h-4 w-4" />
                           <span>Ver todas as transações</span>
                         </div>
-                        <Kbd>Alt + H</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + H</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -210,7 +210,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <CardIcon className="h-4 w-4" />
                           <span>Gerenciar contas e cartões</span>
                         </div>
-                        <Kbd>Alt + C</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + C</Kbd>
                       </div>
                     </ListItem>
                   </ul>
@@ -253,7 +253,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <CardIcon className="h-4 w-4" />
                           <span>Gerenciar os bens cadastrados</span>
                         </div>
-                        <Kbd>Alt + P</Kbd>
+                        <Kbd className="bg-blue-300 text-white h-6 w-14">Alt + P</Kbd>
                       </div>
                     </ListItem>
                   </ul>

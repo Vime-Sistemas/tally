@@ -90,36 +90,36 @@ export function Transactions({ onNavigate }: TransactionsProps) {
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2",
                 activeTab === 'TRANSACTION'
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-blue-400 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               <span className={cn(isMobile && "text-xs")}>Transação</span>
-              {!isMobile && activeTab !== 'TRANSACTION' && <Kbd className="bg-gray-200">Alt+1</Kbd>}
+              {!isMobile && activeTab !== 'TRANSACTION' && <Kbd className="bg-blue-300 text-white">Alt+1</Kbd>}
             </button>
             <button
               onClick={() => setActiveTab('TRANSFER')}
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2",
                 activeTab === 'TRANSFER'
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-blue-400 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               <span className={cn(isMobile && "text-xs")}>Transferência</span>
-              {!isMobile && activeTab !== 'TRANSFER' && <Kbd className="bg-gray-200">Alt+2</Kbd>}
+              {!isMobile && activeTab !== 'TRANSFER' && <Kbd className="bg-blue-300 text-white">Alt+2</Kbd>}
             </button>
             <button
               onClick={() => setActiveTab('INVESTMENT')}
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2",
                 activeTab === 'INVESTMENT'
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-blue-400 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
               <span className={cn(isMobile && "text-xs")}>Aplicação</span>
-              {!isMobile && activeTab !== 'INVESTMENT' && <Kbd className="bg-gray-200">Alt+3</Kbd>}
+              {!isMobile && activeTab !== 'INVESTMENT' && <Kbd className="bg-blue-300 text-white">Alt+3</Kbd>}
             </button>
           </div>
         </div>

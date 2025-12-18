@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../types/account";
-import { CreditCard, Wallet, Banknote, Plus } from "lucide-react";
+import { CreditCard, Wallet, Banknote } from "lucide-react";
 import { getAccounts, getCards } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
@@ -9,6 +9,7 @@ import { EditCardDialog } from '../EditCardDialog';
 import { PayInvoiceDialog } from '../PayInvoiceDialog';
 import { Button } from '../ui/button';
 import type { Page } from '../../types/navigation';
+import { formatCurrency } from '../../utils/formatters';
 
 import { MobileAccountsList } from './Mobile';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -90,7 +91,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
           <h2 className="text-xl font-semibold text-black">Minhas Contas</h2>
           {onNavigate && (
             <Button onClick={() => onNavigate('accounts-new')} className='bg-blue-400 hover:bg-blue-500'>
-              <Plus className="mr-2 h-6 w-6" />
+              <Wallet className="mr-2 h-6 w-6" />
               Nova Conta
             </Button>
           )}
@@ -121,7 +122,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
                 </div>
                 <div>
                   <p className="text-sm opacity-80 mb-1">Saldo Atual</p>
-                  <h3 className="text-2xl font-bold">R$ {account.balance.toFixed(2).replace('.', ',')}</h3>
+                  <h3 className="text-2xl font-bold">{formatCurrency(account.balance)}</h3>
                   <p className="mt-2 font-medium">{account.name}</p>
                 </div>
               </div>
@@ -136,7 +137,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
           <h2 className="text-xl font-semibold text-black">Meus Cartões</h2>
           {onNavigate && (
             <Button onClick={() => onNavigate('accounts-new')} className='bg-blue-400 hover:bg-blue-500'>
-              <Plus className="mr-2 h-4 w-4" />
+              <CreditCard className="mr-2 h-4 w-4" />
               Novo Cartão
             </Button>
           )}
@@ -169,11 +170,11 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
                   <div className="flex justify-between items-end">
                     <div>
                       <p className="text-sm opacity-80 mb-1">Fatura Atual</p>
-                      <h3 className="text-2xl font-bold">R$ {card.currentInvoice.toFixed(2).replace('.', ',')}</h3>
+                      <h3 className="text-2xl font-bold">{formatCurrency(card.currentInvoice)}</h3>
                     </div>
                     <div className="text-right">
                       <p className="text-xs opacity-80">Limite Disponível</p>
-                      <p className="font-medium">R$ {(card.limit - (card.limitUsed || 0)).toFixed(2).replace('.', ',')}</p>
+                      <p className="font-medium">{formatCurrency(card.limit - (card.limitUsed || 0))}</p>
                     </div>
                   </div>
                   <div className="mt-6 flex justify-between items-center">

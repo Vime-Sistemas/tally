@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { CurrencyInput } from '../ui/currency-input';
 import { Kbd } from '../ui/kbd';
 import {
   Select,
@@ -157,25 +158,22 @@ export function InvestmentForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           
           {/* Valor em destaque */}
-          <div className="flex flex-col items-center space-y-3">
-            <Label htmlFor="amount" className="text-gray-500 font-medium">Valor da Aplicação</Label>
-            <div className="relative w-full max-w-[240px]">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg font-medium">
-                  R$
-               </div>
-               <Input
-                id="amount"
-                type="number"
-                step="0.01"
+          <Controller
+            name="amount"
+            control={control}
+            render={({ field }) => (
+              <CurrencyInput
+                value={field.value || 0}
+                onValueChange={field.onChange}
+                label="Valor da Aplicação"
                 placeholder="0,00"
-                className="text-center text-3xl h-16 pl-10 font-semibold border-gray-200 focus:border-black focus:ring-black rounded-xl shadow-sm"
-                {...register('amount', { valueAsNumber: true })}
+                autoResize
+                error={errors.amount?.message}
+                className="text-3xl font-semibold"
+                symbolClassName="text-lg"
               />
-            </div>
-             {errors.amount && (
-                <p className="text-sm text-red-600 text-center">{errors.amount.message}</p>
-              )}
-          </div>
+            )}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipo de Aplicação */}
