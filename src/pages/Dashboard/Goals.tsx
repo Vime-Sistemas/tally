@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState, useEffect } from "react";
@@ -40,13 +41,13 @@ const getCategoryIcon = (category: string) => {
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'travel': return "#33b2e9"; // Lighter Blue
-    case 'electronics': return "#007bb3"; // Darker Blue
-    case 'vehicle': return "#005f9e"; // Indigo Blue
-    case 'home': return "#66c5ee"; // Even Lighter Blue
-    case 'emergency': return "#009FE3"; // Brand Blue
-    case 'investment': return "#008b9e"; // Teal Blue
-    default: return "#6b7280"; // gray-500
+    case 'travel': return "#60a5fa"; // Lighter Blue
+    case 'electronics': return "#60a5fa"; // Darker Blue
+    case 'vehicle': return "#60a5fa"; // Indigo Blue
+    case 'home': return "#60a5fa"; // Even Lighter Blue
+    case 'emergency': return "#60a5fa"; // Brand Blue
+    case 'investment': return "#60a5fa"; // Teal Blue
+    default: return "#60a5fa"; // gray-500
   }
 };
 
@@ -139,7 +140,7 @@ export function Goals() {
                         </div>
                       </div>
                       <CardDescription>
-                        R$ {goal.currentAmount.toLocaleString()} de R$ {goal.targetAmount.toLocaleString()}
+                        R$ {goal.currentAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} de R$ {goal.targetAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center pb-6">
@@ -250,23 +251,32 @@ export function Goals() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="target">Valor Alvo (R$)</Label>
-                      <Input 
-                        id="target" 
-                        type="number" 
-                        placeholder="0,00" 
-                        {...form.register("target")} 
+                      <Controller
+                        name="target"
+                        control={form.control}
+                        render={({ field }) => (
+                          <CurrencyInput
+                            value={field.value ? parseFloat(field.value) : 0}
+                            onValueChange={(value) => field.onChange(value.toString())}
+                            placeholder="0,00"
+                            error={form.formState.errors.target?.message}
+                          />
+                        )}
                       />
-                      {form.formState.errors.target && (
-                        <p className="text-sm text-red-500">{form.formState.errors.target.message}</p>
-                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="current">Valor Atual (R$)</Label>
-                      <Input 
-                        id="current" 
-                        type="number" 
-                        placeholder="0,00" 
-                        {...form.register("current")} 
+                      <Controller
+                        name="current"
+                        control={form.control}
+                        render={({ field }) => (
+                          <CurrencyInput
+                            value={field.value ? parseFloat(field.value) : 0}
+                            onValueChange={(value) => field.onChange(value.toString())}
+                            placeholder="0,00"
+                            error={form.formState.errors.current?.message}
+                          />
+                        )}
                       />
                     </div>
                   </div>

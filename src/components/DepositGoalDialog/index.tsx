@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { CurrencyInput } from "../ui/currency-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -117,16 +118,18 @@ export function DepositGoalDialog({ open, onOpenChange, goal, onSuccess }: Depos
 
           <div className="space-y-2">
             <Label htmlFor="amount">Valor (R$)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0,00"
-              {...form.register("amount")}
+            <Controller
+              name="amount"
+              control={form.control}
+              render={({ field }) => (
+                <CurrencyInput
+                  value={field.value ? parseFloat(field.value) : 0}
+                  onValueChange={(value) => field.onChange(value.toString())}
+                  placeholder="0,00"
+                  error={form.formState.errors.amount?.message}
+                />
+              )}
             />
-            {form.formState.errors.amount && (
-              <p className="text-sm text-red-500">{form.formState.errors.amount.message}</p>
-            )}
           </div>
 
           <div className="space-y-2">
