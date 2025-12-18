@@ -71,28 +71,22 @@ export function CurrencyInput({ value, onValueChange, className, error, label, s
       <div className="space-y-2 w-full flex flex-col items-center">
         {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
         <div className={cn(
-          "inline-flex items-center justify-center bg-white rounded-xl border border-gray-200 focus-within:border-black focus-within:ring-black focus-within:ring-1 transition-colors px-4 py-4 shadow-sm max-w-full overflow-hidden min-w-[140px]",
+          "flex items-center justify-center bg-white rounded-xl border border-gray-200 focus-within:border-black focus-within:ring-black focus-within:ring-1 transition-colors px-4 py-4 shadow-sm w-full max-w-md",
           error && "border-red-500"
         )}>
           <span className={cn("text-gray-400 font-medium mr-2 shrink-0", symbolClassName)}>R$</span>
-          <div className="relative grid place-items-center max-w-full overflow-hidden">
-            {/* Ghost element to determine width */}
-            <span className={cn("invisible col-start-1 row-start-1 whitespace-pre px-1", className)}>
-              {displayValue || props.placeholder || "0,00"}
-            </span>
-            <input
-              type="text"
-              inputMode="decimal"
-              className={cn(
-                "col-start-1 row-start-1 w-full h-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none appearance-none text-left",
-                className
-              )}
-              value={displayValue}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              {...props}
-            />
-          </div>
+          <input
+            type="text"
+            inputMode="decimal"
+            className={cn(
+              "w-full bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none appearance-none text-center",
+              className
+            )}
+            value={displayValue}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            {...props}
+          />
         </div>
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>

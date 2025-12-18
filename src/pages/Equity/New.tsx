@@ -251,7 +251,7 @@ export function EquityNew({ onNavigate }: EquityNewProps) {
               </div>
 
               <div className="pt-4">
-                <Button type="submit" className="w-full bg-blue-400 hover:bg-gray-800 text-white" disabled={isSubmitting}>
+                <Button type="submit" className="w-full bg-blue-400 hover:bg-blue-500 text-white" disabled={isSubmitting}>
                   {isSubmitting ? "Salvando..." : "Cadastrar Patrimônio"}
                 </Button>
               </div>

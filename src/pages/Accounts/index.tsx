@@ -22,8 +22,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
         <div className="mb-8 text-center relative">
           {onNavigate && (
             <Button 
-              variant="ghost" 
-              className="absolute right-0 top-0 hidden md:flex"
+              className="absolute right-0 top-0 hidden md:flex bg-blue-400 hover:bg-blue-500"
               onClick={() => onNavigate('accounts-list')}
             >
               <List className="mr-2 h-4 w-4" />
@@ -35,8 +34,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
 
           {onNavigate && (
             <Button 
-              variant="outline" 
-              className="mt-4 md:hidden w-full"
+              className="mt-4 md:hidden w-full bg-blue-400 hover:bg-blue-500"
               onClick={() => onNavigate('accounts-list')}
             >
               <List className="mr-2 h-4 w-4" />
@@ -53,7 +51,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 activeTab === 'ACCOUNT'
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-blue-400 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >
@@ -64,7 +62,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 activeTab === 'CARD'
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-blue-400 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               )}
             >

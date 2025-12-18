@@ -198,8 +198,7 @@ export function Goals() {
                           </div>
                         </div>
                         <Button 
-                          className="w-full" 
-                          variant="outline"
+                          className="w-full bg-blue-400 hover:bg-blue-500" 
                           onClick={() => setSelectedGoal(goal)}
                         >
                           Adicionar Valor
@@ -215,7 +214,7 @@ export function Goals() {
                 className="border-dashed border-2 flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:bg-gray-50 transition-colors group"
                 onClick={() => setActiveTab("new")}
               >
-                <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4 group-hover:bg-gray-200 transition-colors">
+                <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
                   <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-600">Nova Meta</h3>

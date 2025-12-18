@@ -89,8 +89,8 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-black">Minhas Contas</h2>
           {onNavigate && (
-            <Button onClick={() => onNavigate('accounts-new')} size="sm" variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => onNavigate('accounts-new')} className='bg-blue-400 hover:bg-blue-500'>
+              <Plus className="mr-2 h-6 w-6" />
               Nova Conta
             </Button>
           )}
@@ -135,7 +135,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-black">Meus Cartões</h2>
           {onNavigate && (
-            <Button onClick={() => onNavigate('accounts-new')} size="sm" variant="outline">
+            <Button onClick={() => onNavigate('accounts-new')} className='bg-blue-400 hover:bg-blue-500'>
               <Plus className="mr-2 h-4 w-4" />
               Novo Cartão
             </Button>
