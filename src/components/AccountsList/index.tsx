@@ -180,7 +180,9 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
                   <div className="mt-6 flex justify-between items-center">
                     <div>
                         <p className="font-medium tracking-wide">{card.name}</p>
-                        <p className="text-xs opacity-80">Vence dia {card.dueDay}</p>
+                        <p className="text-xs opacity-80">
+                          {card.lastFourDigits ? `Final: ••••${card.lastFourDigits}` : `Vence dia ${card.dueDay}`}
+                        </p>
                     </div>
                     <Button 
                         size="sm" 

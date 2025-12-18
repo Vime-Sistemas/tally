@@ -154,12 +154,11 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
                 name="accountId"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
+                  <Select value={field.value || ''} onValueChange={(value) => field.onChange(value || undefined)} disabled={loadingAccounts}>
                     <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
                       <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta (opcional)"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma conta</SelectItem>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.name}

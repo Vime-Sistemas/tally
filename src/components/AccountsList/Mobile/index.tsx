@@ -309,7 +309,9 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg tracking-wide">{card.name}</h3>
-                        <p className="text-white/70 text-xs font-medium">Final ****</p>
+                        <p className="text-white/70 text-xs font-medium">
+                          {card.lastFourDigits ? `Final ••••${card.lastFourDigits}` : 'Sem identificador'}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
