@@ -1,4 +1,4 @@
-import { Home, List, PlusCircle, User, Wallet } from "lucide-react";
+import { Home, PlusCircle, User, LayoutList, WalletCards } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { Page } from "../../../types/navigation";
 
@@ -29,7 +29,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
             currentPage === 'transactions-history' ? "text-black" : "text-gray-400"
           )}
         >
-          <List className="w-6 h-6" />
+          <LayoutList className="w-6 h-6" />
           <span className="text-[10px] font-medium">Extrato</span>
         </button>
 
@@ -50,7 +50,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
             currentPage === 'accounts-list' ? "text-black" : "text-gray-400"
           )}
         >
-          <Wallet className="w-6 h-6" />
+          <WalletCards className="w-6 h-6" />
           <span className="text-[10px] font-medium">Contas</span>
         </button>
 

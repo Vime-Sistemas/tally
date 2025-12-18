@@ -258,7 +258,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   };
 
   return (
-    <div className="pb-24 bg-[#F2F2F7] min-h-full -mx-4 -mt-4 px-4 pt-4">
+    <div className="pb-24 bg-white min-h-full -mx-4 -mt-4 px-4 pt-4">
       {/* Type Selector - Segmented Control */}
       <div className="bg-gray-200/80 p-1 rounded-xl flex mb-6">
         <button
@@ -271,7 +271,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           className={cn(
             "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             selectedType === TransactionType.EXPENSE
-              ? "bg-white text-gray-900 shadow-sm"
+              ? "bg-blue-400 text-white shadow-sm"
               : "text-gray-500"
           )}
         >
@@ -287,7 +287,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           className={cn(
             "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             selectedType === TransactionType.INCOME
-              ? "bg-white text-gray-900 shadow-sm"
+              ? "bg-blue-400 text-white shadow-sm"
               : "text-gray-500"
           )}
         >

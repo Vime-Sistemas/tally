@@ -52,7 +52,7 @@ export function Transactions({ onNavigate }: TransactionsProps) {
   }, []);
 
   return (
-    <div className={cn("p-4 md:p-8", isMobile && "p-4 pt-2")}>
+    <div className={cn("p-4 md:p-8 bg-white", isMobile && "p-4 pt-2")}>
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         {!isMobile && (

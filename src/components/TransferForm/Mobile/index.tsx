@@ -141,7 +141,7 @@ export function MobileTransferForm() {
   };
 
   return (
-    <div className="pb-24 bg-[#F2F2F7] min-h-full -mx-4 -mt-4 px-4 pt-4">
+    <div className="pb-24 bg-white min-h-full -mx-4 -mt-4 px-4 pt-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Amount Section */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
