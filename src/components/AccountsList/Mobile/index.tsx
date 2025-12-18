@@ -82,7 +82,7 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
           className="group relative flex flex-col items-center justify-center gap-3 p-5 rounded-[2rem] bg-white shadow-sm border border-gray-100 active:scale-95 transition-all duration-300 hover:shadow-md"
           onClick={() => onNavigate?.('accounts-new')}
         >
-          <div className="p-3.5 bg-black text-white rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="p-3.5 bg-blue-400 text-white rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
             <Plus className="h-6 w-6" />
           </div>
           <span className="text-sm font-semibold text-gray-900">Nova Conta</span>
@@ -92,7 +92,7 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
           className="group relative flex flex-col items-center justify-center gap-3 p-5 rounded-[2rem] bg-white shadow-sm border border-gray-100 active:scale-95 transition-all duration-300 hover:shadow-md"
           onClick={() => onNavigate?.('accounts-new')}
         >
-          <div className="p-3.5 bg-black text-white rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="p-3.5 bg-blue-400 text-white rounded-full shadow-lg group-hover:scale-110 transition-transform duration-300">
             <CreditCardIcon className="h-6 w-6" />
           </div>
           <span className="text-sm font-semibold text-gray-900">Novo Cartão</span>
@@ -101,7 +101,7 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
 
       {/* Equity Shortcut */}
       <div 
-        className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-blue-500 rounded-[2rem] p-6 text-white shadow-xl shadow-blue-200 cursor-pointer active:scale-[0.98] transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300 group"
+        className="relative overflow-hidden bg-gradient-to-br from-blue-400 to-blue-400 rounded-[2rem] p-6 text-white shadow-xl shadow-blue-200 cursor-pointer active:scale-[0.98] transition-all duration-300 hover:shadow-2xl hover:shadow-blue-300 group"
         onClick={() => onNavigate?.('equity-list')}
       >
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors" />

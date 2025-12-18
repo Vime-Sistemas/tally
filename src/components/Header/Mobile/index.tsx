@@ -15,7 +15,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           onClick={() => onNavigate('dashboard-summary')}
           className={cn(
             "flex flex-col items-center justify-center w-full h-full space-y-1",
-            currentPage === 'dashboard-summary' ? "text-black" : "text-gray-400"
+            currentPage === 'dashboard-summary' ? "text-blue-600" : "text-gray-400"
           )}
         >
           <Home className="w-6 h-6" />
@@ -26,7 +26,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           onClick={() => onNavigate('transactions-history')}
           className={cn(
             "flex flex-col items-center justify-center w-full h-full space-y-1",
-            currentPage === 'transactions-history' ? "text-black" : "text-gray-400"
+            currentPage === 'transactions-history' ? "text-blue-600" : "text-gray-400"
           )}
         >
           <LayoutList className="w-6 h-6" />
@@ -47,7 +47,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           onClick={() => onNavigate('accounts-list')}
           className={cn(
             "flex flex-col items-center justify-center w-full h-full space-y-1",
-            currentPage === 'accounts-list' ? "text-black" : "text-gray-400"
+            currentPage === 'accounts-list' ? "text-blue-600" : "text-gray-400"
           )}
         >
           <WalletCards className="w-6 h-6" />
@@ -58,7 +58,7 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           onClick={() => onNavigate('profile')}
           className={cn(
             "flex flex-col items-center justify-center w-full h-full space-y-1",
-            currentPage === 'profile' ? "text-black" : "text-gray-400"
+            currentPage === 'profile' ? "text-blue-600" : "text-gray-400"
           )}
         >
           <User className="w-6 h-6" />
