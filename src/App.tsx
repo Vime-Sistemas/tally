@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth0 } from "@auth0/auth0-react"
+import { Analytics } from "@vercel/analytics/react"
 import api, { setAuthToken } from './services/api'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
@@ -198,6 +199,7 @@ function AppContent() {
         </div>
       </main>
       <Toaster />
+      <Analytics />
     </div>
   )
 }
