@@ -34,6 +34,7 @@ const cardSchema = z.object({
   color: z.string().min(1, 'Cor é obrigatória'),
   currentInvoice: z.number().optional(),
   limitUsed: z.number().optional(),
+  lastFourDigits: z.string().optional(),
 });
 
 type CardFormData = z.infer<typeof cardSchema>;
@@ -84,6 +85,7 @@ export function EditCardDialog({
       color: card.color,
       currentInvoice: card.currentInvoice,
       limitUsed: (card as any).limitUsed || 0,
+      lastFourDigits: (card as any).lastFourDigits || undefined,
     },
   });
 
@@ -243,6 +245,17 @@ export function EditCardDialog({
                     <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
                   )}
                 </div>
+
+                <div>
+                  <Label htmlFor="lastFourDigits" className="text-gray-600">Últimos 4 Dígitos</Label>
+                  <Input
+                    id="lastFourDigits"
+                    placeholder="1234"
+                    maxLength={4}
+                    className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                    {...register('lastFourDigits')}
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 justify-between pt-4 border-t">
@@ -395,6 +408,17 @@ export function EditCardDialog({
                   {errors.color && (
                     <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="lastFourDigits" className="text-gray-600">Últimos 4 Dígitos</Label>
+                  <Input
+                    id="lastFourDigits"
+                    placeholder="1234"
+                    maxLength={4}
+                    className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                    {...register('lastFourDigits')}
+                  />
                 </div>
               </div>
 
