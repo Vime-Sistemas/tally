@@ -9,21 +9,15 @@ interface ProfileProps {
 }
 
 export function Profile({ hasBusiness, setHasBusiness }: ProfileProps) {
-  const { setUser } = useUser();
+  const { logout } = useUser();
   const isMobile = useIsMobile();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    window.location.href = '/';
-  };
 
   if (isMobile) {
     return (
       <MobileProfile 
         hasBusiness={hasBusiness} 
         setHasBusiness={setHasBusiness} 
-        onLogout={handleLogout}
+        onLogout={logout}
       />
     );
   }

@@ -7,7 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User, LogOut } from "lucide-react";
 import { HousePlus } from "lucide-react";
 import React from "react";
 
@@ -60,7 +60,7 @@ const ListItem = React.forwardRef<
 ListItem.displayName = "ListItem"
 
 export function Header({ onNavigate, hasBusiness, currentContext, onContextChange, currentPage }: HeaderProps) {
-  const { user } = useUser();
+  const { user, logout } = useUser();
 
   const getInitials = (name: string) => {
     return name
@@ -283,17 +283,39 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                 </SelectContent>
               </Select>
             )}
-             <button 
-              onClick={() => onNavigate('profile')} 
-              className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
-              title={displayName}
-             >
-                <span className="hidden md:inline-block text-sm font-medium text-gray-700">{displayName}</span>
-                <Avatar className="h-8 w-8 border border-gray-200">
-                  <AvatarImage src="" alt={displayName} />
-                  <AvatarFallback>{userInitials}</AvatarFallback>
-                </Avatar>
-             </button>
+             <div className="hidden md:flex items-center gap-2">
+               <button
+                 onClick={logout}
+                 title="Sair"
+                 className="ml-2 inline-flex items-center gap-2 px-3 h-9 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+               >
+                 <LogOut className="h-4 w-4" />
+                 <span className="hidden sm:inline">Sair</span>
+               </button>
+               <button 
+                 onClick={() => onNavigate('profile')} 
+                 className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
+                 title={displayName}
+               >
+                 <span className="hidden md:inline-block text-sm font-medium text-gray-700">{displayName}</span>
+                 <Avatar className="h-8 w-8 border border-gray-200">
+                   <AvatarImage src="" alt={displayName} />
+                   <AvatarFallback>{userInitials}</AvatarFallback>
+                 </Avatar>
+               </button>
+             </div>
+             <div className="md:hidden">
+               <button 
+                 onClick={() => onNavigate('profile')} 
+                 className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
+                 title={displayName}
+               >
+                 <Avatar className="h-8 w-8 border border-gray-200">
+                   <AvatarImage src="" alt={displayName} />
+                   <AvatarFallback>{userInitials}</AvatarFallback>
+                 </Avatar>
+               </button>
+             </div>
           </nav>
         </div>
       </div>

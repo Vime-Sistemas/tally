@@ -82,7 +82,7 @@ export function Login({ onNavigate }: LoginProps) {
   return (
     <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-white">
       {/* Left Side - Carousel */}
-      <div className="hidden lg:flex w-1/2 bg-zinc-50 text-zinc-900 relative flex-col justify-between p-12">
+      <div className="hidden lg:flex w-1/2 bg-white text-zinc-900 relative flex-col justify-between p-12">
         <div className="z-10">
           <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
               <img src="/icon.svg"></img>
@@ -107,7 +107,7 @@ export function Login({ onNavigate }: LoginProps) {
                 <CarouselItem key={index}>
                   <div className="p-1">
                     <div className="space-y-6">
-                      <div className="aspect-video overflow-hidden rounded-2xl shadow-2xl border border-zinc-200 bg-white">
+                      <div className="aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-white">
                          <img src={feature.image} alt={feature.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                       </div>
                       <div className="space-y-2">
@@ -122,8 +122,8 @@ export function Login({ onNavigate }: LoginProps) {
               ))}
             </CarouselContent>
             <div className="flex gap-2 mt-8">
-                <CarouselPrevious className="static translate-y-0 bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-900" />
-                <CarouselNext className="static translate-y-0 bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-900" />
+                <CarouselPrevious className="static translate-y-0 bg-white hover:bg-white border-zinc-200 text-zinc-900" />
+                <CarouselNext className="static translate-y-0 bg-white hover:bg-white border-zinc-200 text-zinc-900" />
             </div>
           </Carousel>
         </div>
@@ -133,7 +133,7 @@ export function Login({ onNavigate }: LoginProps) {
         </div>
         
         {/* Abstract Background Pattern - Light Version */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-zinc-100 via-zinc-50 to-white opacity-80 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-white to-white opacity-80 pointer-events-none" />
       </div>
 
       {/* Right Side - Form */}
@@ -181,7 +181,7 @@ export function Login({ onNavigate }: LoginProps) {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-11 text-base bg-blue-400" disabled={isLoading}>
+            <Button type="submit" className="w-full h-11 text-base bg-blue-400 hover:bg-blue-500" disabled={isLoading}>
               {isLoading ? "Entrando..." : "Entrar"}
               {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
             </Button>

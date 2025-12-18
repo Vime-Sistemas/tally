@@ -86,7 +86,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
   return (
     <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-white">
       {/* Left Side - Carousel */}
-      <div className="hidden lg:flex w-1/2 bg-zinc-50 text-zinc-900 relative flex-col justify-between p-12">
+      <div className="hidden lg:flex w-1/2 bg-white text-zinc-900 relative flex-col justify-between p-12">
         <div className="z-10">
           <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
               <img src="/icon.svg"></img>
@@ -111,7 +111,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
                 <CarouselItem key={index}>
                   <div className="p-1">
                     <div className="space-y-6">
-                      <div className="aspect-video overflow-hidden rounded-2xl shadow-2xl border border-zinc-200 bg-white">
+                      <div className="aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-white">
                          <img src={feature.image} alt={feature.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                       </div>
                       <div className="space-y-2">
@@ -198,7 +198,7 @@ export function SignUp({ onNavigate }: SignUpProps) {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-11 text-base bg-blue-400" disabled={isLoading}>
+            <Button type="submit" className="w-full h-11 text-base bg-blue-400 hover:bg-blue-500" disabled={isLoading}>
               {isLoading ? "Criando conta..." : "Criar conta"}
               {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
             </Button>
