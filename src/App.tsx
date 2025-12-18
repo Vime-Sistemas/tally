@@ -180,7 +180,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-white w-full overflow-x-hidden">
       {!['signup', 'login'].includes(currentPage) && (
         <Header 
           onNavigate={setCurrentPage} 

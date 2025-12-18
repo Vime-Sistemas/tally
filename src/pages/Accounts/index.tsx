@@ -16,7 +16,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ACCOUNT');
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 bg-white">
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8 text-center relative">
