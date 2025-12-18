@@ -204,18 +204,18 @@ export function Login({ onNavigate }: LoginProps) {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 bg-white">
-        <div className="w-full max-w-sm space-y-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-24 bg-white">
+        <div className="w-full max-w-sm space-y-6 sm:space-y-8">
           <div className="space-y-2 text-center lg:text-left">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bem-vindo de volta</h1>
             <p className="text-gray-500">Entre para acessar suas finanças.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="relative">
               <Button 
                 variant="outline" 
-                className={`w-full h-14 px-6 transition-all text-base ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                className={`w-full h-12 sm:h-14 px-4 sm:px-6 transition-all text-sm sm:text-base ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
                 type="button" 
                 onClick={() => handleSocialLogin('google-oauth2')}
               >
@@ -223,7 +223,7 @@ export function Login({ onNavigate }: LoginProps) {
                 Google
               </Button>
               {lastSocial === 'google-oauth2' && (
-                <div className="absolute -top-4 -right-3 inline-flex items-center gap-1 px-2 py-1 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
+                <div className="absolute -top-3 -right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
                   <Clock className="h-3 w-3" />
                   <span className="hidden sm:inline">Recente</span>
                 </div>
@@ -232,7 +232,7 @@ export function Login({ onNavigate }: LoginProps) {
             <div className="relative">
               <Button 
                 variant="outline" 
-                className={`w-full h-14 px-6 transition-all text-base ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                className={`w-full h-12 sm:h-14 px-4 sm:px-6 transition-all text-sm sm:text-base ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
                 type="button" 
                 onClick={() => handleSocialLogin('facebook')}
               >
@@ -240,7 +240,7 @@ export function Login({ onNavigate }: LoginProps) {
                 Facebook
               </Button>
               {lastSocial === 'facebook' && (
-                <div className="absolute -top-4 -right-3 inline-flex items-center gap-1 px-2 py-1 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
+                <div className="absolute -top-3 -right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
                   <Clock className="h-3 w-3" />
                   <span className="hidden sm:inline">Recente</span>
                 </div>
