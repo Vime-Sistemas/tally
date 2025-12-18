@@ -212,13 +212,35 @@ export function Login({ onNavigate }: LoginProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
+            <Button 
+              variant="outline" 
+              className={`w-full h-11 relative transition-all ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+              type="button" 
+              onClick={() => handleSocialLogin('google-oauth2')}
+            >
               <Chromium className="mr-2 h-4 w-4 text-blue-400" />
-              Google {lastSocial === 'google-oauth2' && <span className="ml-2 text-xs text-gray-400">(Último usado)</span>}
+              Google
+              {lastSocial === 'google-oauth2' && (
+                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full">
+                  <Clock className="h-3 w-3" />
+                  Recente
+                </span>
+              )}
             </Button>
-            <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('facebook')}>
+            <Button 
+              variant="outline" 
+              className={`w-full h-11 relative transition-all ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+              type="button" 
+              onClick={() => handleSocialLogin('facebook')}
+            >
               <Facebook className="mr-2 h-4 w-4 text-blue-400" />
-              Facebook {lastSocial === 'facebook' && <span className="ml-2 text-xs text-gray-400">(Último usado)</span>}
+              Facebook
+              {lastSocial === 'facebook' && (
+                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full">
+                  <Clock className="h-3 w-3" />
+                  Recente
+                </span>
+              )}
             </Button>
           </div>
 
