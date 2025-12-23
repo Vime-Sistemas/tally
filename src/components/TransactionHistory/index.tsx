@@ -2,26 +2,41 @@ import { useState, useEffect, useMemo } from "react";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { TransactionType } from "../../types/transaction";
-import { 
-  Search, 
-  Edit, 
+import {
+  Search,
+  Plus,
+  CalendarClock,
+  Edit,
   Trash2,
-  ShoppingBag,
-  Coffee,
   Home,
-  Car,
   Zap,
+  Coffee,
+  Car,
   Heart,
-  Gamepad2,
+  Shield,
   GraduationCap,
+  ShoppingBag,
+  Shirt,
+  Gamepad2,
+  Repeat,
+  Landmark,
+  Receipt,
+  PawPrint,
+  Gift,
+  Plane,
+  MoreHorizontal,
+
   Briefcase,
   DollarSign,
   TrendingUp,
-  MoreHorizontal,
   ArrowRightLeft,
-  CalendarClock,
-  Plus
-} from "lucide-react";
+  PiggyBank,
+  Coins,
+  Banknote,
+  Wallet,
+  Building2,
+  Globe
+} from 'lucide-react';
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { toast } from "sonner";
@@ -132,20 +147,64 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const getCategoryIcon = (category: string) => {
     const iconProps = { className: "h-5 w-5" };
     switch (category) {
-      case 'FOOD': return <Coffee {...iconProps} />;
-      case 'SHOPPING': return <ShoppingBag {...iconProps} />;
-      case 'HOUSING': return <Home {...iconProps} />;
-      case 'TRANSPORT': return <Car {...iconProps} />;
-      case 'UTILITIES': return <Zap {...iconProps} />;
-      case 'HEALTHCARE': return <Heart {...iconProps} />;
-      case 'ENTERTAINMENT': return <Gamepad2 {...iconProps} />;
-      case 'EDUCATION': return <GraduationCap {...iconProps} />;
-      case 'SALARY': return <Briefcase {...iconProps} />;
-      case 'INVESTMENT': return <TrendingUp {...iconProps} />;
-      case 'FREELANCE': return <DollarSign {...iconProps} />;
-      case 'TRANSFER': return <ArrowRightLeft {...iconProps} />;
-      default: return <MoreHorizontal {...iconProps} />;
-    }
+    /* =======================
+     * DESPESAS
+     * ======================= */
+    case 'HOUSING': return <Home {...iconProps} />;
+    case 'UTILITIES': return <Zap {...iconProps} />;
+    case 'FOOD': return <Coffee {...iconProps} />;
+    case 'TRANSPORT': return <Car {...iconProps} />;
+    case 'HEALTHCARE': return <Heart {...iconProps} />;
+    case 'INSURANCE': return <Shield {...iconProps} />;
+    case 'EDUCATION': return <GraduationCap {...iconProps} />;
+    case 'SHOPPING': return <ShoppingBag {...iconProps} />;
+    case 'CLOTHING': return <Shirt {...iconProps} />;
+    case 'ENTERTAINMENT': return <Gamepad2 {...iconProps} />;
+    case 'SUBSCRIPTIONS': return <Repeat {...iconProps} />;
+    case 'TAXES': return <Landmark {...iconProps} />;
+    case 'FEES': return <Receipt {...iconProps} />;
+    case 'PETS': return <PawPrint {...iconProps} />;
+    case 'DONATIONS': return <Gift {...iconProps} />;
+    case 'TRAVEL': return <Plane {...iconProps} />;
+
+    /* =======================
+     * RECEITAS
+     * ======================= */
+    case 'SALARY': return <Briefcase {...iconProps} />;
+    case 'BONUS': return <Banknote {...iconProps} />;
+    case 'FREELANCE':
+    case 'SELF_EMPLOYED':
+      return <DollarSign {...iconProps} />;
+
+    case 'DIVIDENDS':
+    case 'INTEREST':
+    case 'RENT':
+    case 'INVESTMENT_INCOME':
+      return <TrendingUp {...iconProps} />;
+
+    case 'PENSION_INCOME': return <PiggyBank {...iconProps} />;
+
+    /* =======================
+     * INVESTIMENTOS / APORTES
+     * ======================= */
+    case 'INVESTMENT': return <TrendingUp {...iconProps} />;
+    case 'PENSION_CONTRIBUTION': return <PiggyBank {...iconProps} />;
+    case 'SAVINGS': return <Wallet {...iconProps} />;
+    case 'CRYPTO': return <Coins {...iconProps} />;
+    case 'REAL_ESTATE':
+    case 'REAL_ESTATE_FUNDS':
+      return <Building2 {...iconProps} />;
+
+    case 'FOREIGN_INVESTMENT': return <Globe {...iconProps} />;
+
+    /* =======================
+     * TRANSFERÊNCIAS
+     * ======================= */
+    case 'TRANSFER': return <ArrowRightLeft {...iconProps} />;
+
+    default:
+      return <MoreHorizontal {...iconProps} />;
+  }
   };
 
   const activeClass = (active: boolean, color: string) =>
@@ -156,19 +215,43 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      FOOD: 'Alimentação',
-      SHOPPING: 'Compras',
       HOUSING: 'Moradia',
+      UTILITIES: 'Contas Fixas',
+      FOOD: 'Alimentação',
       TRANSPORT: 'Transporte',
-      UTILITIES: 'Contas',
       HEALTHCARE: 'Saúde',
-      ENTERTAINMENT: 'Lazer',
+      INSURANCE: 'Seguros',
       EDUCATION: 'Educação',
-      OTHER_EXPENSE: 'Outros',
+      SHOPPING: 'Compras',
+      CLOTHING: 'Vestuário',
+      ENTERTAINMENT: 'Lazer',
+      SUBSCRIPTIONS: 'Assinaturas',
+      TAXES: 'Impostos',
+      FEES: 'Taxas e Tarifas',
+      PETS: 'Pets',
+      DONATIONS: 'Doações',
+      TRAVEL: 'Viagens',
+
       SALARY: 'Salário',
+      BONUS: 'Bônus / PLR',
       FREELANCE: 'Freelance',
-      INVESTMENT: 'Investimento',
-      OTHER_INCOME: 'Outros',
+      SELF_EMPLOYED: 'Autônomo / PJ',
+      DIVIDENDS: 'Dividendos',
+      INTEREST: 'Juros',
+      RENT: 'Aluguel',
+      INVESTMENT_INCOME: 'Rendimentos',
+      PENSION_INCOME: 'Previdência / Aposentadoria',
+
+      INVESTMENT: 'Investimentos',
+      PENSION_CONTRIBUTION: 'Previdência Privada',
+      SAVINGS: 'Poupança',
+      CRYPTO: 'Criptomoedas',
+      REAL_ESTATE: 'Imóveis',
+      REAL_ESTATE_FUNDS: 'Fundos Imobiliários',
+      FOREIGN_INVESTMENT: 'Investimentos no Exterior',
+
+      TRANSFER: 'Transferência',
+      OTHER_EXPENSE: 'Outros'
     };
     return labels[category] || category;
   };
