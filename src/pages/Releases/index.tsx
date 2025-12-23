@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.11',
+    date: '23 de dezembro de 2025',
+    description: 'Pequenas Melhorias',
+    features: [],
+    fixes: ['Correção do bug no dialog de edição de uma transação'],
+    improvements: [],
+  },
+  {
     version: '1.5.10',
     date: '23 de dezembro de 2025',
     description: 'Pequenas Melhorias',

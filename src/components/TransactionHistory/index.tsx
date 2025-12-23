@@ -757,159 +757,170 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               Faça as alterações necessárias na transação.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Descrição</label>
-              <Input
-                value={editingDescription}
-                onChange={(e) => setEditingDescription(e.target.value)}
-              />
+          <div className="space-y-3 py-4">
+            {/* Descrição e Valor */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Descrição</label>
+                <Input
+                  value={editingDescription}
+                  onChange={(e) => setEditingDescription(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Valor</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editingAmount}
+                  onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
+                  className="h-8 text-sm"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Valor</label>
-              <Input
-                type="number"
-                step="0.01"
-                value={editingAmount}
-                onChange={(e) => setEditingAmount(parseFloat(e.target.value))}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Parcela Atual</label>
+
+            {/* Parcelas e Data */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Parcela</label>
                 <Input
                   type="number"
                   min="1"
                   placeholder="Ex: 1"
                   value={editingCurrentInstallment || ''}
                   onChange={(e) => setEditingCurrentInstallment(e.target.value ? parseInt(e.target.value) : null)}
+                  className="h-8 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Total Parcelas</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Total</label>
                 <Input
                   type="number"
                   min="1"
                   placeholder="Ex: 12"
                   value={editingTotalInstallments || ''}
                   onChange={(e) => setEditingTotalInstallments(e.target.value ? parseInt(e.target.value) : null)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Data</label>
+                <Input
+                  type="date"
+                  value={editingDate}
+                  onChange={(e) => setEditingDate(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Categoria</label>
-              <Select value={editingCategory} onValueChange={setEditingCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(selectedTransaction?.type === TransactionType.INCOME ? {
-                    SALARY: 'Salário',
-                    BONUS: 'Bônus / PLR',
-                    COMMISSION: 'Comissão',
-                    FREELANCE: 'Freelance',
-                    SELF_EMPLOYED: 'Autônomo / PJ',
-                    INVESTMENT_INCOME: 'Rendimentos de Investimentos',
-                    DIVIDENDS: 'Dividendos',
-                    INTEREST: 'Juros',
-                    RENT: 'Aluguel',
-                    PENSION_INCOME: 'Previdência / Aposentadoria',
-                    BENEFITS: 'Benefícios',
-                    GIFTS: 'Presentes',
-                    REFUND: 'Reembolsos',
-                    OTHER_INCOME: 'Outros',
-                  } : {
-                    HOUSING: 'Moradia',
-                    UTILITIES: 'Contas Fixas (Água, Luz, Internet, Gás)',
-                    FOOD: 'Alimentação',
-                    TRANSPORT: 'Transporte',
-                    HEALTHCARE: 'Saúde',
-                    INSURANCE: 'Seguros',
-                    EDUCATION: 'Educação',
-                    SHOPPING: 'Compras',
-                    CLOTHING: 'Vestuário',
-                    ENTERTAINMENT: 'Lazer',
-                    SUBSCRIPTIONS: 'Assinaturas',
-                    TAXES: 'Impostos',
-                    FEES: 'Taxas e Tarifas',
-                    PETS: 'Pets',
-                    DONATIONS: 'Doações',
-                    TRAVEL: 'Viagens',
-                    OTHER_EXPENSE: 'Outros',
-                  }).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data</label>
-              <Input
-                type="date"
-                value={editingDate}
-                onChange={(e) => setEditingDate(e.target.value)}
-              />
-            </div>
-
-            {/* Conta / Cartão */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Conta / Cartão</label>
-              <Select value={editingPaymentMethod} onValueChange={setEditingPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map(account => (
-                    <SelectItem key={account.id} value={`account:${account.id}`}>
-                      Conta: {account.name}
-                    </SelectItem>
-                  ))}
-                  {cards.map(card => (
-                    <SelectItem key={card.id} value={`card:${card.id}`}>
-                      Cartão: {card.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Centro de Custo (Apenas para Despesas) */}
-            {selectedTransaction?.type === TransactionType.EXPENSE && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Centro de Custo</label>
-                <Select value={editingCostCenterId} onValueChange={setEditingCostCenterId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
+            {/* Categoria e Conta/Cartão */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Categoria</label>
+                <Select value={editingCategory} onValueChange={setEditingCategory}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {costCenters.map(center => (
-                      <SelectItem key={center.id} value={center.id}>
-                        {center.name}
+                    {Object.entries(selectedTransaction?.type === TransactionType.INCOME ? {
+                      SALARY: 'Salário',
+                      BONUS: 'Bônus / PLR',
+                      COMMISSION: 'Comissão',
+                      FREELANCE: 'Freelance',
+                      SELF_EMPLOYED: 'Autônomo / PJ',
+                      INVESTMENT_INCOME: 'Rendimentos de Investimentos',
+                      DIVIDENDS: 'Dividendos',
+                      INTEREST: 'Juros',
+                      RENT: 'Aluguel',
+                      PENSION_INCOME: 'Previdência / Aposentadoria',
+                      BENEFITS: 'Benefícios',
+                      GIFTS: 'Presentes',
+                      REFUND: 'Reembolsos',
+                      OTHER_INCOME: 'Outros',
+                    } : {
+                      HOUSING: 'Moradia',
+                      UTILITIES: 'Contas Fixas (Água, Luz, Internet, Gás)',
+                      FOOD: 'Alimentação',
+                      TRANSPORT: 'Transporte',
+                      HEALTHCARE: 'Saúde',
+                      INSURANCE: 'Seguros',
+                      EDUCATION: 'Educação',
+                      SHOPPING: 'Compras',
+                      CLOTHING: 'Vestuário',
+                      ENTERTAINMENT: 'Lazer',
+                      SUBSCRIPTIONS: 'Assinaturas',
+                      TAXES: 'Impostos',
+                      FEES: 'Taxas e Tarifas',
+                      PETS: 'Pets',
+                      DONATIONS: 'Doações',
+                      TRAVEL: 'Viagens',
+                      OTHER_EXPENSE: 'Outros',
+                    }).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Conta / Cartão</label>
+                <Select value={editingPaymentMethod} onValueChange={setEditingPaymentMethod}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map(account => (
+                      <SelectItem key={account.id} value={`account:${account.id}`}>
+                        Conta: {account.name}
+                      </SelectItem>
+                    ))}
+                    {cards.map(card => (
+                      <SelectItem key={card.id} value={`card:${card.id}`}>
+                        Cartão: {card.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            </div>
 
-            {/* Status de Pagamento */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Marcar como pago?</label>
-                <Switch checked={editingIsPaid} onCheckedChange={setEditingIsPaid} />
+            {/* Centro de Custo e Pagamento */}
+            <div className={`grid ${selectedTransaction?.type === TransactionType.EXPENSE ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+              {selectedTransaction?.type === TransactionType.EXPENSE && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Centro de Custo</label>
+                  <Select value={editingCostCenterId} onValueChange={setEditingCostCenterId}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {costCenters.map(center => (
+                        <SelectItem key={center.id} value={center.id}>
+                          {center.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-1 flex items-end">
+                <div className="flex items-center gap-2 w-full">
+                  <label className="text-xs font-medium">Pago?</label>
+                  <Switch checked={editingIsPaid} onCheckedChange={setEditingIsPaid} />
+                </div>
               </div>
             </div>
 
             {/* Data de Pagamento */}
             {editingIsPaid && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Data do Pagamento</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Data do Pagamento</label>
                 <Input
                   type="date"
                   value={editingPaidDate}
                   onChange={(e) => setEditingPaidDate(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
             )}
