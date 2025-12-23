@@ -31,6 +31,18 @@ export function BudgetsPage() {
       const data = await getBudgets(selectedYear ?? undefined, selectedMonth ?? undefined);
       setBudgets(data);
       setComparisons({});
+      
+      // Carregar comparações para todos os budgets
+      const comparisonsData: Record<string, BudgetComparison> = {};
+      for (const budget of data) {
+        try {
+          const comparison = await getBudgetComparison(budget.id);
+          comparisonsData[budget.id] = comparison;
+        } catch (error) {
+          console.error(`Erro ao carregar comparação para ${budget.id}:`, error);
+        }
+      }
+      setComparisons(comparisonsData);
     } catch (error) {
       console.error('Erro ao carregar orçamentos:', error);
       toast.error('Erro ao carregar orçamentos');

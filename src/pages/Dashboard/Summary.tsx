@@ -1,27 +1,30 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, YAxis, Bar, BarChart } from "recharts";
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
   Wallet, 
   TrendingUp, 
   AlertTriangle, 
-  CreditCard as CreditCardIcon
+  CreditCard as CreditCardIcon,
+  BarChart3
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { accountService } from "../../services/accounts";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
-import { getCards } from "../../services/api";
+import { getCards, getBudgets, getBudgetComparison } from "../../services/api";
 import { AccountType, type Account, type CreditCard } from "../../types/account";
 import { TransactionCategory, type Transaction } from "../../types/transaction";
 import { EQUITY_TYPES } from "../../types/equity";
 import type { Equity } from "../../types/equity";
+import type { Budget, BudgetComparison } from "../../types/budget";
 import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { cn } from "../../lib/utils";
 
 // Helper to parse UTC date string as local date (ignoring time)
 // This prevents timezone shifts (e.g. 2025-12-01T00:00:00Z becoming 2025-11-30 in UTC-3)
@@ -105,21 +108,41 @@ export function Summary() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgetComparisons, setBudgetComparisons] = useState<Record<string, BudgetComparison>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [accData, txData, eqData, cardsData] = await Promise.all([
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        
+        const [accData, txData, eqData, cardsData, budgetsData] = await Promise.all([
           accountService.getAll(),
           transactionService.getAll(),
           equityService.getAll(),
-          getCards()
+          getCards(),
+          getBudgets(currentYear, currentMonth)
         ]);
+        
         setAccounts(accData);
         setTransactions(txData);
         setEquities(eqData);
         setCards(cardsData);
+        setBudgets(budgetsData);
+        
+        // Carregar comparações de orçamentos
+        const comparisonsData: Record<string, BudgetComparison> = {};
+        for (const budget of budgetsData) {
+          try {
+            const comparison = await getBudgetComparison(budget.id);
+            comparisonsData[budget.id] = comparison;
+          } catch (error) {
+            console.error(`Erro ao carregar comparação do orçamento ${budget.id}:`, error);
+          }
+        }
+        setBudgetComparisons(comparisonsData);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
         toast.error("Erro ao carregar dados do dashboard");
@@ -614,6 +637,64 @@ export function Summary() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Budgets Section */}
+      {budgets.length > 0 && (
+        <div>
+          <h3 className="text-2xl font-bold tracking-tight mb-4 flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Orçamentos do Mês
+          </h3>
+
+          <div className="grid gap-4 md:grid-cols-2 mb-4">
+            {budgets.slice(0, 4).map((budget) => {
+              const comparison = budgetComparisons[budget.id];
+              const percentage = comparison ? (comparison.spent / budget.amount) * 100 : 0;
+              const isOverBudget = comparison && comparison.spent > budget.amount;
+              
+              return (
+                <Card key={budget.id} className="shadow-sm">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">{budget.name}</CardTitle>
+                      <span className={cn(
+                        'text-xs font-medium px-2 py-1 rounded-full',
+                        isOverBudget ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                      )}>
+                        {Math.round(percentage)}%
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                      <span>R$ {comparison?.spent.toFixed(2) || '0.00'}</span>
+                      <span>R$ {budget.amount.toFixed(2)}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={cn(
+                          'h-2 rounded-full transition-all',
+                          percentage <= 50 ? 'bg-green-500' :
+                          percentage <= 75 ? 'bg-yellow-500' :
+                          percentage <= 100 ? 'bg-orange-500' :
+                          'bg-red-500'
+                        )}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                    <p className={cn(
+                      'text-xs text-right',
+                      comparison?.remaining || 0 >= 0 ? 'text-green-600' : 'text-red-600'
+                    )}>
+                      {comparison?.remaining && comparison.remaining >= 0 ? '+' : ''}R$ {comparison?.remaining.toFixed(2) || '0.00'}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div>
         <h3 className="text-2xl font-bold tracking-tight mb-4">Investimentos</h3>
