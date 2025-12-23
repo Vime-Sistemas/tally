@@ -7,7 +7,7 @@ import {
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User, LogOut } from "lucide-react";
+import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User, LogOut, BarChart3 } from "lucide-react";
 import { HousePlus } from "lucide-react";
 import React, { useState } from "react";
 
@@ -254,6 +254,43 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                           <span>Gerenciar os bens cadastrados</span>
                         </div>
                         <Kbd className="bg-blue-300 text-white h-6 w-14">Alt + P</Kbd>
+                      </div>
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-transparent">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Orçamentos
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onNavigate('budgets'); }}
+                        >
+                          <BarChart3 className="h-6 w-6" />
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Orçamentos
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Planeje e acompanhe seus orçamentos.
+                          </p>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <ListItem href="#" title="Visualizar" onClick={(e) => { e.preventDefault(); onNavigate('budgets'); }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-4 w-4" />
+                          <span>Gerenciar orçamentos</span>
+                        </div>
+                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + B</Kbd>
                       </div>
                     </ListItem>
                   </ul>

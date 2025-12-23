@@ -14,6 +14,7 @@ import { Profile } from './pages/Profile'
 import { SignUp } from './pages/SignUp'
 import { Login } from './pages/Login'
 import { Releases } from './pages/Releases'
+import { BudgetsPage } from './pages/Budgets'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
@@ -110,6 +111,10 @@ function AppContent() {
             e.preventDefault();
             setCurrentPage('equity-list');
             break;
+          case 'b': // Budgets (Orçamentos)
+            e.preventDefault();
+            setCurrentPage('budgets');
+            break;
         }
       }
     };
@@ -187,6 +192,8 @@ function AppContent() {
         );
       case 'releases':
         return <Releases onNavigate={setCurrentPage} />;
+      case 'budgets':
+        return <BudgetsPage />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }
