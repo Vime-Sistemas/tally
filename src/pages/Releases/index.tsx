@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.10',
+    date: '23 de dezembro de 2025',
+    description: 'Pequenas Melhorias',
+    features: [],
+    fixes: ['Agora centros de custo não são obrigatórios para receitas.'],
+    improvements: ['Ajustes nos dialogs de edição e listagem de transações'],
+  },
+  {
     version: '1.5.9',
     date: '23 de dezembro de 2025',
     description: 'Pequenas Melhorias',

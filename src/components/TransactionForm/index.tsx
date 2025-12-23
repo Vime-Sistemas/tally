@@ -362,7 +362,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className={`grid gap-4 ${selectedType === TransactionType.EXPENSE ? 'grid-cols-3' : 'grid-cols-2'}`}>
               {/* Tipo */}
               <div className="space-y-2">
                 <Label htmlFor="type" className="text-gray-600">Tipo</Label>
@@ -455,28 +455,30 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                 />
               </div>
 
-              {/* Centro de Custo */}
-              <div className="space-y-2">
-                <Label htmlFor="costCenter" className="text-gray-600 text-sm">Centro de Custo</Label>
-                <Controller
-                  name="costCenterId"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value || ''} onValueChange={field.onChange}>
-                      <SelectTrigger id="costCenter" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {costCenters.map((center) => (
-                          <SelectItem key={center.id} value={center.id}>
-                            {center.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+              {/* Centro de Custo (Apenas para Despesas) */}
+              {selectedType === TransactionType.EXPENSE && (
+                <div className="space-y-2">
+                  <Label htmlFor="costCenter" className="text-gray-600 text-sm">Centro de Custo</Label>
+                  <Controller
+                    name="costCenterId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger id="costCenter" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {costCenters.map((center) => (
+                            <SelectItem key={center.id} value={center.id}>
+                              {center.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )}
             </div>
             {errors.category && (
               <p className="text-sm text-red-600 -mt-2">{errors.category.message}</p>

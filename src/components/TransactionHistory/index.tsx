@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Switch } from "../ui/switch";
 import { TransactionType } from "../../types/transaction";
+import { useUser } from "../../contexts/UserContext";
 import {
   Search,
   Plus,
@@ -99,7 +101,12 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [editingDate, setEditingDate] = useState("");
   const [editingCurrentInstallment, setEditingCurrentInstallment] = useState<number | null>(null);
   const [editingTotalInstallments, setEditingTotalInstallments] = useState<number | null>(null);
+  const [editingCostCenterId, setEditingCostCenterId] = useState("");
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState("");
+  const [editingIsPaid, setEditingIsPaid] = useState(false);
+  const [editingPaidDate, setEditingPaidDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { costCenters } = useUser();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
@@ -264,6 +271,13 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     setEditingDate(transaction.date.split('T')[0]);
     setEditingCurrentInstallment((transaction as any).currentInstallment || null);
     setEditingTotalInstallments((transaction as any).totalInstallments || null);
+    setEditingCostCenterId(transaction.costCenterId || "");
+    setEditingPaymentMethod(
+      transaction.cardId ? `card:${transaction.cardId}` : 
+      (transaction.accountId ? `account:${transaction.accountId}` : "")
+    );
+    setEditingIsPaid(transaction.isPaid || false);
+    setEditingPaidDate(transaction.paidDate ? transaction.paidDate.split('T')[0] : "");
     setIsEditDialogOpen(true);
   };
 
@@ -272,13 +286,19 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     
     setIsSubmitting(true);
     try {
+      const [methodType, methodId] = editingPaymentMethod.split(':');
       const updateData = {
         description: editingDescription,
         amount: editingAmount,
         category: editingCategory as any,
         date: editingDate,
         currentInstallment: editingCurrentInstallment ?? undefined,
-        totalInstallments: editingTotalInstallments ?? undefined
+        totalInstallments: editingTotalInstallments ?? undefined,
+        costCenterId: editingCostCenterId || undefined,
+        accountId: methodType === 'account' ? methodId : undefined,
+        cardId: methodType === 'card' ? methodId : undefined,
+        isPaid: editingIsPaid,
+        paidDate: editingIsPaid && editingPaidDate ? editingPaidDate : undefined
       };
 
       await updateTransaction(selectedTransaction.id, updateData);
@@ -832,6 +852,68 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                 onChange={(e) => setEditingDate(e.target.value)}
               />
             </div>
+
+            {/* Conta / Cartão */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Conta / Cartão</label>
+              <Select value={editingPaymentMethod} onValueChange={setEditingPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map(account => (
+                    <SelectItem key={account.id} value={`account:${account.id}`}>
+                      Conta: {account.name}
+                    </SelectItem>
+                  ))}
+                  {cards.map(card => (
+                    <SelectItem key={card.id} value={`card:${card.id}`}>
+                      Cartão: {card.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Centro de Custo (Apenas para Despesas) */}
+            {selectedTransaction?.type === TransactionType.EXPENSE && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Centro de Custo</label>
+                <Select value={editingCostCenterId} onValueChange={setEditingCostCenterId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {costCenters.map(center => (
+                      <SelectItem key={center.id} value={center.id}>
+                        {center.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Status de Pagamento */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Marcar como pago?</label>
+                <Switch checked={editingIsPaid} onCheckedChange={setEditingIsPaid} />
+              </div>
+            </div>
+
+            {/* Data de Pagamento */}
+            {editingIsPaid && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Data do Pagamento</label>
+                <Input
+                  type="date"
+                  value={editingPaidDate}
+                  onChange={(e) => setEditingPaidDate(e.target.value)}
+                />
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
               <Button onClick={handleEditSave} disabled={isSubmitting} className="bg-blue-400 text-white">
