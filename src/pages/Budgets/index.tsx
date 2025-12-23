@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getBudgets, deleteBudget, getBudgetComparison } from '../../services/api';
+import { getBudgets, deleteBudget, getBudgetComparison, createBudget } from '../../services/api';
 import { BudgetForm } from '../../components/BudgetForm';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
@@ -160,11 +160,24 @@ export function BudgetsPage() {
     loadBudgets();
   };
 
-  const handleDuplicateBudget = (budget: Budget) => {
-    // Criar uma cópia do budget sem ID para ser criado novo
-    const duplicatedBudget = { ...budget, id: undefined };
-    setSelectedBudget(duplicatedBudget as any);
-    setActiveTab('form');
+  const handleDuplicateBudget = async (budget: Budget) => {
+    try {
+      // Criar um novo orçamento com os mesmos dados
+      await createBudget({
+        name: `${budget.name} (Cópia)`,
+        type: budget.type,
+        category: budget.category || '',
+        amount: budget.amount,
+        period: budget.period,
+        year: budget.year,
+        month: budget.month || undefined,
+      });
+      toast.success('Orçamento duplicado com sucesso!');
+      loadBudgets();
+    } catch (error) {
+      console.error('Erro ao duplicar orçamento:', error);
+      toast.error('Erro ao duplicar orçamento');
+    }
   };
 
   const getCategoryLabel = (category: string, type: BudgetType) => {
