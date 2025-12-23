@@ -16,8 +16,8 @@ export function BudgetsPage() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
   const [comparisons, setComparisons] = useState<Record<string, BudgetComparison>>({});
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number | null>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth() + 1);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function BudgetsPage() {
   const loadBudgets = async () => {
     try {
       setLoading(true);
-      const data = await getBudgets(selectedYear, selectedMonth);
+      const data = await getBudgets(selectedYear ?? undefined, selectedMonth ?? undefined);
       setBudgets(data);
       setComparisons({});
     } catch (error) {
@@ -176,10 +176,11 @@ export function BudgetsPage() {
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-600">Ano</label>
           <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            value={selectedYear ?? ''}
+            onChange={(e) => setSelectedYear(e.target.value === '' ? null : parseInt(e.target.value))}
             className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black"
           >
+            <option value="">Todos</option>
             {[2024, 2025, 2026, 2027, 2028].map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
@@ -188,10 +189,11 @@ export function BudgetsPage() {
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-600">Mês</label>
           <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            value={selectedMonth ?? ''}
+            onChange={(e) => setSelectedMonth(e.target.value === '' ? null : parseInt(e.target.value))}
             className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black"
           >
+            <option value="">Todos</option>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
               <option key={month} value={month}>{getMonthName(month)}</option>
             ))}

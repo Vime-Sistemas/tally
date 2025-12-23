@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
+import { BudgetOverview } from "../../components/BudgetOverview";
 
 const chartData = [
   { month: "Jan", income: 5000, expense: 3200 },
@@ -124,6 +125,10 @@ export function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <BudgetOverview />
       </div>
     </div>
   );
