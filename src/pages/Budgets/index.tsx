@@ -7,8 +7,62 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { toast } from 'sonner';
 import type { Budget, BudgetComparison } from '../../types/budget';
 import { BudgetType } from '../../types/budget';
-import { Edit, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, Trash2, Plus, ChevronDown, ChevronUp, Copy, BarChart3 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { formatCurrency } from '../../utils/formatters';
+
+const expenseCategoriesLabels: Record<string, string> = {
+  HOUSING: 'Moradia',
+  UTILITIES: 'Contas Fixas (Água, Luz, Internet, Gás)',
+  FOOD: 'Alimentação',
+  TRANSPORT: 'Transporte',
+  HEALTHCARE: 'Saúde',
+  INSURANCE: 'Seguros',
+  EDUCATION: 'Educação',
+  SHOPPING: 'Compras',
+  CLOTHING: 'Vestuário',
+  ENTERTAINMENT: 'Lazer',
+  SUBSCRIPTIONS: 'Assinaturas',
+  TAXES: 'Impostos',
+  FEES: 'Taxas e Tarifas',
+  PETS: 'Pets',
+  DONATIONS: 'Doações',
+  TRAVEL: 'Viagens',
+  OTHER_EXPENSE: 'Outros'
+};
+
+const incomeCategoriesLabels: Record<string, string> = {
+  SALARY: 'Salário',
+  BONUS: 'Bônus / PLR',
+  COMMISSION: 'Comissão',
+  FREELANCE: 'Freelance',
+  SELF_EMPLOYED: 'Autônomo / PJ',
+  INVESTMENT_INCOME: 'Rendimentos de Investimentos',
+  DIVIDENDS: 'Dividendos',
+  INTEREST: 'Juros',
+  RENT: 'Aluguel',
+  PENSION_INCOME: 'Previdência / Aposentadoria',
+  BENEFITS: 'Benefícios',
+  GIFTS: 'Presentes',
+  REFUND: 'Reembolsos',
+  OTHER_INCOME: 'Outros'
+};
+
+const investmentCategoriesLabels: Record<string, string> = {
+  STOCKS: 'Ações',
+  REAL_ESTATE: 'Imóveis',
+  REAL_ESTATE_FUNDS: 'Fundos Imobiliários (FIIs)',
+  CRYPTO: 'Criptomoedas',
+  BONDS: 'Títulos Públicos',
+  PRIVATE_BONDS: 'Títulos Privados (CDB, LCI, LCA, Debêntures)',
+  MUTUAL_FUND: 'Fundos de Investimento',
+  ETF: 'ETFs',
+  PENSION: 'Previdência Privada',
+  SAVINGS: 'Poupança',
+  FOREIGN_INVESTMENT: 'Investimentos no Exterior',
+  CASH: 'Caixa / Reserva de Emergência',
+  OTHER_INVESTMENT: 'Outros'
+};
 
 export function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -20,6 +74,8 @@ export function BudgetsPage() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth() + 1);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedBudgetType, setSelectedBudgetType] = useState<string>('');
 
   useEffect(() => {
     loadBudgets();
@@ -104,6 +160,57 @@ export function BudgetsPage() {
     loadBudgets();
   };
 
+  const handleDuplicateBudget = (budget: Budget) => {
+    // Criar uma cópia do budget sem ID para ser criado novo
+    const duplicatedBudget = { ...budget, id: undefined };
+    setSelectedBudget(duplicatedBudget as any);
+    setActiveTab('form');
+  };
+
+  const getCategoryLabel = (category: string, type: BudgetType) => {
+    if (type === BudgetType.EXPENSE) {
+      return expenseCategoriesLabels[category] || category;
+    } else if (type === BudgetType.INCOME) {
+      return incomeCategoriesLabels[category] || category;
+    } else if (type === BudgetType.INVESTMENT) {
+      return investmentCategoriesLabels[category] || category;
+    }
+    return category;
+  };
+
+  const getUniqueCategories = () => {
+    const categories = new Set(budgets.map(b => b.category).filter(Boolean)) as Set<string>;
+    return Array.from(categories).sort();
+  };
+
+  const filteredBudgets = budgets.filter(budget => {
+    if (selectedCategory && budget.category !== selectedCategory) {
+      return false;
+    }
+    if (selectedBudgetType && budget.type !== selectedBudgetType) {
+      return false;
+    }
+    return true;
+  });
+
+  const getAggregatedData = () => {
+    const aggregated = {
+      [BudgetType.EXPENSE]: { budgeted: 0, spent: 0 },
+      [BudgetType.INCOME]: { budgeted: 0, spent: 0 },
+      [BudgetType.INVESTMENT]: { budgeted: 0, spent: 0 },
+    };
+
+    budgets.forEach(budget => {
+      const comparison = comparisons[budget.id];
+      if (comparison) {
+        aggregated[budget.type as keyof typeof aggregated].budgeted += comparison.budgeted;
+        aggregated[budget.type as keyof typeof aggregated].spent += comparison.spent;
+      }
+    });
+
+    return aggregated;
+  };
+
   const getMonthName = (month: number) => {
     const months = [
       'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -153,12 +260,19 @@ export function BudgetsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
           <TabsTrigger 
             value="list" 
             className="data-[state=active]:bg-white data-[state=active]:text-black"
           >
             Meus Orçamentos
+          </TabsTrigger>
+          <TabsTrigger 
+            value="aggregate"
+            className="data-[state=active]:bg-white data-[state=active]:text-black flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Visão Agregada
           </TabsTrigger>
           <TabsTrigger 
             value="form"
@@ -171,42 +285,85 @@ export function BudgetsPage() {
         {/* Aba de Lista */}
         <TabsContent value="list" className="space-y-4">
           {/* Filtros */}
-          <div className="flex gap-4 flex-wrap">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600">Ano</label>
-              <select
-                value={selectedYear ?? ''}
-                onChange={(e) => setSelectedYear(e.target.value === '' ? null : parseInt(e.target.value))}
-                className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
-              >
-                <option value="">Todos</option>
-                {[2024, 2025, 2026, 2027, 2028].map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+          <div className="space-y-4">
+            <div className="flex gap-4 flex-wrap">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600">Ano</label>
+                <select
+                  value={selectedYear ?? ''}
+                  onChange={(e) => setSelectedYear(e.target.value === '' ? null : parseInt(e.target.value))}
+                  className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
+                >
+                  <option value="">Todos</option>
+                  {[2024, 2025, 2026, 2027, 2028].map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600">Mês</label>
+                <select
+                  value={selectedMonth ?? ''}
+                  onChange={(e) => setSelectedMonth(e.target.value === '' ? null : parseInt(e.target.value))}
+                  className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
+                >
+                  <option value="">Todos</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
+                    <option key={month} value={month}>{getMonthName(month)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600">Tipo</label>
+                <select
+                value={selectedBudgetType}
+                onChange={(e) => setSelectedBudgetType(e.target.value)}
+                  className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
+                >
+                  <option value="">Todos</option>
+                  <option value={BudgetType.EXPENSE}>Despesa</option>
+                  <option value={BudgetType.INCOME}>Receita</option>
+                  <option value={BudgetType.INVESTMENT}>Investimento</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-600">Categoria</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
+                >
+                  <option value="">Todas</option>
+                  {getUniqueCategories().map((category: string) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-600">Mês</label>
-              <select
-                value={selectedMonth ?? ''}
-                onChange={(e) => setSelectedMonth(e.target.value === '' ? null : parseInt(e.target.value))}
-                className="h-10 px-3 border border-gray-200 rounded-lg focus:outline-none focus:border-black bg-white text-black"
-              >
-                <option value="">Todos</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => (
-                  <option key={month} value={month}>{getMonthName(month)}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
+            {(selectedCategory || selectedBudgetType) && (
               <Button
-                onClick={handleCreateBudget}
-                className="bg-blue-400 hover:bg-blue-500 text-white flex items-center gap-2 h-10"
+                onClick={() => {
+                  setSelectedCategory('');
+                  setSelectedBudgetType('');
+                }}
+                variant="outline"
+                size="sm"
+                className="border-gray-200 text-gray-600"
               >
-                <Plus className="h-4 w-4" />
-                Novo Orçamento
+                Limpar filtros
               </Button>
-            </div>
+            )}
+          </div>
+
+          {/* Botão criar orçamento */}
+          <div className="flex justify-end">
+            <Button
+              onClick={handleCreateBudget}
+              className="bg-blue-400 hover:bg-blue-500 text-white flex items-center gap-2 h-10"
+            >
+              <Plus className="h-4 w-4" />
+              Novo Orçamento
+            </Button>
           </div>
 
           {/* Lista de Orçamentos */}
@@ -222,9 +379,23 @@ export function BudgetsPage() {
                 Criar Primeiro Orçamento
               </Button>
             </div>
+          ) : filteredBudgets.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">Nenhum orçamento encontrado com os filtros selecionados</p>
+              <Button
+                onClick={() => {
+                  setSelectedCategory('');
+                  setSelectedBudgetType('');
+                }}
+                variant="outline"
+                className="border-gray-200 text-gray-600"
+              >
+                Limpar filtros
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
-              {budgets.map((budget) => {
+              {filteredBudgets.map((budget) => {
                 const comparison = comparisons[budget.id];
 
                 return (
@@ -242,7 +413,7 @@ export function BudgetsPage() {
                           <div className="flex items-center gap-2 flex-wrap mb-2">
                             {budget.category && budget.category !== 'ALL' && (
                               <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium border border-blue-200">
-                                {budget.category}
+                                {getCategoryLabel(budget.category, budget.type as BudgetType)}
                               </span>
                             )}
                             <span className="text-xs text-gray-500">
@@ -253,13 +424,13 @@ export function BudgetsPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-gray-600">Orçado</p>
-                              <p className="font-semibold text-gray-900">R$ {budget.amount.toFixed(2)}</p>
+                              <p className="font-semibold text-gray-900">{formatCurrency(budget.amount)}</p>
                             </div>
                             {comparison && (
                               <div>
                                 <p className="text-gray-600">Gasto</p>
                                 <p className={cn('font-semibold', comparison.spent > budget.amount ? 'text-red-600' : 'text-green-600')}>
-                                  R$ {comparison.spent.toFixed(2)}
+                                  {formatCurrency(comparison.spent)}
                                 </p>
                               </div>
                             )}
@@ -271,8 +442,18 @@ export function BudgetsPage() {
                             variant="ghost"
                             onClick={() => handleEditBudget(budget)}
                             className="h-9 w-9 p-0"
+                            title="Editar"
                           >
                             <Edit className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDuplicateBudget(budget)}
+                            className="h-9 w-9 p-0"
+                            title="Duplicar"
+                          >
+                            <Copy className="h-4 w-4 text-purple-600" />
                           </Button>
                           <Button
                             size="sm"
@@ -280,6 +461,7 @@ export function BudgetsPage() {
                             onClick={() => handleDeleteBudget(budget.id)}
                             className="h-9 w-9 p-0"
                             disabled={isDeleting}
+                            title="Deletar"
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
@@ -323,12 +505,12 @@ export function BudgetsPage() {
                           <div className="grid grid-cols-3 gap-4 pt-4">
                             <div className="text-center">
                               <p className="text-xs text-gray-600 mb-1">Orçado</p>
-                              <p className="font-semibold text-black text-lg">R$ {comparison.budgeted.toFixed(2)}</p>
+                              <p className="font-semibold text-black text-lg">{formatCurrency(comparison.budgeted)}</p>
                             </div>
                             <div className="text-center">
                               <p className="text-xs text-gray-600 mb-1">Gasto</p>
                               <p className={cn('font-semibold text-lg', comparison.spent > comparison.budgeted ? 'text-red-600' : 'text-green-600')}>
-                                R$ {comparison.spent.toFixed(2)}
+                                {formatCurrency(comparison.spent)}
                               </p>
                             </div>
                             <div className="text-center">
@@ -344,6 +526,128 @@ export function BudgetsPage() {
               })}
             </div>
           )}
+        </TabsContent>
+
+        {/* Aba de Visão Agregada */}
+        <TabsContent value="aggregate" className="space-y-6">
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Resumo agregado para {selectedMonth ? getMonthName(selectedMonth) : 'todos os meses'} de {selectedYear || 'todos os anos'}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Despesas */}
+              <Card className="border-gray-100 bg-red-50">
+                <CardHeader>
+                  <h3 className="text-lg font-semibold text-red-700">Despesas</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Orçado</p>
+                      <p className="text-2xl font-bold text-red-700">
+                        {formatCurrency(getAggregatedData()[BudgetType.EXPENSE].budgeted)}
+                      </p>
+                    </div>
+                    <div className="border-t border-red-200 pt-3">
+                      <p className="text-sm text-gray-600">Realizado</p>
+                      <p className={cn('text-2xl font-bold', 
+                        getAggregatedData()[BudgetType.EXPENSE].spent > getAggregatedData()[BudgetType.EXPENSE].budgeted 
+                          ? 'text-red-700' 
+                          : 'text-green-700'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.EXPENSE].spent)}
+                      </p>
+                    </div>
+                    <div className="border-t border-red-200 pt-3">
+                      <p className="text-sm text-gray-600">Diferença</p>
+                      <p className={cn('text-lg font-semibold',
+                        getAggregatedData()[BudgetType.EXPENSE].budgeted - getAggregatedData()[BudgetType.EXPENSE].spent >= 0 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.EXPENSE].budgeted - getAggregatedData()[BudgetType.EXPENSE].spent)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Receitas */}
+              <Card className="border-gray-100 bg-blue-50">
+                <CardHeader>
+                  <h3 className="text-lg font-semibold text-blue-700">Receitas</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Orçado</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {formatCurrency(getAggregatedData()[BudgetType.INCOME].budgeted)}
+                      </p>
+                    </div>
+                    <div className="border-t border-blue-200 pt-3">
+                      <p className="text-sm text-gray-600">Realizado</p>
+                      <p className={cn('text-2xl font-bold', 
+                        getAggregatedData()[BudgetType.INCOME].spent > getAggregatedData()[BudgetType.INCOME].budgeted 
+                          ? 'text-green-700' 
+                          : 'text-red-700'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.INCOME].spent)}
+                      </p>
+                    </div>
+                    <div className="border-t border-blue-200 pt-3">
+                      <p className="text-sm text-gray-600">Diferença</p>
+                      <p className={cn('text-lg font-semibold',
+                        getAggregatedData()[BudgetType.INCOME].spent - getAggregatedData()[BudgetType.INCOME].budgeted >= 0 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.INCOME].spent - getAggregatedData()[BudgetType.INCOME].budgeted)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Investimentos */}
+              <Card className="border-gray-100 bg-purple-50">
+                <CardHeader>
+                  <h3 className="text-lg font-semibold text-purple-700">Investimentos</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Orçado</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {formatCurrency(getAggregatedData()[BudgetType.INVESTMENT].budgeted)}
+                      </p>
+                    </div>
+                    <div className="border-t border-purple-200 pt-3">
+                      <p className="text-sm text-gray-600">Realizado</p>
+                      <p className={cn('text-2xl font-bold', 
+                        getAggregatedData()[BudgetType.INVESTMENT].spent > getAggregatedData()[BudgetType.INVESTMENT].budgeted 
+                          ? 'text-green-700' 
+                          : 'text-red-700'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.INVESTMENT].spent)}
+                      </p>
+                    </div>
+                    <div className="border-t border-purple-200 pt-3">
+                      <p className="text-sm text-gray-600">Diferença</p>
+                      <p className={cn('text-lg font-semibold',
+                        getAggregatedData()[BudgetType.INVESTMENT].budgeted - getAggregatedData()[BudgetType.INVESTMENT].spent >= 0 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      )}>
+                        {formatCurrency(getAggregatedData()[BudgetType.INVESTMENT].budgeted - getAggregatedData()[BudgetType.INVESTMENT].spent)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Aba de Formulário */}

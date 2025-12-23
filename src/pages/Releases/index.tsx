@@ -20,7 +20,7 @@ const releases: ReleaseNote[] = [
   {
     version: '1.5.4',
     date: '23 de dezembro de 2025',
-    description: 'Novas Categorias',
+    description: 'Pequenas Melhorias',
     features: [],
     fixes: ['Bug de proporção do nome do sistema no header desktop.'],
     improvements: ['Dashboard melhorado com novas informações sobre orçamentos.'],
