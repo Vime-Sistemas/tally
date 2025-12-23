@@ -47,6 +47,8 @@ export interface Transaction {
   currentInstallment?: number;
   totalInstallments?: number;
   recurringTransactionId?: string; // Reference to recurring transaction
+  isPaid: boolean;
+  paidDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -65,6 +67,8 @@ export interface CreateTransactionDTO {
   installments?: number;
   currentInstallment?: number;
   totalInstallments?: number;
+  isPaid?: boolean;
+  paidDate?: string;
 }
 
 export interface UpdateTransactionDTO extends Partial<CreateTransactionDTO> {

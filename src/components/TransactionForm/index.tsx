@@ -39,6 +39,8 @@ const transactionSchema = z.object({
   isRecurring: z.boolean().optional(),
   frequency: z.string().optional(),
   endDate: z.string().optional(),
+  isPaid: z.boolean().optional(),
+  paidDate: z.string().optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -77,6 +79,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
     !!initialData?.installments && initialData.installments > 1
   );
   const [isRecurring, setIsRecurring] = useState(false);
+  const [isPaid, setIsPaid] = useState(initialData?.isPaid || false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -131,6 +134,8 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
         : '',
       equityId: initialData?.equityId || undefined,
       installments: initialData?.installments || undefined,
+      isPaid: initialData?.isPaid || false,
+      paidDate: initialData?.paidDate ? new Date(initialData.paidDate).toISOString().split('T')[0] : undefined,
     },
   });
 
@@ -184,6 +189,8 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           accountId: methodType === 'account' ? methodId : undefined,
           cardId: methodType === 'card' ? methodId : undefined,
           installments: isInstallment ? data.installments : undefined,
+          isPaid: isPaid,
+          paidDate: isPaid ? (data.paidDate || data.date) : undefined,
         };
 
         if (initialData) {
@@ -217,6 +224,8 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
             equityId: data.equityId,
             accountId: methodType === 'account' ? methodId : undefined,
             cardId: methodType === 'card' ? methodId : undefined,
+            isPaid: isPaid,
+            paidDate: isPaid ? (data.paidDate || data.date) : undefined,
         };
         setPendingPayload(payload);
         setShowBalanceDialog(true);
@@ -535,6 +544,33 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                {errors.date && (
                   <p className="text-sm text-red-600">{errors.date.message}</p>
                 )}
+            </div>
+
+            {/* Status de Pagamento */}
+            <div className="space-y-4 pt-2 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="is-paid" className="text-gray-600 font-medium">Marcar como pago?</Label>
+                <Switch
+                  id="is-paid"
+                  checked={isPaid}
+                  onCheckedChange={setIsPaid}
+                />
+              </div>
+
+              {isPaid && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <Label htmlFor="paidDate" className="text-gray-600">Data do Pagamento</Label>
+                  <Input
+                    id="paidDate"
+                    type="date"
+                    className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full"
+                    {...register('paidDate')}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Se vazio, usará a data da transação.
+                  </p>
+                </div>
+              )}
             </div>
 
             <Button

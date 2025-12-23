@@ -513,6 +513,11 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">{transaction.description}</p>
+                              {transaction.isPaid && (
+                                <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1">
+                                  ✓ Pago
+                                </span>
+                              )}
                               {transaction.recurringTransactionId && (
                                 <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-md font-medium flex items-center gap-1">
                                   <CalendarClock className="h-3 w-3" />
@@ -596,6 +601,20 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                             <span className="text-gray-500">Data</span>
                             <span className="font-medium text-gray-900">{formatDateToDDMMYYYY(transaction.date)}</span>
                           </div>
+
+                          {transaction.isPaid && (
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-500">Status</span>
+                              <span className="font-medium text-green-600 bg-green-50 px-2 py-1 rounded-md text-sm">✓ Pago</span>
+                            </div>
+                          )}
+
+                          {transaction.isPaid && transaction.paidDate && (
+                            <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-500">Data do Pagamento</span>
+                              <span className="font-medium text-gray-900">{formatDateToDDMMYYYY(transaction.paidDate)}</span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex gap-3 pt-4">
