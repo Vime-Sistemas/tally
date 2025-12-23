@@ -79,7 +79,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
     !!initialData?.installments && initialData.installments > 1
   );
   const [isRecurring, setIsRecurring] = useState(false);
-  const [isPaid, setIsPaid] = useState(initialData?.isPaid || false);
+  const [isPaid, setIsPaid] = useState(initialData?.isPaid ?? true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -134,7 +134,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
         : '',
       equityId: initialData?.equityId || undefined,
       installments: initialData?.installments || undefined,
-      isPaid: initialData?.isPaid || false,
+      isPaid: initialData?.isPaid ?? true,
       paidDate: initialData?.paidDate ? new Date(initialData.paidDate).toISOString().split('T')[0] : undefined,
     },
   });
