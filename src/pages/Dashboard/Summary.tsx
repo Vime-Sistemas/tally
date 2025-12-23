@@ -366,7 +366,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
                 <TrendingUp className="h-6 w-6 text-blue-600" />
-                Bem-vindo ao Tally! 👋
+                Bem-vindo ao Cérebro das Finanças! 👋
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
