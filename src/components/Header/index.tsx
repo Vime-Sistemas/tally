@@ -94,7 +94,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
               <img src="/icon.svg"></img>
             </div>
             <span className="hidden font-bold sm:inline-block">
-              Cérebro de Finanças
+              CDF
             </span>
           </a>
           <NavigationMenu>

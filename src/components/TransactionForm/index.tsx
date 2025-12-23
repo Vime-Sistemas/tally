@@ -26,6 +26,21 @@ import type { Account, CreditCard } from '../../types/account';
 import type { Equity } from '../../types/equity';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 import { CurrencyInput } from '../ui/currency-input';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '../ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 const transactionSchema = z.object({
   type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
@@ -47,21 +62,50 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 const incomeCategoriesLabels: Record<string, string> = {
   SALARY: 'Salário',
+  BONUS: 'Bônus / PLR',
+  COMMISSION: 'Comissão',
+
   FREELANCE: 'Freelance',
-  INVESTMENT: 'Investimento',
+  SELF_EMPLOYED: 'Autônomo / PJ',
+
+  INVESTMENT_INCOME: 'Rendimentos de Investimentos',
+  DIVIDENDS: 'Dividendos',
+  INTEREST: 'Juros',
+  RENT: 'Aluguel',
+
+  PENSION_INCOME: 'Previdência / Aposentadoria',
+
+  BENEFITS: 'Benefícios',
+  GIFTS: 'Presentes',
+  REFUND: 'Reembolsos',
+
   OTHER_INCOME: 'Outros',
 };
 
 const expenseCategoriesLabels: Record<string, string> = {
+  HOUSING: 'Moradia',
+  UTILITIES: 'Contas Fixas (Água, Luz, Internet, Gás)',
   FOOD: 'Alimentação',
   TRANSPORT: 'Transporte',
-  HOUSING: 'Moradia',
-  UTILITIES: 'Contas',
+
   HEALTHCARE: 'Saúde',
-  ENTERTAINMENT: 'Lazer',
+  INSURANCE: 'Seguros',
   EDUCATION: 'Educação',
+
   SHOPPING: 'Compras',
-  INVESTMENT: 'Investimento / Aplicação',
+  CLOTHING: 'Vestuário',
+
+  ENTERTAINMENT: 'Lazer',
+  SUBSCRIPTIONS: 'Assinaturas',
+
+  TAXES: 'Impostos',
+  FEES: 'Taxas e Tarifas',
+
+  PETS: 'Pets',
+  DONATIONS: 'Doações',
+
+  TRAVEL: 'Viagens',
+
   OTHER_EXPENSE: 'Outros',
 };
 
@@ -88,6 +132,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
   const [isMac, setIsMac] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -112,6 +157,13 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
     // Detectar SO
     setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
   }, []);
+
+  const getSortedCategories = () => {
+    const labels = selectedType === TransactionType.INCOME ? incomeCategoriesLabels : expenseCategoriesLabels;
+    return Object.entries(labels)
+      .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, 'pt-BR'))
+      .map(([key, label]) => ({ key, label }));
+  };
   
 
   const {
@@ -268,13 +320,6 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
     setSelectedType(type);
   };
 
-  const getCategoriesForType = () => {
-    if (selectedType === TransactionType.INCOME) {
-      return Object.entries(incomeCategoriesLabels);
-    }
-    return Object.entries(expenseCategoriesLabels);
-  };
-
   return (
     <>
       <Card className="w-full shadow-sm border-gray-100">
@@ -341,18 +386,64 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                   name="category"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="category" className="w-full h-10 border-gray-200 focus:ring-black">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCategoriesForType().map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openCategory} onOpenChange={setOpenCategory}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openCategory}
+                          className="w-full h-10 justify-between border-gray-200 focus:ring-black"
+                        >
+                          {field.value
+                            ? getSortedCategories().find((cat) => cat.key === field.value)?.label
+                            : 'Selecione uma categoria...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command
+                          filter={(value, search) => {
+                            const categories = getSortedCategories();
+                            const category = categories.find(c => c.key === value);
+                            if (!category) return 0;
+                            
+                            const searchNormalized = search.toLowerCase();
+                            const labelNormalized = category.label.toLowerCase();
+                            const keyNormalized = category.key.toLowerCase();
+                            
+                            if (labelNormalized.includes(searchNormalized) || keyNormalized.includes(searchNormalized)) {
+                              return 1;
+                            }
+                            return 0;
+                          }}
+                        >
+                          <CommandInput placeholder="Pesquisar categoria..." />
+                          <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                          <CommandList>
+                            <CommandGroup>
+                              {getSortedCategories().map((category) => (
+                                <CommandItem
+                                  key={category.key}
+                                  value={category.key}
+                                  onSelect={(currentValue) => {
+                                    field.onChange(currentValue === field.value ? '' : currentValue);
+                                    setOpenCategory(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      field.value === category.key ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {category.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   )}
                 />
               </div>

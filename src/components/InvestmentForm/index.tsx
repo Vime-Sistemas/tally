@@ -19,6 +19,21 @@ import { toast } from 'sonner';
 import { getAccounts, createTransaction, confirmTransaction } from '../../services/api';
 import type { Account } from '../../types/account';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '../ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 const investmentSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
@@ -31,15 +46,24 @@ const investmentSchema = z.object({
 type InvestmentFormData = z.infer<typeof investmentSchema>;
 
 const investmentTypeMap: Record<string, string> = {
-  'CDB': 'CDB',
-  'TREASURY': 'Tesouro Direto',
   'STOCKS': 'Ações',
-  'FII': 'FIIs',
-  'FOUNDS': 'Fundos',
-  'CP': 'Crédito Privado',
-  'PREVIDENCIA': 'Previdência',
+  'REAL_ESTATE': 'Imóveis',
+  'REAL_ESTATE_FUNDS': 'Fundos Imobiliários (FIIs)',
   'CRYPTO': 'Criptomoedas',
-  'OTHER': 'Outros',
+
+  'BONDS': 'Títulos Públicos',
+  'PRIVATE_BONDS': 'Títulos Privados (CDB, LCI, LCA, Debêntures)',
+
+  'MUTUAL_FUND': 'Fundos de Investimento',
+  'ETF': 'ETFs',
+
+  'PENSION': 'Previdência Privada',
+  'SAVINGS': 'Poupança',
+
+  'FOREIGN_INVESTMENT': 'Investimentos no Exterior',
+  'CASH': 'Caixa / Reserva de Emergência',
+
+  'OTHER_INVESTMENT': 'Outros',
 };
 
 export function InvestmentForm() {
@@ -49,6 +73,7 @@ export function InvestmentForm() {
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingData, setPendingData] = useState<InvestmentFormData | null>(null);
+  const [openInvestmentType, setOpenInvestmentType] = useState(false);
 
   const {
     register,
@@ -89,6 +114,12 @@ export function InvestmentForm() {
     };
     loadAccounts();
   }, []);
+
+  const getSortedInvestmentTypes = () => {
+    return Object.entries(investmentTypeMap)
+      .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, 'pt-BR'))
+      .map(([key, label]) => ({ key, label }));
+  };
 
   const onSubmit = async (data: InvestmentFormData) => {
     try {
@@ -183,18 +214,64 @@ export function InvestmentForm() {
                 name="investmentType"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="investmentType" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(investmentTypeMap).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openInvestmentType} onOpenChange={setOpenInvestmentType}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openInvestmentType}
+                        className="w-full h-10 justify-between border-gray-200 focus:ring-black"
+                      >
+                        {field.value
+                          ? getSortedInvestmentTypes().find((inv) => inv.key === field.value)?.label
+                          : 'Selecione um tipo...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command
+                        filter={(value, search) => {
+                          const investments = getSortedInvestmentTypes();
+                          const investment = investments.find(i => i.key === value);
+                          if (!investment) return 0;
+                          
+                          const searchNormalized = search.toLowerCase();
+                          const labelNormalized = investment.label.toLowerCase();
+                          const keyNormalized = investment.key.toLowerCase();
+                          
+                          if (labelNormalized.includes(searchNormalized) || keyNormalized.includes(searchNormalized)) {
+                            return 1;
+                          }
+                          return 0;
+                        }}
+                      >
+                        <CommandInput placeholder="Pesquisar tipo..." />
+                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                        <CommandList>
+                          <CommandGroup>
+                            {getSortedInvestmentTypes().map((investment) => (
+                              <CommandItem
+                                key={investment.key}
+                                value={investment.key}
+                                onSelect={(currentValue) => {
+                                  field.onChange(currentValue === field.value ? '' : currentValue);
+                                  setOpenInvestmentType(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value === investment.key ? 'opacity-100' : 'opacity-0'
+                                  )}
+                                />
+                                {investment.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )}
               />
               {errors.investmentType && (

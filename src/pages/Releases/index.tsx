@@ -18,11 +18,37 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.4',
+    date: '23 de dezembro de 2025',
+    description: 'Novas Categorias',
+    features: [],
+    fixes: ['Bug de proporção do nome do sistema no header desktop.'],
+    improvements: ['Dashboard melhorado com novas informações sobre orçamentos.'],
+  },
+  {
+    version: '1.5.3',
+    date: '23 de dezembro de 2025',
+    description: 'Novas Categorias',
+    features: [],
+    fixes: [],
+    improvements: ['Novas categorias para transações e investimentos.', 'Alteração do select padrão para um combobox searchable para acelerar a sua produtividade.'],
+  },
+  {
+    version: '1.5.2',
+    date: '23 de dezembro de 2025',
+    description: 'Adição de orçamentos',
+    features: [
+      'Agora você consegue criar orçamentos com base em receitas/despesa e investimentos, uma boa hora de bater as suas metas...?',
+    ],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.1',
     date: '23 de dezembro de 2025',
     description: 'Adição de Transações pagas e não pagas',
     features: [
-      'Agora você consegue criar orçamentos com base em receitas/despesas, aumentando a previsibilidade do seu dinheiro.',
+      'Agora você consegue criar transações com base em receitas/despesas futuras, aumentando a previsibilidade do seu fluxo financeiro.',
     ],
     fixes: [],
     improvements: [],
