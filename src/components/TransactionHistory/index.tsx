@@ -43,7 +43,7 @@ import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account, CreditCard } from "../../types/account";
 import { Button } from "../ui/button";
-import { format, isToday, isYesterday, startOfMonth, endOfMonth } from "date-fns";
+import { format, isToday, isYesterday, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -336,9 +336,9 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
           (t.accountId === accountFilter) || 
           (t.cardId === accountFilter);
 
-        const transactionDate = parseUTCDate(t.date);
-        const matchesDate = (!dateRange?.from || transactionDate >= dateRange.from) && 
-                            (!dateRange?.to || transactionDate <= dateRange.to);
+        const transactionDate = startOfDay(parseUTCDate(t.date));
+        const matchesDate = (!dateRange?.from || transactionDate >= startOfDay(dateRange.from)) && 
+                            (!dateRange?.to || transactionDate <= endOfDay(dateRange.to));
 
         return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
       })
