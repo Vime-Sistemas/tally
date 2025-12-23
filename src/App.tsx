@@ -183,7 +183,7 @@ function AppContent() {
       case 'profile':
         return <Profile hasBusiness={hasBusiness} setHasBusiness={setHasBusiness} />;
       case 'dashboard-summary':
-        return isMobile ? <MobileSummary /> : <Summary />;
+        return isMobile ? <MobileSummary /> : <Summary onNavigate={setCurrentPage} />;
       case 'dashboard-goals':
         return <Goals />;
       case 'reports':

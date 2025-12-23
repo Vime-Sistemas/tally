@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.12',
+    date: '23 de dezembro de 2025',
+    description: 'Onboarding',
+    features: [],
+    fixes: [],
+    improvements: ['Agora temos um on-boarding para você não se perder no nosso mar de funcionalidades.'],
+  },
+  {
     version: '1.5.11',
     date: '23 de dezembro de 2025',
     description: 'Pequenas Melhorias',

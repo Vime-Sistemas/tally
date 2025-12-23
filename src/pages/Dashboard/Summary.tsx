@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
 import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell, YAxis } from "recharts";
 import { 
@@ -9,7 +10,10 @@ import {
   TrendingUp, 
   AlertTriangle, 
   CreditCard as CreditCardIcon,
-  BarChart3
+  BarChart3,
+  CheckCircle2,
+  Circle,
+  Plus
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { accountService } from "../../services/accounts";
@@ -21,6 +25,7 @@ import { TransactionCategory, type Transaction } from "../../types/transaction";
 import { EQUITY_TYPES } from "../../types/equity";
 import type { Equity } from "../../types/equity";
 import type { Budget, BudgetComparison } from "../../types/budget";
+import type { Page } from "../../types/navigation";
 import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -103,7 +108,7 @@ const GROUP_COLORS: Record<string, string> = {
   'Outros': "#99d9f4", // Very light
 };
 
-export function Summary() {
+export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
@@ -354,6 +359,120 @@ export function Summary() {
         <p className="text-sm md:text-base text-muted-foreground">Acompanhe o fluxo do seu patrimônio.</p>
       </div>
 
+      {/* First Steps Onboarding */}
+      {(accounts.length === 0 || cards.length === 0) && transactions.length === 0 ? (
+        <div className="space-y-8">
+          <Card className="border-2 border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+                Bem-vindo ao Tally! 👋
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm text-gray-700">
+                Vamos começar com os primeiros passos para você controlar melhor suas finanças.
+              </p>
+
+              <div className="space-y-4">
+                {/* Passo 1: Criar Conta/Cartão */}
+                <div className="flex gap-4 items-start">
+                  <div className="flex-shrink-0">
+                    {accounts.length > 0 || cards.length > 0 ? (
+                      <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-gray-400 mt-1" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">1. Criar uma Conta ou Cartão</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Comece adicionando uma conta bancária ou cartão de crédito para controlar seus recursos.
+                    </p>
+                    {accounts.length === 0 && cards.length === 0 && (
+                      <Button onClick={() => onNavigate?.('accounts-new')} className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 gap-1">
+                        <Plus className="h-3 w-3" />
+                        Adicionar Conta/Cartão
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Passo 2: Registrar Transações */}
+                <div className="flex gap-4 items-start">
+                  <div className="flex-shrink-0">
+                    {transactions.length > 0 ? (
+                      <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-gray-400 mt-1" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">2. Registrar Suas Transações</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Adicione suas receitas e despesas para começar a acompanhar seu fluxo de caixa.
+                    </p>
+                    {(accounts.length > 0 || cards.length > 0) && transactions.length === 0 && (
+                      <Button onClick={() => onNavigate?.('transactions-new')} className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 gap-1">
+                        <Plus className="h-3 w-3" />
+                        Nova Transação
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Passo 3: Adicionar Patrimônio (Opcional) */}
+                <div className="flex gap-4 items-start opacity-60">
+                  <div className="flex-shrink-0">
+                    {equities.length > 0 ? (
+                      <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-gray-400 mt-1" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">3. Adicionar Patrimônio (Opcional)</h4>
+                    <p className="text-sm text-gray-600">
+                      Registre seus imóveis, investimentos e outros bens para visualizar sua riqueza total.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Passo 4: Definir Metas (Opcional) */}
+                <div className="flex gap-4 items-start opacity-60">
+                  <div className="flex-shrink-0">
+                    <Circle className="h-6 w-6 text-gray-400 mt-1" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">4. Definir Metas de Economia (Opcional)</h4>
+                    <p className="text-sm text-gray-600">
+                      Crie objetivos de poupança e acompanhe seu progresso ao longo do tempo.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Passo 5: Criar Orçamentos (Opcional) */}
+                <div className="flex gap-4 items-start opacity-60">
+                  <div className="flex-shrink-0">
+                    {budgets.length > 0 ? (
+                      <CheckCircle2 className="h-6 w-6 text-green-600 mt-1" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-gray-400 mt-1" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">5. Criar Orçamentos (Opcional)</h4>
+                    <p className="text-sm text-gray-600">
+                      Defina limites de gastos por categoria para controlar melhor seu dinheiro.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* Alerts Section */}
       {upcomingBills.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -790,6 +909,8 @@ export function Summary() {
           </Card>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
