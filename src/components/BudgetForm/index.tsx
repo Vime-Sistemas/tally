@@ -282,7 +282,23 @@ export function BudgetForm({ onSuccess, initialData }: BudgetFormProps) {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0">
-                    <Command>
+                    <Command
+                      filter={(value, search) => {
+                        const categories = getSortedCategories(selectedType);
+                        const category = categories.find(c => c.key === value);
+                        if (!category) return 0;
+                        
+                        // Busca por chave ou rótulo (insensível a maiúsculas/acentos)
+                        const searchNormalized = search.toLowerCase();
+                        const labelNormalized = category.label.toLowerCase();
+                        const keyNormalized = category.key.toLowerCase();
+                        
+                        if (labelNormalized.includes(searchNormalized) || keyNormalized.includes(searchNormalized)) {
+                          return 1;
+                        }
+                        return 0;
+                      }}
+                    >
                       <CommandInput placeholder="Pesquisar categoria..." />
                       <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
                       <CommandList>
