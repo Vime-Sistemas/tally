@@ -18,6 +18,22 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.9',
+    date: '23 de dezembro de 2025',
+    description: 'Pequenas Melhorias',
+    features: [],
+    fixes: [],
+    improvements: ['Melhoria no layout de transações para uma melhor experiência com os novos campos'],
+  },
+  {
+    version: '1.5.8',
+    date: '23 de dezembro de 2025',
+    description: 'Centro de Custo',
+    features: ['Apresentamos os centros de custos, uma nova de identificar os seus gastos'],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.7',
     date: '23 de dezembro de 2025',
     description: 'Pequenas Melhorias',

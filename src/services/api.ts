@@ -173,6 +173,7 @@ export interface CreateRecurringTransactionDTO {
   accountId?: string | null;
   cardId?: string | null;
   destinationAccountId?: string | null;
+  costCenterId?: string;
 }
 
 export const createRecurringTransaction = async (data: CreateRecurringTransactionDTO): Promise<any> => {

@@ -20,6 +20,7 @@ import { Button } from '../ui/button';
 import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../services/api';
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
+import { useUser } from '../../contexts/UserContext';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../types/account';
@@ -49,6 +50,7 @@ const transactionSchema = z.object({
   description: z.string().min(3, 'Descrição deve ter pelo menos 3 caracteres'),
   date: z.string().min(1, 'Data é obrigatória'),
   paymentMethod: z.string().min(1, 'Selecione uma conta ou cartão'),
+  costCenterId: z.string().optional(),
   equityId: z.string().optional(),
   installments: z.number().min(2, 'Mínimo de 2 parcelas').optional(),
   isRecurring: z.boolean().optional(),
@@ -115,6 +117,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onSuccess, initialData }: TransactionFormProps) {
+  const { costCenters } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(
     initialData?.type || TransactionType.EXPENSE
@@ -184,6 +187,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
       paymentMethod: initialData 
         ? (initialData.cardId ? `card:${initialData.cardId}` : `account:${initialData.accountId}`)
         : '',
+      costCenterId: initialData?.costCenterId || '',
       equityId: initialData?.equityId || undefined,
       installments: initialData?.installments || undefined,
       isPaid: initialData?.isPaid ?? true,
@@ -223,6 +227,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           endDate: data.endDate || null,
           accountId: methodType === 'account' ? methodId : null,
           cardId: methodType === 'card' ? methodId : null,
+          costCenterId: data.costCenterId || undefined,
         });
 
         reset();
@@ -237,6 +242,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           amount: data.amount,
           description: data.description,
           date: data.date,
+          costCenterId: data.costCenterId || undefined,
           equityId: data.equityId,
           accountId: methodType === 'account' ? methodId : undefined,
           cardId: methodType === 'card' ? methodId : undefined,
@@ -273,6 +279,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
             amount: data.amount,
             description: data.description,
             date: data.date,
+            costCenterId: data.costCenterId || undefined,
             equityId: data.equityId,
             accountId: methodType === 'account' ? methodId : undefined,
             cardId: methodType === 'card' ? methodId : undefined,
@@ -355,7 +362,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               {/* Tipo */}
               <div className="space-y-2">
                 <Label htmlFor="type" className="text-gray-600">Tipo</Label>
@@ -396,7 +403,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                         >
                           {field.value
                             ? getSortedCategories().find((cat) => cat.key === field.value)?.label
-                            : 'Selecione uma categoria...'}
+                            : 'Selecione...'}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -447,6 +454,29 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                   )}
                 />
               </div>
+
+              {/* Centro de Custo */}
+              <div className="space-y-2">
+                <Label htmlFor="costCenter" className="text-gray-600 text-sm">Centro de Custo</Label>
+                <Controller
+                  name="costCenterId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <SelectTrigger id="costCenter" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {costCenters.map((center) => (
+                          <SelectItem key={center.id} value={center.id}>
+                            {center.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
             </div>
             {errors.category && (
               <p className="text-sm text-red-600 -mt-2">{errors.category.message}</p>
@@ -484,61 +514,62 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
 
             {/* Parcelamento (Apenas Despesas) */}
             {selectedType === TransactionType.EXPENSE && (
-              <div className="space-y-4 pt-2 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is-installment" className="text-gray-600 font-medium">Parcelar esta despesa?</Label>
-                  <Switch
-                    id="is-installment"
-                    checked={isInstallment}
-                    onCheckedChange={setIsInstallment}
-                    disabled={isRecurring}
-                  />
-                </div>
-
-                {isInstallment && !isRecurring && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                    <Label htmlFor="installments" className="text-gray-600">Número de Parcelas</Label>
-                    <Input
-                      id="installments"
-                      type="number"
-                      min="2"
-                      placeholder="Ex: 12"
-                      className="border-gray-200 focus:border-black focus:ring-black"
-                      {...register('installments', { valueAsNumber: true })}
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="is-installment" className="text-gray-600 font-medium text-sm">Parcelar?</Label>
+                    <Switch
+                      id="is-installment"
+                      checked={isInstallment}
+                      onCheckedChange={setIsInstallment}
+                      disabled={isRecurring}
                     />
-                    {errors.installments && (
-                      <p className="text-sm text-red-600">{errors.installments.message}</p>
-                    )}
-                    <p className="text-xs text-gray-500">
-                      O valor total será dividido pelo número de parcelas e lançado nos meses subsequentes.
-                    </p>
                   </div>
-                )}
+
+                  {isInstallment && !isRecurring && (
+                    <div className="flex-1 animate-in fade-in slide-in-from-top-2">
+                      <Label htmlFor="installments" className="text-gray-600 text-sm">Parcelas</Label>
+                      <Input
+                        id="installments"
+                        type="number"
+                        min="2"
+                        placeholder="12"
+                        className="border-gray-200 focus:border-black focus:ring-black h-9 text-sm mt-1"
+                        {...register('installments', { valueAsNumber: true })}
+                      />
+                      {errors.installments && (
+                        <p className="text-sm text-red-600">{errors.installments.message}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {/* Recorrência */}
             {!isInstallment && (
-              <div className="space-y-4 pt-2 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is-recurring" className="text-gray-600 font-medium">Tornar recorrente?</Label>
-                  <Switch
-                    id="is-recurring"
-                    checked={isRecurring}
-                    onCheckedChange={setIsRecurring}
-                  />
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="is-recurring" className="text-gray-600 font-medium text-sm">Recorrente?</Label>
+                    <Switch
+                      id="is-recurring"
+                      checked={isRecurring}
+                      onCheckedChange={setIsRecurring}
+                    />
+                  </div>
                 </div>
 
                 {isRecurring && (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="frequency" className="text-gray-600">Frequência</Label>
+                  <div className="space-y-2 grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="col-span-2">
+                      <Label htmlFor="frequency" className="text-gray-600 text-sm">Frequência</Label>
                       <Controller
                         name="frequency"
                         control={control}
                         render={({ field }) => (
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full h-10 border-gray-200 focus:ring-black">
+                            <SelectTrigger className="w-full h-9 border-gray-200 focus:ring-black text-sm">
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
@@ -553,94 +584,94 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                         )}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate" className="text-gray-600">Data de Término (Opcional)</Label>
+                    <div>
+                      <Label htmlFor="endDate" className="text-gray-600 text-sm">Fim (Opcional)</Label>
                       <Input
                         id="endDate"
                         type="date"
-                        className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full"
+                        className="h-9 border-gray-200 focus:border-black focus:ring-black block w-full text-sm mt-1"
                         {...register('endDate')}
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
-                      A transação será lançada automaticamente na frequência escolhida a partir da data de início.
-                    </p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Conta / Cartão */}
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod" className="text-gray-600">Conta / Cartão</Label>
-              <Controller
-                name="paymentMethod"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
-                    <SelectTrigger id="paymentMethod" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Contas</SelectLabel>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={`account:${account.id}`}>
-                            {account.name} {account.type === 'WALLET' && '(Dinheiro)'}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      {cards.length > 0 && (
+            {/* Conta / Cartão e Descrição */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Conta / Cartão */}
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="paymentMethod" className="text-gray-600 text-sm">Conta / Cartão</Label>
+                <Controller
+                  name="paymentMethod"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
+                      <SelectTrigger id="paymentMethod" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
+                        <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione"} />
+                      </SelectTrigger>
+                      <SelectContent>
                         <SelectGroup>
-                          <SelectLabel>Cartões de Crédito</SelectLabel>
-                          {cards.map((card) => (
-                            <SelectItem key={card.id} value={`card:${card.id}`}>
-                              {card.name}
+                          <SelectLabel>Contas</SelectLabel>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={`account:${account.id}`}>
+                              {account.name} {account.type === 'WALLET' && '(Dinheiro)'}
                             </SelectItem>
                           ))}
                         </SelectGroup>
-                      )}
-                    </SelectContent>
-                  </Select>
+                        {cards.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>Cartões de Crédito</SelectLabel>
+                            {cards.map((card) => (
+                              <SelectItem key={card.id} value={`card:${card.id}`}>
+                                {card.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.paymentMethod && (
+                  <p className="text-sm text-red-600">{errors.paymentMethod.message}</p>
                 )}
-              />
-              {errors.paymentMethod && (
-                <p className="text-sm text-red-600">{errors.paymentMethod.message}</p>
-              )}
+              </div>
+
+              {/* Data */}
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-gray-600 text-sm">Data</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full text-sm"
+                  {...register('date')}
+                />
+                {errors.date && (
+                  <p className="text-sm text-red-600">{errors.date.message}</p>
+                )}
+              </div>
             </div>
 
             {/* Descrição */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-600">Descrição</Label>
+              <Label htmlFor="description" className="text-gray-600 text-sm">Descrição</Label>
               <Input
                 id="description"
                 placeholder="Ex: Compras do mês"
-                className="h-10 border-gray-200 focus:border-black focus:ring-black"
+                className="h-10 border-gray-200 focus:border-black focus:ring-black text-sm"
                 {...register('description')}
               />
-               {errors.description && (
-                  <p className="text-sm text-red-600">{errors.description.message}</p>
-                )}
-            </div>
-
-            {/* Data */}
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-gray-600">Data</Label>
-              <Input
-                id="date"
-                type="date"
-                className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full"
-                {...register('date')}
-              />
-               {errors.date && (
-                  <p className="text-sm text-red-600">{errors.date.message}</p>
-                )}
+              {errors.description && (
+                <p className="text-sm text-red-600">{errors.description.message}</p>
+              )}
             </div>
 
             {/* Status de Pagamento */}
             <div className="space-y-4 pt-2 border-t border-gray-100">
               <div className="flex items-center justify-between">
-                <Label htmlFor="is-paid" className="text-gray-600 font-medium">Marcar como pago?</Label>
+                <Label htmlFor="is-paid" className="text-gray-600 font-medium text-sm">Marcar como pago?</Label>
                 <Switch
                   id="is-paid"
                   checked={isPaid}
@@ -649,28 +680,27 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
               </div>
 
               {isPaid && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <Label htmlFor="paidDate" className="text-gray-600">Data do Pagamento</Label>
-                  <Input
-                    id="paidDate"
-                    type="date"
-                    className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full"
-                    {...register('paidDate')}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Se vazio, usará a data da transação.
-                  </p>
+                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div>
+                    <Label htmlFor="paidDate" className="text-gray-600 text-sm">Data do Pagamento</Label>
+                    <Input
+                      id="paidDate"
+                      type="date"
+                      className="h-9 border-gray-200 focus:border-black focus:ring-black block w-full text-sm mt-1"
+                      {...register('paidDate')}
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-blue-400 hover:bg-blue-500 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-blue-400 hover:bg-blue-500 text-white h-11 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar Transação' : 'Salvar Transação')}
-              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600">{isMac ? '⌘' : 'Ctrl'}+Enter</Kbd>}
+              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar' : 'Salvar')}
+              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600 text-xs">{isMac ? '⌘' : 'Ctrl'}+Enter</Kbd>}
             </Button>
           </form>
         </CardContent>

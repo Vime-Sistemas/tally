@@ -41,6 +41,7 @@ export interface Transaction {
   accountId?: string;
   cardId?: string;
   destinationAccountId?: string; // For transfers
+  costCenterId?: string;
   equityId?: string;
   goalId?: string;
   installments?: number;
@@ -62,6 +63,7 @@ export interface CreateTransactionDTO {
   accountId?: string;
   cardId?: string;
   destinationAccountId?: string;
+  costCenterId?: string;
   equityId?: string;
   goalId?: string;
   installments?: number;

@@ -3,6 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import api, { setAuthToken } from './services/api'
+import { costCenterService } from './services/costCenters'
 import { Transactions } from './pages/Transactions'
 import { Accounts } from './pages/Accounts'
 import { Summary } from './pages/Dashboard/Summary'
@@ -28,7 +29,7 @@ import './App.css'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
-  const { setUser } = useUser();
+  const { setUser, setCostCenters } = useUser();
   
   // Detect initial page from pathname
   const getInitialPage = (): Page => {
@@ -62,6 +63,10 @@ function AppContent() {
           });
           
           setUser(response.data);
+
+          // Load cost centers
+          const costCenters = await costCenterService.getCostCenters();
+          setCostCenters(costCenters);
         } catch (err) {
           console.error('Error syncing user:', err);
         } finally {
@@ -74,7 +79,7 @@ function AppContent() {
     if (!isLoading) {
       syncUser();
     }
-  }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, setUser]);
+  }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, setUser, setCostCenters]);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
