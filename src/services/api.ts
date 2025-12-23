@@ -4,6 +4,7 @@ import type { Account, CreditCard } from '../types/account';
 import type { Transaction } from '../types/transaction';
 import type { CreateTransactionDTO } from '../types/transaction';
 import type { Goal, CreateGoalDTO, UpdateGoalDTO } from '../types/goal';
+import type { Budget, CreateBudgetDTO, BudgetComparison } from '../types/budget';
 // import { encryptPayload, decryptPayload } from '../utils/crypto';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -191,6 +192,36 @@ export const updateRecurringTransaction = async (id: string, data: Partial<Creat
 
 export const deleteRecurringTransaction = async (id: string): Promise<void> => {
   await api.delete(`/recurring-transactions/${id}`);
+};
+
+// BUDGETS API
+
+export const getBudgets = async (year?: number, month?: number): Promise<Budget[]> => {
+  const params = new URLSearchParams();
+  if (year) params.append('year', year.toString());
+  if (month) params.append('month', month.toString());
+  
+  const response = await api.get(`/budgets?${params.toString()}`);
+  return response.data;
+};
+
+export const createBudget = async (data: CreateBudgetDTO): Promise<Budget> => {
+  const response = await api.post('/budgets', data);
+  return response.data;
+};
+
+export const updateBudget = async (id: string, data: Partial<CreateBudgetDTO>): Promise<Budget> => {
+  const response = await api.put(`/budgets/${id}`, data);
+  return response.data;
+};
+
+export const deleteBudget = async (id: string): Promise<void> => {
+  await api.delete(`/budgets/${id}`);
+};
+
+export const getBudgetComparison = async (id: string): Promise<BudgetComparison> => {
+  const response = await api.get(`/budgets/${id}/comparison`);
+  return response.data;
 };
 
 export default api;

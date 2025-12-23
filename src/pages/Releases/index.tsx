@@ -18,6 +18,16 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.1',
+    date: '23 de dezembro de 2025',
+    description: 'Adição de Transações pagas e não pagas',
+    features: [
+      'Agora você consegue criar orçamentos com base em receitas/despesas, aumentando a previsibilidade do seu dinheiro.',
+    ],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.0',
     date: '18 de dezembro de 2025',
     description: 'Melhorias no sistema de cartões de crédito e transações recorrentes',
