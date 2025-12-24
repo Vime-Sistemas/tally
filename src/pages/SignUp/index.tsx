@@ -6,17 +6,21 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
-import { ChevronRight, Facebook, Chromium } from "lucide-react";
+import { 
+  CreditCard, 
+  RefreshCw, 
+  Target, 
+  TrendingUp, 
+  PieChart, 
+  CheckCircle2, 
+  Facebook, 
+  Chrome, // Trocando Chromium por Chrome para o ícone padrão
+  ShieldCheck,
+  ArrowRight
+} from "lucide-react";
 import type { Page } from "@/types/navigation";
 
+// --- Zod Schema ---
 const signUpSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
@@ -24,26 +28,23 @@ const signUpSchema = z.object({
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
-interface SignUpProps {
+interface LandingPageProps {
   onNavigate: (page: Page) => void;
 }
 
-export function SignUp({ onNavigate }: SignUpProps) {
+export function SignUp({ onNavigate }: LandingPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { loginWithRedirect } = useAuth0();
 
+  // --- Form Setup ---
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-    },
+    defaultValues: { name: "", email: "" },
   });
 
+  // --- Handlers ---
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
-    // Redirect to Auth0 Universal Login for signup
-    // We force the DB connection so it doesn't try to suggest Google based on the email
     await loginWithRedirect({
       authorizationParams: {
         screen_hint: 'signup',
@@ -59,162 +60,218 @@ export function SignUp({ onNavigate }: SignUpProps) {
     loginWithRedirect({ 
       authorizationParams: {
         connection: connection,
-        screen_hint: 'signup'
-        ,ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
+        screen_hint: 'signup',
+        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
       }
     });
   };
 
+  // --- Data: Features ---
   const features = [
     {
-      title: "Controle Total",
-      description: "Gerencie suas finanças pessoais e empresariais em um único lugar, com simplicidade e elegância.",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=2626&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      title: "Contas e Cartões",
+      description: "Controle de limites, faturas e avisos de saldo.",
+      icon: <CreditCard className="w-6 h-6 text-blue-400" />,
+      items: ["Múltiplas contas", "Gestão de Fatura", "Avisos inteligentes"]
     },
     {
-      title: "Metas Claras",
-      description: "Defina objetivos financeiros e acompanhe sua evolução com gráficos intuitivos e motivadores.",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      title: "Transações",
+      description: "Recorrências, parcelamentos e categorização.",
+      icon: <RefreshCw className="w-6 h-6 text-blue-400" />,
+      items: ["Gastos recorrentes", "Parcelamentos", "Histórico completo"]
     },
     {
-      title: "Insights Poderosos",
-      description: "Tome decisões melhores com relatórios detalhados sobre seus hábitos de consumo e investimentos.",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      title: "Metas Financeiras",
+      description: "Defina objetivos e acompanhe o progresso real.",
+      icon: <Target className="w-6 h-6 text-blue-400" />,
+      items: ["Objetivos de viagem", "Reserva de emergência", "Visualização clara"]
+    },
+    {
+      title: "Investimentos",
+      description: "Monitore a evolução do seu patrimônio global.",
+      icon: <TrendingUp className="w-6 h-6 text-blue-400" />,
+      items: ["Cadastro de ativos", "Preço médio", "Curva de patrimônio"]
+    },
+    {
+      title: "Orçamento",
+      description: "Planeje seu mês e não gaste mais do que ganha.",
+      icon: <PieChart className="w-6 h-6 text-blue-400" />,
+      items: ["Previsto vs Realizado", "Visão mensal", "Alertas de desvio"]
     }
   ];
 
   return (
-    <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-white">
-      {/* Left Side - Carousel */}
-      <div className="hidden lg:flex w-1/2 bg-white text-zinc-900 relative flex-col justify-between p-12">
-        <div className="z-10">
-          <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
-              <img src="/icon.svg"></img>
+    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100">
+      
+      {/* --- Navbar --- */}
+      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-zinc-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center text-white font-bold">
+              C
             </div>
-          <h1 className="text-2xl font-bold tracking-tighter text-blue-400">Cérebro de Finanças.</h1>
-        </div>
-
-        <div className="z-10 w-full max-w-5xl mx-auto">
-          <Carousel 
-            className="w-full"
-            plugins={[
-              Autoplay({
-                delay: 3000,
-              }),
-            ]}
-            opts={{
-              loop: true,
-            }}
-          >
-            <CarouselContent>
-              {features.map((feature, index) => (
-                <CarouselItem key={index}>
-                  <div className="p-1">
-                    <div className="space-y-6">
-                      <div className="aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-                         <img src={feature.image} alt={feature.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-                      </div>
-                      <div className="space-y-2">
-                        <h2 className="text-3xl font-semibold tracking-tight text-blue-400">{feature.title}</h2>
-                        <p className="text-zinc-500 text-lg leading-relaxed max-w-lg">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex gap-2 mt-8">
-                <CarouselPrevious className="static translate-y-0 bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-900" />
-                <CarouselNext className="static translate-y-0 bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-900" />
-            </div>
-          </Carousel>
-        </div>
-
-        <div className="z-10 text-sm text-zinc-500">
-          © 2025 um produto da Vime Sistemas.
-        </div>
-        
-        {/* Abstract Background Pattern - Light Version */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-zinc-100 via-zinc-50 to-white opacity-80 pointer-events-none" />
-      </div>
-
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-24 bg-white">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Crie sua conta</h1>
-            <p className="text-gray-500">Comece a controlar suas finanças hoje mesmo.</p>
+            <span className="text-xl font-bold tracking-tight text-zinc-900">CDF</span>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
-              <Chromium className="mr-2 h-4 w-4 text-blue-400" />
-              Google
-            </Button>
-            <Button variant="outline" className="w-full h-11" type="button" onClick={() => handleSocialLogin('facebook')}>
-              <Facebook className="mr-2 h-4 w-4 text-blue-400" />
-              Facebook
+          <div>
+            <Button 
+              variant="ghost" 
+              onClick={() => onNavigate('login')}
+              className="text-zinc-600 hover:text-blue-400 hover:bg-blue-50 font-medium"
+            >
+              Já tenho conta
             </Button>
           </div>
+        </div>
+      </nav>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+      {/* --- Hero Section (Hybrid: Pitch + Form) --- */}
+      <section className="pt-28 pb-16 lg:pt-36 lg:pb-24 px-4 sm:px-6 relative overflow-hidden">
+        {/* Background blobs decorativos */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Left: Pitch */}
+          <div className="space-y-8 text-center lg:text-left z-10">
+            <div className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
+              <span className="flex h-2 w-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
+              Novo: Integração completa de Orçamentos
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Ou continue com</span>
+            
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-zinc-900 leading-[1.15]">
+              O cérebro da sua <br />
+              <span className="text-blue-400">independência financeira.</span>
+            </h1>
+            
+            <p className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              Deixe de anotar gastos em cadernos. Tenha contas, cartões, metas e investimentos centralizados em uma plataforma inteligente.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start text-sm text-zinc-500">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-blue-400" />
+                Dados criptografados
+              </div>
+              <div className="hidden sm:block w-1 h-1 bg-zinc-300 rounded-full" />
+              <div>Plataforma 100% Gratuita para começar</div>
             </div>
           </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
+          {/* Right: Sign Up Card */}
+          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto bg-white rounded-2xl shadow-xl border border-zinc-100 p-6 sm:p-8 z-20 relative">
+            <div className="absolute -top-4 -right-4 bg-blue-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg transform rotate-12">
+              Comece Agora
+            </div>
+
+            <div className="mb-6 text-center lg:text-left">
+              <h2 className="text-2xl font-bold text-zinc-900">Crie sua conta</h2>
+              <p className="text-zinc-500 text-sm">Junte-se ao CDF e controle seu dinheiro.</p>
+            </div>
+
+            {/* Social Login */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <Button variant="outline" className="w-full" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
+                <Chrome className="mr-2 h-4 w-4 text-blue-400" /> Google
+              </Button>
+              <Button variant="outline" className="w-full" type="button" onClick={() => handleSocialLogin('facebook')}>
+                <Facebook className="mr-2 h-4 w-4 text-blue-400" /> Facebook
+              </Button>
+            </div>
+
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-400">Ou use seu e-mail</span></div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  placeholder="Ex: João Silva"
-                  {...form.register("name")}
-                  className="h-11"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-                )}
+                <Input id="name" placeholder="Seu nome" {...form.register("name")} className="h-10 focus-visible:ring-blue-400" />
+                {form.formState.errors.name && <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  {...form.register("email")}
-                  className="h-11"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                )}
+                <Input id="email" type="email" placeholder="seu@email.com" {...form.register("email")} className="h-10 focus-visible:ring-blue-400" />
+                {form.formState.errors.email && <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>}
               </div>
-            </div>
 
-            <Button type="submit" className="w-full h-11 text-base bg-blue-400 hover:bg-blue-500" disabled={isLoading}>
-              {isLoading ? "Criando conta..." : "Criar conta"}
-              {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
-            </Button>
-          </form>
-
-          <div className="text-center text-sm">
-            <span className="text-gray-500">Já tem uma conta? </span>
-            <button 
-              onClick={() => onNavigate('login')} 
-              className="font-medium text-black hover:underline underline-offset-4"
-            >
-              Entrar
-            </button>
+              <Button type="submit" className="w-full h-11 bg-blue-400 hover:bg-blue-500 text-white font-semibold shadow-md hover:shadow-lg transition-all" disabled={isLoading}>
+                {isLoading ? "Criando..." : "Criar conta grátis"}
+                {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </form>
+            
+            <p className="mt-4 text-center text-xs text-zinc-400">
+              Ao criar conta, você concorda com nossos Termos de Uso.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* --- Features Grid Section --- */}
+      <section className="py-20 bg-zinc-50 border-t border-zinc-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 mb-4">
+              Funcionalidades que você desconhece (ainda)
+            </h2>
+            <p className="text-zinc-500 text-lg">
+              O CDF vai muito além do básico. Descubra ferramentas poderosas projetadas para quem quer enriquecer de verdade.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {features.map((feature, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 group">
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 mb-2">{feature.title}</h3>
+                <p className="text-zinc-500 mb-4 text-sm leading-relaxed">
+                  {feature.description}
+                </p>
+                <ul className="space-y-2">
+                  {feature.items.map((item, i) => (
+                    <li key={i} className="flex items-center text-sm text-zinc-600 font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-blue-400 mr-2 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            
+            {/* Last Card: Call to Action Style */}
+            <div className="bg-blue-400 p-6 rounded-2xl shadow-lg flex flex-col justify-center text-white relative overflow-hidden group">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+              <h3 className="text-2xl font-bold mb-2 relative z-10">E muito mais...</h3>
+              <p className="text-blue-50 mb-6 relative z-10">
+                Relatórios mensais, categorização automática e suporte premium.
+              </p>
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-blue-50 transition-colors relative z-10 shadow-sm"
+              >
+                Começar agora
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- Footer --- */}
+      <footer className="py-8 bg-white border-t border-zinc-100 text-center">
+        <div className="flex items-center justify-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
+          <div className="w-6 h-6 bg-blue-400 rounded-md flex items-center justify-center text-white text-xs font-bold">C</div>
+          <span className="font-bold text-zinc-900">CDF</span>
+        </div>
+        <p className="text-zinc-400 text-sm">
+          © 2025 Cérebro das Finanças (CDF). Todos os direitos reservados.
+        </p>
+      </footer>
     </div>
   );
 }

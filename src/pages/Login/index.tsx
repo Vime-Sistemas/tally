@@ -10,14 +10,15 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  // CarouselNext, // Opcional no login, deixei autoplay para ser mais clean
+  // CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { ChevronRight, Facebook, Chromium, Clock, X } from "lucide-react";
+import { ChevronRight, Facebook, Chrome, Clock, X } from "lucide-react";
 import { encryptPayload, decryptPayload } from "@/utils/crypto";
 import type { Page } from "@/types/navigation";
 
+// --- Schema ---
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
 });
@@ -35,6 +36,7 @@ export function Login({ onNavigate }: LoginProps) {
   const [lastSocial, setLastSocial] = useState<string | null>(null);
   const [lastAccount, setLastAccount] = useState<string | null>(null);
 
+  // --- Logic: Restore Session ---
   useEffect(() => {
     try {
       const data = localStorage.getItem('tally_u');
@@ -44,25 +46,24 @@ export function Login({ onNavigate }: LoginProps) {
         if (decrypted.account) setLastAccount(decrypted.account);
       }
     } catch (e) {
-      // ignore
+      // ignore corruption
     }
   }, []);
 
+  // --- Logic: Save Session ---
   const saveLastData = (social?: string, account?: string) => {
     try {
       const current = localStorage.getItem('tally_u');
       let data: { social?: string; account?: string } = {};
       try {
         data = decryptPayload<{ social?: string; account?: string }>(current || '{}');
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) { /* ignore */ }
+      
       if (social !== undefined) data.social = social;
       if (account !== undefined) data.account = account;
+      
       localStorage.setItem('tally_u', encryptPayload(data));
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) { /* ignore */ }
   };
 
   const saveLastAccount = (email: string) => {
@@ -70,6 +71,14 @@ export function Login({ onNavigate }: LoginProps) {
     setLastAccount(email);
   };
 
+  const clearLastData = () => {
+    try { localStorage.removeItem('tally_u'); } catch (e) { /* ignore */ }
+    setLastAccount(null);
+    setLastSocial(null);
+    form.setValue('email', '');
+  };
+
+  // --- Helpers ---
   const maskEmail = (email: string) => {
     const parts = email.split('@');
     if (parts.length !== 2) return email;
@@ -79,18 +88,14 @@ export function Login({ onNavigate }: LoginProps) {
     return `${name[0]}***${name[name.length-1]}@${domain}`;
   };
 
+  // --- Form ---
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: { email: "" },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    // For custom UI with Auth0, we typically redirect to Universal Login
-    // passing the email as a hint if possible, or use Resource Owner Password flow (not recommended).
-    // Here we will redirect to the standard Auth0 login page for security.
     saveLastAccount(data.email);
     await loginWithRedirect({
       authorizationParams: {
@@ -112,209 +117,183 @@ export function Login({ onNavigate }: LoginProps) {
     });
   };
 
-  const clearLastData = () => {
-    try {
-      localStorage.removeItem('tally_u');
-    } catch (e) {
-      // ignore
-    }
-    setLastAccount(null);
-    setLastSocial(null);
-  };
-
-  const features = [
+  // --- Content ---
+  const slides = [
     {
-      title: "Controle Total",
-      description: "Gerencie suas finanças pessoais e empresariais em um único lugar, com simplicidade e elegância.",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=2626&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      quote: "Finalmente consegui entender para onde meu dinheiro vai todo mês, sem planilhas.",
+      author: "Controle financeiro pessoal",
+      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1470&auto=format&fit=crop"
     },
     {
-      title: "Metas Claras",
-      description: "Defina objetivos financeiros e acompanhe sua evolução com gráficos intuitivos e motivadores.",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      quote: "Ver minhas metas avançando aos poucos me ajudou a manter a disciplina financeira.",
+      author: "Organização e metas",
+      image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2400&auto=format&fit=crop"
     },
     {
-      title: "Insights Poderosos",
-      description: "Tome decisões melhores com relatórios detalhados sobre seus hábitos de consumo e investimentos.",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      quote: "Controlar cartão, gastos parcelados e recorrentes no mesmo lugar fez muita diferença.",
+      author: "Gastos do dia a dia",
+      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2400&auto=format&fit=crop"
     }
   ];
 
-  return (
-    <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-white">
-      {/* Left Side - Carousel */}
-      <div className="hidden lg:flex w-1/2 bg-white text-zinc-900 relative flex-col justify-between p-12">
-        <div className="z-10">
-          <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
-              <img src="/icon.svg"></img>
-            </div>
-          <h1 className="text-2xl font-bold tracking-tighter text-blue-400">Cérebro de Finanças.</h1>
-        </div>
 
-        <div className="z-10 w-full max-w-5xl mx-auto">
-          <Carousel 
-            className="w-full"
-            plugins={[
-              Autoplay({
-                delay: 5000,
-              }),
-            ]}
-            opts={{
-              loop: true,
-            }}
-          >
-            <CarouselContent>
-              {features.map((feature, index) => (
-                <CarouselItem key={index}>
-                  <div className="p-1">
+  return (
+    <div className="w-full h-screen flex overflow-hidden bg-white">
+      
+      {/* --- Left Side (Visual) --- */}
+      <div className="hidden lg:flex w-1/2 relative bg-zinc-900 text-white">
+        <div className="absolute inset-0 z-10 bg-blue-600/20 mix-blend-overlay" />
+        
+        {/* Content Wrapper */}
+        <div className="relative z-20 flex flex-col justify-between h-full p-12">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center text-white font-bold">
+              C
+            </div>
+            <span className="text-xl font-bold tracking-tight">CDF</span>
+          </div>
+
+          <div className="w-full max-w-md">
+            <Carousel 
+              plugins={[Autoplay({ delay: 5000 })]}
+              opts={{ loop: true }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {slides.map((slide, index) => (
+                  <CarouselItem key={index}>
                     <div className="space-y-6">
-                      <div className="aspect-video overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-                         <img src={feature.image} alt={feature.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-                      </div>
-                      <div className="space-y-2">
-                        <h2 className="text-3xl font-semibold tracking-tight text-blue-400">{feature.title}</h2>
-                        <p className="text-zinc-500 text-lg leading-relaxed max-w-lg">
-                          {feature.description}
-                        </p>
+                      <blockquote className="text-2xl font-medium leading-relaxed">
+                        "{slide.quote}"
+                      </blockquote>
+                      <div className="flex items-center gap-2 text-white/80">
+                        <div className="h-0.5 w-4 bg-white/50" />
+                        <p className="font-medium text-sm">{slide.author}</p>
                       </div>
                     </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex gap-2 mt-8">
-                <CarouselPrevious className="static translate-y-0 bg-white hover:bg-white border-zinc-200 text-zinc-900" />
-                <CarouselNext className="static translate-y-0 bg-white hover:bg-white border-zinc-200 text-zinc-900" />
-            </div>
-          </Carousel>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+          
+          <div className="text-xs text-white/40 flex justify-between items-end">
+            <p>© 2025 Vime Sistemas</p>
+          </div>
         </div>
 
-        <div className="z-10 text-sm text-zinc-500">
-          © 2025 um produto da Vime Sistemas.
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+           <Carousel 
+              plugins={[Autoplay({ delay: 5000 })]}
+              opts={{ loop: true, watchDrag: false }} // Sync visually implies visuals match quotes if ordered same
+              className="w-full h-full"
+            >
+              <CarouselContent className="h-full ml-0">
+                {slides.map((slide, index) => (
+                  <CarouselItem key={index} className="pl-0 h-full">
+                     <img 
+                      src={slide.image} 
+                      alt="Background" 
+                      className="w-full h-full object-cover opacity-50 grayscale transition-all duration-[3000ms]" 
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+           </Carousel>
         </div>
-        
-        {/* Abstract Background Pattern - Light Version */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-white to-white opacity-80 pointer-events-none" />
       </div>
 
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-24 bg-white">
-        <div className="w-full max-w-sm space-y-6 sm:space-y-8">
-          <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bem-vindo de volta</h1>
-            <p className="text-gray-500">Entre para acessar suas finanças.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="relative">
-              <Button 
-                variant="outline" 
-                className={`w-full h-12 sm:h-14 px-4 sm:px-6 transition-all text-sm sm:text-base ${lastSocial === 'google-oauth2' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
-                type="button" 
-                onClick={() => handleSocialLogin('google-oauth2')}
-              >
-                <Chromium className="mr-2 h-4 w-4 text-blue-400" />
-                Google
-              </Button>
-              {lastSocial === 'google-oauth2' && (
-                <div className="absolute -top-3 -right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
-                  <Clock className="h-3 w-3" />
-                  <span className="hidden sm:inline">Recente</span>
-                </div>
-              )}
+      {/* --- Right Side (Form) --- */}
+      <div className="w-full lg:w-1/2 flex flex-col relative bg-white">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-24">
+          <div className="w-full max-w-sm space-y-8">
+            
+            <div className="space-y-2 text-center">
+              <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Bem-vindo de volta</h1>
+              <p className="text-zinc-500">Acesse sua central de controle financeiro.</p>
             </div>
-            <div className="relative">
-              <Button 
-                variant="outline" 
-                className={`w-full h-12 sm:h-14 px-4 sm:px-6 transition-all text-sm sm:text-base ${lastSocial === 'facebook' ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
-                type="button" 
-                onClick={() => handleSocialLogin('facebook')}
-              >
-                <Facebook className="mr-2 h-4 w-4 text-blue-400" />
-                Facebook
-              </Button>
-              {lastSocial === 'facebook' && (
-                <div className="absolute -top-3 -right-2 inline-flex items-center gap-1 px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full shadow-md">
-                  <Clock className="h-3 w-3" />
-                  <span className="hidden sm:inline">Recente</span>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {lastAccount && (
-            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-start justify-between gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-blue-400 flex items-center justify-center text-white text-lg">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+            {/* --- Last Account Recognition Card --- */}
+            {lastAccount && (
+              <div className="relative group overflow-hidden bg-white border border-blue-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300">
+                <div className="absolute top-0 right-0 p-3">
+                   <button onClick={clearLastData} className="text-zinc-300 hover:text-red-400 transition-colors">
+                      <X className="w-4 h-4" />
+                   </button>
+                </div>
+                
+                <div 
+                  onClick={() => form.setValue('email', lastAccount)}
+                  className="flex items-center gap-4 cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                    <Clock className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 font-semibold tracking-wide uppercase">Última conta</p>
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate" title={lastAccount}>
-                      {maskEmail(lastAccount)}
-                    </p>
+                    <p className="text-xs font-medium text-blue-500 mb-0.5">Continuar como</p>
+                    <p className="text-sm font-semibold text-zinc-900 truncate">{maskEmail(lastAccount)}</p>
                   </div>
+                  <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                 </div>
-                <button
-                  className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1"
-                  onClick={() => clearLastData()}
-                  type="button"
-                  title="Remover"
-                >
-                  <X className="h-4 w-4" />
-                </button>
               </div>
-              <button
-                className="w-full mt-2 sm:mt-3 px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
-                onClick={() => form.setValue('email', lastAccount)}
-                type="button"
+            )}
+
+            {/* --- Social Login --- */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                className={`h-11 ${lastSocial === 'google-oauth2' ? 'border-blue-400 bg-blue-50/50 text-blue-700' : 'hover:bg-zinc-50'}`}
+                onClick={() => handleSocialLogin('google-oauth2')}
               >
-                Continuar com essa conta
-              </button>
+                <Chrome className="mr-2 h-4 w-4" /> Google
+              </Button>
+              <Button 
+                variant="outline" 
+                className={`h-11 ${lastSocial === 'facebook' ? 'border-blue-400 bg-blue-50/50 text-blue-700' : 'hover:bg-zinc-50'}`}
+                onClick={() => handleSocialLogin('facebook')}
+              >
+                <Facebook className="mr-2 h-4 w-4" /> Facebook
+              </Button>
             </div>
-          )}
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-400">Ou use seu e-mail</span></div>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Ou continue com</span>
-            </div>
-          </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
+            {/* --- Email Form --- */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  {...form.register("email")}
-                  className="h-11"
+                <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="seu@email.com" 
+                    {...form.register("email")} 
+                    className="h-11 bg-zinc-50/50 focus:bg-white transition-colors"
                 />
                 {form.formState.errors.email && (
-                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                  <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
                 )}
               </div>
+
+              <Button type="submit" className="w-full h-11 bg-blue-400 hover:bg-blue-500 text-white font-semibold" disabled={isLoading}>
+                {isLoading ? "Entrando..." : "Entrar na conta"}
+                {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </form>
+
+            <div className="text-center text-sm">
+              <span className="text-zinc-500">Ainda não tem conta? </span>
+              <button 
+                onClick={() => onNavigate('signup')} 
+                className="font-medium text-blue-500 hover:text-blue-600 hover:underline underline-offset-4"
+              >
+                Criar conta gratuita
+              </button>
             </div>
 
-            <Button type="submit" className="w-full h-11 text-base bg-blue-400 hover:bg-blue-500" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Entrar"}
-              {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
-            </Button>
-          </form>
-
-          <div className="text-center text-sm">
-            <span className="text-gray-500">Não tem uma conta? </span>
-            <button 
-              onClick={() => onNavigate('signup')} 
-              className="font-medium text-black hover:underline underline-offset-4"
-            >
-              Cadastre-se
-            </button>
           </div>
         </div>
       </div>
