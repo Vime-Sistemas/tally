@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -7,10 +8,22 @@ import {
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
 import { cn } from "../../lib/utils";
-import { Wallet, PieChart, TrendingUp, CreditCard, PlusCircle, List, CreditCard as CardIcon, Target, Building2, User, LogOut, BarChart3 } from "lucide-react";
-import { HousePlus } from "lucide-react";
-import React, { useState } from "react";
-
+import {
+  Wallet,
+  PieChart,
+  TrendingUp,
+  CreditCard,
+  PlusCircle,
+  List,
+  Target,
+  Building2,
+  User,
+  LogOut,
+  BarChart3,
+  Landmark,
+  LayoutDashboard,
+  ArrowRightLeft
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,7 +32,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Kbd } from "../ui/kbd";
 import type { Page, AppContext } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 import {
@@ -42,31 +54,37 @@ interface HeaderProps {
   currentPage: Page;
 }
 
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+interface ListItemProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  title: string;
+  icon?: React.ElementType;
+  children?: React.ReactNode;
+}
+
+const ListItem = React.forwardRef<HTMLAnchorElement, ListItemProps>(({ className, title, children, icon: Icon, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
         <a
           ref={ref}
           className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
+            "group block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-colors hover:bg-zinc-50 focus:bg-zinc-50 cursor-pointer",
             className
           )}
           {...props}
         >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm font-medium leading-none text-zinc-900 group-hover:text-blue-600 transition-colors">
+            {Icon && <Icon className="h-4 w-4 text-zinc-400 group-hover:text-blue-500" />}
+            {title}
+          </div>
+          <p className="line-clamp-2 text-xs leading-snug text-zinc-500 pl-6 group-hover:text-zinc-600">
             {children}
           </p>
         </a>
       </NavigationMenuLink>
     </li>
-  )
-})
-ListItem.displayName = "ListItem"
+  );
+});
+ListItem.displayName = "ListItem";
 
 export function Header({ onNavigate, hasBusiness, currentContext, onContextChange, currentPage }: HeaderProps) {
   const { user, logout } = useUser();
@@ -86,310 +104,233 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 hidden md:block">
-        <div className="container mx-auto flex h-14 items-center px-4 md:px-8">
-          <div className="mr-4 flex">
-            <a className="mr-6 flex items-center space-x-2" href="#" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
-            <div className="h-6 w-6 bg-white rounded-md flex items-center justify-center">
-              <img src="/icon.svg"></img>
-            </div>
-            <span className="hidden font-bold sm:inline-block">
-              CDF
-            </span>
-          </a>
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-100 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 hidden md:block">
+        <div className="max-w-7xl mx-auto flex h-16 items-center px-4 md:px-8">
+          
+          {/* Logo Area */}
+          <div className="mr-8 flex items-center">
+            <a 
+              className="flex items-center gap-2 group" 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}
+            >
+              <div className="h-8 w-8 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                <div className="font-bold text-blue-600 text-sm">C</div>
+              </div>
+              <span className="hidden font-bold text-zinc-900 sm:inline-block tracking-tight">
+                CDF
+              </span>
+            </a>
+          </div>
+
+          {/* Navigation */}
           <NavigationMenu>
-            <NavigationMenuList>
+            <NavigationMenuList className="gap-1">
+              
+              {/* Visão Geral */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  <Wallet className="mr-2 h-4 w-4" />
+                <NavigationMenuTrigger className="bg-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 data-[state=open]:bg-zinc-50 rounded-lg h-9 px-4">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
                   Visão Geral
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 w-[260px]">
-                    <ListItem href="#" title="Resumo" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <PieChart className="h-4 w-4" />
-                          <span>Visão resumo</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + D</Kbd>
-                      </div>
+                  <ul className="grid gap-2 p-4 w-[300px] bg-white rounded-2xl border border-zinc-100 shadow-xl">
+                    <ListItem 
+                      href="#" 
+                      title="Resumo Financeiro" 
+                      icon={PieChart}
+                      onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}
+                    >
+                      Dashboard completo com seus indicadores.
                     </ListItem>
-                    <ListItem href="#" title="Metas" onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4" />
-                          <span>Analisar metas</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + M</Kbd>
-                      </div>
+                    <ListItem 
+                      href="#" 
+                      title="Metas & Objetivos" 
+                      icon={Target}
+                      onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}
+                    >
+                      Acompanhe o progresso dos seus sonhos.
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
+              {/* Transações */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  <TrendingUp className="mr-2 h-4 w-4" />
+                <NavigationMenuTrigger className="bg-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 data-[state=open]:bg-zinc-50 rounded-lg h-9 px-4">
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
                   Transações
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white rounded-2xl border border-zinc-100 shadow-xl">
                     <li className="row-span-3">
                       <NavigationMenuLink asChild>
                         <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-zinc-50 to-zinc-100 p-6 no-underline outline-none focus:shadow-md hover:from-blue-50 hover:to-blue-100 transition-all group"
                           href="#"
                           onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}
                         >
-                          <TrendingUp className="h-6 w-6" />
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            Transações
+                          <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
+                             <TrendingUp className="h-5 w-5 text-blue-500" />
                           </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Gerencie suas receitas, despesas e transferências em um só lugar.
+                          <div className="mb-2 text-lg font-medium text-zinc-900">
+                            Nova Transação
+                          </div>
+                          <p className="text-sm leading-tight text-zinc-500 group-hover:text-zinc-600">
+                            Registre receitas ou despesas em segundos.
                           </p>
                         </a>
                       </NavigationMenuLink>
                     </li>
-                    <ListItem href="#" title="Nova Transação" onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <PlusCircle className="h-4 w-4" />
-                          <span>Registrar nova movimentação</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + T</Kbd>
-                      </div>
-                    </ListItem>
-                    <ListItem href="#" title="Histórico" onClick={(e) => { e.preventDefault(); onNavigate('transactions-history'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <List className="h-4 w-4" />
-                          <span>Ver todas as transações</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + H</Kbd>
-                      </div>
-                    </ListItem>
+                    <div className="flex flex-col justify-center gap-1">
+                       <ListItem href="#" title="Registrar Rápido" icon={PlusCircle} onClick={(e) => { e.preventDefault(); onNavigate('transactions-new'); }}>
+                          Adicionar movimentação
+                       </ListItem>
+                       <ListItem href="#" title="Histórico Completo" icon={List} onClick={(e) => { e.preventDefault(); onNavigate('transactions-history'); }}>
+                          Ver todas as transações
+                       </ListItem>
+                    </div>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
+              {/* Contas e Cartões */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Contas e Cartões
+                <NavigationMenuTrigger className="bg-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 data-[state=open]:bg-zinc-50 rounded-lg h-9 px-4">
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Carteira
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}
-                        >
-                          <Wallet className="h-6 w-6" />
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            Carteira
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Visualize seus saldos e limites de cartão de crédito.
-                          </p>
-                        </a>
-                      </NavigationMenuLink>
-                    </li>
-                    <ListItem href="#" title="Nova Conta ou Cartão" onClick={(e) => { e.preventDefault(); onNavigate('accounts-new'); }}>
-                      <div className="flex items-center gap-2">
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Adicionar nova conta</span>
-                      </div>
+                  <ul className="grid gap-3 p-4 w-[400px] bg-white rounded-2xl border border-zinc-100 shadow-xl">
+                    <ListItem href="#" title="Minhas Contas" icon={Wallet} onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
+                      Gerencie saldos e contas bancárias.
                     </ListItem>
-                    <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CardIcon className="h-4 w-4" />
-                          <span>Gerenciar contas e cartões</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + C</Kbd>
-                      </div>
+                    <ListItem href="#" title="Cartões de Crédito" icon={CreditCard} onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
+                      Controle limites e faturas.
+                    </ListItem>
+                    <ListItem href="#" title="Adicionar Nova" icon={PlusCircle} onClick={(e) => { e.preventDefault(); onNavigate('accounts-new'); }}>
+                      Conecte uma nova instituição.
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
+              {/* Patrimônio & Orçamentos (Combinados para economizar espaço ou separados se preferir) */}
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  <HousePlus className="mr-2 h-4 w-4" />
-                  Patrimônio
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}
-                        >
-                          <HousePlus className="h-6 w-6" />
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            Patrimônio
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Gerencie seus bens.
-                          </p>
-                        </a>
-                      </NavigationMenuLink>
-                    </li>
-                    <ListItem href="#" title="Novo Item" onClick={(e) => { e.preventDefault(); onNavigate('equity-new'); }}>
-                      <div className="flex items-center gap-2">
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Adicionar novo bem</span>
-                      </div>
-                    </ListItem>
-                    <ListItem href="#" title="Cadastrados" onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CardIcon className="h-4 w-4" />
-                          <span>Gerenciar os bens cadastrados</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-14">Alt + P</Kbd>
-                      </div>
-                    </ListItem>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
+                <NavigationMenuTrigger className="bg-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 data-[state=open]:bg-zinc-50 rounded-lg h-9 px-4">
                   <BarChart3 className="mr-2 h-4 w-4" />
-                  Orçamentos
+                  Planejamento
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-white p-6 no-underline outline-none focus:shadow-md"
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); onNavigate('budgets'); }}
-                        >
-                          <BarChart3 className="h-6 w-6" />
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            Orçamentos
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Planeje e acompanhe seus orçamentos.
-                          </p>
-                        </a>
-                      </NavigationMenuLink>
-                    </li>
-                    <ListItem href="#" title="Visualizar" onClick={(e) => { e.preventDefault(); onNavigate('budgets'); }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4" />
-                          <span>Gerenciar orçamentos</span>
-                        </div>
-                        <Kbd className="bg-blue-300 text-white h-6 w-12">Alt + B</Kbd>
-                      </div>
+                   <ul className="grid gap-3 p-4 w-[350px] bg-white rounded-2xl border border-zinc-100 shadow-xl">
+                    <div className="px-3 pb-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                        Orçamentos
+                    </div>
+                    <ListItem href="#" title="Meus Orçamentos" icon={PieChart} onClick={(e) => { e.preventDefault(); onNavigate('budgets'); }}>
+                       Defina limites de gastos mensais.
                     </ListItem>
-                  </ul>
+                    
+                    <div className="h-px bg-zinc-100 my-1 mx-2" />
+                    
+                    <div className="px-3 pt-2 pb-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                        Patrimônio
+                    </div>
+                    <ListItem href="#" title="Meus Bens" icon={Landmark} onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}>
+                       Imóveis, veículos e investimentos.
+                    </ListItem>
+                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
             </NavigationMenuList>
           </NavigationMenu>
-        </div>
-        
-        {/* Mobile Menu Button could go here */}
+          
+          <div className="flex-1" />
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            {/* Search or other controls */}
-          </div>
-          <nav className="flex items-center gap-2">
-             {hasBusiness && (
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-4">
+            
+            {/* Context Selector */}
+            {hasBusiness && (
               <Select value={currentContext} onValueChange={(v) => onContextChange(v as AppContext)}>
-                <SelectTrigger className="w-[160px] h-9 border-dashed bg-transparent hover:bg-accent/50 transition-colors focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="w-[140px] h-9 border-zinc-200 bg-white hover:bg-zinc-50 transition-colors text-xs font-medium focus:ring-zinc-200 rounded-lg">
                   <div className="flex items-center gap-2">
-                    {currentContext === 'PERSONAL' ? <User className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                    {currentContext === 'PERSONAL' ? <User className="h-3.5 w-3.5 text-zinc-500" /> : <Building2 className="h-3.5 w-3.5 text-zinc-500" />}
                     <SelectValue placeholder="Contexto" />
                   </div>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PERSONAL">
-                    <div className="flex items-center gap-2">
-                        <span>Pessoal</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="BUSINESS">
-                    <div className="flex items-center gap-2">
-                        <span>Empresarial</span>
-                    </div>
-                  </SelectItem>
+                <SelectContent className="rounded-xl border-zinc-100 shadow-lg">
+                  <SelectItem value="PERSONAL" className="text-xs">Pessoal</SelectItem>
+                  <SelectItem value="BUSINESS" className="text-xs">Empresarial</SelectItem>
                 </SelectContent>
               </Select>
             )}
-             <div className="hidden md:flex items-center gap-2">
-               <button
-                 onClick={() => setLogoutOpen(true)}
-                 title="Sair"
-                 className="ml-2 inline-flex items-center gap-2 px-3 h-9 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-               >
-                 <LogOut className="h-4 w-4" />
-                 <span className="hidden sm:inline">Sair</span>
-               </button>
-               <button 
-                 onClick={() => onNavigate('profile')} 
-                 className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
-                 title={displayName}
-               >
-                 <span className="hidden md:inline-block text-sm font-medium text-gray-700">{displayName}</span>
-                 <Avatar className="h-8 w-8 border border-gray-200">
-                   <AvatarImage src="" alt={displayName} />
-                   <AvatarFallback>{userInitials}</AvatarFallback>
-                 </Avatar>
-               </button>
-             </div>
-             <div className="md:hidden">
-               <button 
-                 onClick={() => onNavigate('profile')} 
-                 className="ml-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2"
-                 title={displayName}
-               >
-                 <Avatar className="h-8 w-8 border border-gray-200">
-                   <AvatarImage src="" alt={displayName} />
-                   <AvatarFallback>{userInitials}</AvatarFallback>
-                 </Avatar>
-               </button>
-             </div>
-          </nav>
-          {/* Logout confirmation dialog */}
-          <AlertDialog open={logoutOpen} onOpenChange={(open) => setLogoutOpen(open)}>
-            <AlertDialogContent className="rounded-2xl">
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-zinc-200" />
+
+            {/* Profile & Logout */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => onNavigate('profile')} 
+                className="group flex items-center gap-2 outline-none"
+                title="Meu Perfil"
+              >
+                <div className="text-right hidden lg:block">
+                  <p className="text-sm font-medium text-zinc-900 leading-none group-hover:text-blue-600 transition-colors">
+                    {displayName.split(' ')[0]}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider mt-0.5">
+                    {hasBusiness ? (currentContext === 'BUSINESS' ? 'Business' : 'Pessoal') : 'Free'}
+                  </p>
+                </div>
+                <Avatar className="h-9 w-9 border border-zinc-200 group-hover:border-blue-200 transition-colors">
+                  <AvatarImage src="" />
+                  <AvatarFallback className="bg-zinc-50 text-zinc-600 text-xs font-bold group-hover:text-blue-500 group-hover:bg-blue-50">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+
+              <button
+                onClick={() => setLogoutOpen(true)}
+                title="Sair"
+                className="p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Logout Alert */}
+          <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+            <AlertDialogContent className="rounded-2xl border-zinc-100 shadow-2xl max-w-[400px]">
               <AlertDialogHeader>
-                <AlertDialogTitle>Sair da conta</AlertDialogTitle>
+                <AlertDialogTitle className="text-xl">Sair da conta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Tem certeza que deseja sair da sua conta? Você será redirecionado para a tela de login.
+                  Você precisará fazer login novamente para acessar suas informações financeiras.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="flex justify-end gap-3 mt-4">
-                <AlertDialogCancel className="">Cancelar</AlertDialogCancel>
+                <AlertDialogCancel className="rounded-xl border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900">
+                  Cancelar
+                </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     setLogoutOpen(false);
                     logout();
                   }}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="rounded-xl bg-red-500 hover:bg-red-600 text-white shadow-sm"
                 >
                   Sair
                 </AlertDialogAction>
               </div>
             </AlertDialogContent>
           </AlertDialog>
+
         </div>
-      </div>
       </header>
+      
       <MobileHeader onNavigate={onNavigate} currentPage={currentPage} />
     </>
   );

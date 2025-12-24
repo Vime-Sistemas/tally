@@ -18,6 +18,22 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.14',
+    date: '23 de dezembro de 2025',
+    description: 'Novo Dashboard',
+    features: [],
+    fixes: [],
+    improvements: ['Melhoramos significativamente o visual do dashboard e do header'],
+  },
+  {
+    version: '1.5.13',
+    date: '23 de dezembro de 2025',
+    description: 'Novo Sign-in e novo Sign-up',
+    features: [],
+    fixes: [],
+    improvements: ['Melhoramos completamente o visual das páginas de login e cadastro'],
+  },
+  {
     version: '1.5.12',
     date: '23 de dezembro de 2025',
     description: 'Onboarding',
