@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import {
@@ -14,7 +14,7 @@ import {
 } from '../ui/select';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
-import { Check } from 'lucide-react';
+import { Check, CreditCard, CalendarDays, Hash, Landmark, Gauge } from 'lucide-react';
 import { createCard, getAccounts } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account } from '../../types/account';
@@ -32,17 +32,18 @@ const cardSchema = z.object({
 
 type CardFormData = z.infer<typeof cardSchema>;
 
+// Cores aprimoradas com classes de anel (ring) para foco
 const colors = [
-  { value: 'bg-blue-500', name: 'Azul' },
-  { value: 'bg-green-500', name: 'Verde' },
-  { value: 'bg-purple-500', name: 'Roxo' },
-  { value: 'bg-pink-500', name: 'Rosa' },
-  { value: 'bg-orange-500', name: 'Laranja' },
-  { value: 'bg-red-500', name: 'Vermelho' },
-  { value: 'bg-slate-500', name: 'Cinza' },
-  { value: 'bg-indigo-500', name: 'Índigo' },
-  { value: 'bg-slate-900', name: 'Preto'},
-  { value: 'bg-gradient-to-br from-yellow-600 to-yellow-700', name: 'Gold'}
+  { value: 'bg-slate-900', name: 'Preto', ring: 'ring-slate-900' },
+  { value: 'bg-blue-500', name: 'Azul', ring: 'ring-blue-500' },
+  { value: 'bg-purple-500', name: 'Roxo', ring: 'ring-purple-500' },
+  { value: 'bg-green-500', name: 'Verde', ring: 'ring-green-500' },
+  { value: 'bg-red-500', name: 'Vermelho', ring: 'ring-red-500' },
+  { value: 'bg-orange-500', name: 'Laranja', ring: 'ring-orange-500' },
+  { value: 'bg-pink-500', name: 'Rosa', ring: 'ring-pink-500' },
+  { value: 'bg-indigo-500', name: 'Índigo', ring: 'ring-indigo-500' },
+  { value: 'bg-slate-500', name: 'Cinza', ring: 'ring-slate-500' },
+  { value: 'bg-gradient-to-br from-yellow-600 to-yellow-700', name: 'Gold', ring: 'ring-yellow-600' }
 ];
 
 export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -76,7 +77,8 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
   } = useForm<CardFormData>({
     resolver: zodResolver(cardSchema),
     defaultValues: {
-      color: 'bg-gray-900',
+      color: 'bg-slate-900',
+      limit: 0,
     },
   });
 
@@ -101,159 +103,171 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <Card className="w-full shadow-sm border-gray-100">
-      <CardHeader className="pb-6">
-        <CardTitle className="text-xl font-semibold text-center text-black">Novo Cartão de Crédito</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <Card className="w-full shadow-lg border border-zinc-100 rounded-3xl overflow-hidden">
+      <CardContent className="p-6 md:p-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           
-          {/* Limite em destaque */}
-          <div className="flex flex-col items-center space-y-3 w-full">
-            <Label htmlFor="limit" className="text-gray-500 font-medium">Limite do Cartão</Label>
-            <div className="w-full flex justify-center">
+          {/* 1. Limite em destaque (Hero) */}
+          <div className="flex flex-col items-center space-y-4">
+            <div className="bg-zinc-50 px-4 py-1.5 rounded-full text-sm font-medium text-zinc-600 flex items-center gap-2 border border-zinc-100">
+              <Gauge className="w-4 h-4" />
+              Limite Total
+            </div>
+            
+            <div className="w-full text-center">
               <Controller
                 name="limit"
                 control={control}
                 render={({ field }) => (
-                  <CurrencyInput
-                    value={field.value || 0}
-                    onValueChange={field.onChange}
-                    placeholder="0,00"
-                    className="text-3xl font-semibold"
-                    symbolClassName="text-3xl font-semibold text-gray-400"
-                    autoResize
-                  />
+                  <div className="relative inline-block">
+                    <CurrencyInput
+                      value={field.value || 0}
+                      onValueChange={field.onChange}
+                      placeholder="0,00"
+                      className="text-5xl font-bold text-center bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-zinc-200 text-zinc-900"
+                      symbolClassName="text-2xl align-top mr-1 font-medium text-zinc-300"
+                      autoResize
+                    />
+                  </div>
                 )}
               />
-            </div>
-             {errors.limit && (
-                <p className="text-sm text-red-600 text-center">{errors.limit.message}</p>
+              {errors.limit && (
+                <p className="text-sm text-red-500 mt-1">{errors.limit.message}</p>
               )}
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {/* Nome do Cartão */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-600">Nome do Cartão</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Nubank Gold"
-                className="h-10 border-gray-200 focus:border-black focus:ring-black"
-                {...register('name')}
-              />
-               {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name.message}</p>
-                )}
+          <div className="space-y-6">
+            
+            {/* 2. Informações Principais (Nome e Final) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Nome do Cartão</Label>
+                <div className="relative">
+                  <Input
+                    id="name"
+                    placeholder="Ex: Nubank Gold"
+                    className="pl-9 h-12 rounded-xl bg-zinc-50 border-zinc-100 focus:bg-white focus:ring-2 focus:ring-zinc-100 transition-all text-base"
+                    {...register('name')}
+                  />
+                  <CreditCard className="w-4 h-4 text-zinc-400 absolute left-3 top-4" />
+                </div>
+                {errors.name && <p className="text-xs text-red-500 ml-1">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastFourDigits" className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Últimos 4 Dígitos (Opcional)</Label>
+                <div className="relative">
+                  <Input
+                    id="lastFourDigits"
+                    placeholder="Ex: 1234"
+                    maxLength={4}
+                    className="pl-9 h-12 rounded-xl bg-zinc-50 border-zinc-100 focus:bg-white focus:ring-2 focus:ring-zinc-100 transition-all text-base"
+                    {...register('lastFourDigits')}
+                  />
+                  <Hash className="w-4 h-4 text-zinc-400 absolute left-3 top-4" />
+                </div>
+                {errors.lastFourDigits && <p className="text-xs text-red-500 ml-1">{errors.lastFourDigits.message}</p>}
+              </div>
             </div>
 
-            {/* Conta Vinculada */}
+            {/* 3. Datas (Fechamento e Vencimento) */}
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="closingDay" className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Dia Fechamento</Label>
+                <div className="relative">
+                  <Input
+                    id="closingDay"
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Dia 05"
+                    className="pl-9 h-12 rounded-xl bg-zinc-50 border-zinc-100 focus:bg-white focus:ring-2 focus:ring-zinc-100 transition-all text-base"
+                    {...register('closingDay', { valueAsNumber: true })}
+                  />
+                  <CalendarDays className="w-4 h-4 text-zinc-400 absolute left-3 top-4" />
+                </div>
+                {errors.closingDay && <p className="text-xs text-red-500 ml-1">{errors.closingDay.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dueDay" className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Dia Vencimento</Label>
+                <div className="relative">
+                  <Input
+                    id="dueDay"
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="Dia 10"
+                    className="pl-9 h-12 rounded-xl bg-zinc-50 border-zinc-100 focus:bg-white focus:ring-2 focus:ring-zinc-100 transition-all text-base"
+                    {...register('dueDay', { valueAsNumber: true })}
+                  />
+                  <CalendarDays className="w-4 h-4 text-zinc-400 absolute left-3 top-4" />
+                </div>
+                {errors.dueDay && <p className="text-xs text-red-500 ml-1">{errors.dueDay.message}</p>}
+              </div>
+            </div>
+
+            {/* 4. Conta para Débito Automático (Opcional) */}
             <div className="space-y-2">
-              <Label htmlFor="accountId" className="text-gray-600">Conta Vinculada (Opcional)</Label>
+              <Label htmlFor="accountId" className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Conta para Pagamento (Opcional)</Label>
               <Controller
                 name="accountId"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value || ''} onValueChange={(value) => field.onChange(value || undefined)} disabled={loadingAccounts}>
-                    <SelectTrigger id="accountId" className="w-full h-10 border-gray-200 focus:ring-black">
-                      <SelectValue placeholder={loadingAccounts ? "Carregando contas..." : "Selecione a conta (opcional)"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Select value={field.value || ''} onValueChange={(value) => field.onChange(value || undefined)} disabled={loadingAccounts}>
+                      <SelectTrigger id="accountId" className="pl-9 h-12 rounded-xl bg-zinc-50 border-zinc-100 focus:bg-white focus:ring-2 focus:ring-zinc-100 transition-all">
+                        <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione a conta para débito"} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id} className="cursor-pointer">
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Landmark className="w-4 h-4 text-zinc-400 absolute left-3 top-4 pointer-events-none" />
+                  </div>
                 )}
               />
-              {errors.accountId && (
-                <p className="text-sm text-red-600">{errors.accountId.message}</p>
-              )}
+              {errors.accountId && <p className="text-xs text-red-500 ml-1">{errors.accountId.message}</p>}
             </div>
 
-            {/* Últimos 4 dígitos */}
-            <div className="space-y-2">
-              <Label htmlFor="lastFourDigits" className="text-gray-600">Últimos 4 Dígitos (Opcional)</Label>
-              <Input
-                id="lastFourDigits"
-                placeholder="Ex: 1234"
-                maxLength={4}
-                className="h-10 border-gray-200 focus:border-black focus:ring-black"
-                {...register('lastFourDigits')}
-              />
-              {errors.lastFourDigits && (
-                <p className="text-sm text-red-600">{errors.lastFourDigits.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Dia de Fechamento */}
-              <div className="space-y-2">
-                <Label htmlFor="closingDay" className="text-gray-600">Dia de Fechamento</Label>
-                <Input
-                  id="closingDay"
-                  type="number"
-                  min="1"
-                  max="31"
-                  placeholder="Ex: 5"
-                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
-                  {...register('closingDay', { valueAsNumber: true })}
-                />
-                 {errors.closingDay && (
-                    <p className="text-sm text-red-600">{errors.closingDay.message}</p>
-                  )}
-              </div>
-
-              {/* Dia de Vencimento */}
-              <div className="space-y-2">
-                <Label htmlFor="dueDay" className="text-gray-600">Dia de Vencimento</Label>
-                <Input
-                  id="dueDay"
-                  type="number"
-                  min="1"
-                  max="31"
-                  placeholder="Ex: 10"
-                  className="h-10 border-gray-200 focus:border-black focus:ring-black"
-                  {...register('dueDay', { valueAsNumber: true })}
-                />
-                 {errors.dueDay && (
-                    <p className="text-sm text-red-600">{errors.dueDay.message}</p>
-                  )}
-              </div>
-            </div>
-
-            {/* Cor */}
-            <div className="space-y-2">
-              <Label className="text-gray-600">Cor de Identificação</Label>
-              <div className="flex flex-wrap gap-3 pt-2">
+            {/* 5. Seletor de Cores */}
+            <div className="space-y-3">
+              <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold ml-1">Cor do Cartão</Label>
+              <div className="flex flex-wrap gap-3">
                 {colors.map((color) => (
                   <button
                     key={color.value}
                     type="button"
-                    className={cn(
-                      "w-8 h-8 rounded-full cursor-pointer transition-all flex items-center justify-center",
-                      color.value,
-                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110"
-                    )}
                     onClick={() => setValue('color', color.value)}
+                    className={cn(
+                      "w-8 h-8 rounded-full transition-all duration-300 relative flex items-center justify-center shadow-sm hover:scale-110",
+                      color.value,
+                      selectedColor === color.value 
+                        ? `ring-2 ring-offset-2 ${color.ring || 'ring-zinc-400'} scale-110` 
+                        : "ring-0 ring-offset-0 opacity-70 hover:opacity-100"
+                    )}
                     title={color.name}
                   >
-                    {selectedColor === color.value && <Check className="w-4 h-4 text-white" />}
+                    {selectedColor === color.value && (
+                      <Check className="w-4 h-4 text-white drop-shadow-md" strokeWidth={3} />
+                    )}
                   </button>
                 ))}
               </div>
-              {errors.color && (
-                <p className="text-sm text-red-600">{errors.color.message}</p>
-              )}
+              {errors.color && <p className="text-xs text-red-500 ml-1">{errors.color.message}</p>}
             </div>
+
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-blue-400 hover:bg-blue-500 text-white h-12 text-base font-medium rounded-lg mt-4 transition-all"
-            disabled={isSubmitting || loadingAccounts}
+            className="w-full h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-zinc-200 mt-6 transition-all hover:scale-[1.01] active:scale-[0.99]"
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'Salvando...' : 'Cadastrar Cartão'}
           </Button>
