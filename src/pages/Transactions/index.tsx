@@ -9,7 +9,6 @@ import { useIsMobile } from '../../hooks/use-mobile';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { List, ArrowRightLeft, TrendingUp, PiggyBank } from 'lucide-react';
-import { Kbd } from '../../components/ui/kbd';
 import type { Page } from '../../types/navigation';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';

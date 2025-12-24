@@ -22,7 +22,6 @@ import { getAccounts, createTransaction, confirmTransaction } from '../../servic
 import type { Account } from '../../types/account';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 import { ArrowRight, ArrowDown, ArrowRightLeft, Calendar, AlignLeft, Wallet, Building2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { useIsMobile } from '../../hooks/use-mobile';
 
 const transferSchema = z.object({
@@ -227,8 +226,9 @@ export function TransferForm() {
                     {errors.sourceAccount && <p className="text-xs text-red-500 ml-1">{errors.sourceAccount.message}</p>}
                   </div>
 
-                  {/* Botão de Troca (Swap) */}
-                  <div className="relative z-10 flex items-center justify-center -my-2 md:my-0">
+                  {/* Botão de Troca (Swap) - ALINHAMENTO CORRIGIDO */}
+                  {/* Adicionado md:pt-6 para compensar a altura do Label e alinhar a seta com os inputs */}
+                  <div className="relative z-10 flex items-center justify-center -my-2 md:my-0 md:pt-6">
                     <button
                       type="button"
                       onClick={handleSwapAccounts}
@@ -307,7 +307,7 @@ export function TransferForm() {
 
             <Button
               type="submit"
-              className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 text-white text-base font-semibold rounded-xl shadow-lg shadow-zinc-200 mt-4 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-full h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-zinc-200 mt-4 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Processando...' : 'Confirmar Transferência'}
