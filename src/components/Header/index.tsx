@@ -12,7 +12,6 @@ import {
   Wallet,
   PieChart,
   TrendingUp,
-  CreditCard,
   PlusCircle,
   List,
   Target,
@@ -204,9 +203,6 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                   <ul className="grid gap-3 p-4 w-[400px] bg-white rounded-2xl border border-zinc-100 shadow-xl">
                     <ListItem href="#" title="Minhas Contas" icon={Wallet} onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
                       Gerencie saldos e contas bancárias.
-                    </ListItem>
-                    <ListItem href="#" title="Cartões de Crédito" icon={CreditCard} onClick={(e) => { e.preventDefault(); onNavigate('accounts-list'); }}>
-                      Controle limites e faturas.
                     </ListItem>
                     <ListItem href="#" title="Adicionar Nova" icon={PlusCircle} onClick={(e) => { e.preventDefault(); onNavigate('accounts-new'); }}>
                       Conecte uma nova instituição.

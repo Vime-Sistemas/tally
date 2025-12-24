@@ -157,31 +157,6 @@ export function AccountForm({ onSuccess }: { onSuccess?: () => void }) {
                 <p className="text-sm text-red-600">{errors.type.message}</p>
               )}
             </div>
-
-            {/* Cor */}
-            <div className="space-y-2">
-              <Label className="text-gray-600">Cor de Identificação</Label>
-              <div className="flex flex-wrap gap-3 pt-2">
-                {colors.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    className={cn(
-                      "w-8 h-8 rounded-full cursor-pointer transition-all flex items-center justify-center",
-                      color.value,
-                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110"
-                    )}
-                    onClick={() => setValue('color', color.value)}
-                    title={color.name}
-                  >
-                    {selectedColor === color.value && <Check className="w-4 h-4 text-white" />}
-                  </button>
-                ))}
-              </div>
-              {errors.color && (
-                <p className="text-sm text-red-600">{errors.color.message}</p>
-              )}
-            </div>
           </div>
 
           <Button

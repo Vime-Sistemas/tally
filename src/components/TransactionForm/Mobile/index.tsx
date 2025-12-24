@@ -430,10 +430,10 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
               </p>
             </div>
             <Switch
-              checked={isRecurring}
-              onCheckedChange={setIsRecurring}
-              disabled={isInstallment}
-            />
+                checked={isRecurring}
+                onCheckedChange={(v) => setIsRecurring(!!v)}
+                disabled={isInstallment}
+              />
           </div>
 
           {isRecurring && (
@@ -475,7 +475,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
               </div>
               <Switch
                 checked={isInstallment}
-                onCheckedChange={setIsInstallment}
+                onCheckedChange={(v) => setIsInstallment(!!v)}
                 disabled={isRecurring}
               />
             </div>

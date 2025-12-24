@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card'; // Removemos Header/Title pois já está na página pai
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Kbd } from '../ui/kbd';
@@ -21,6 +21,7 @@ import { createTransaction, confirmTransaction, getAccounts, getCards, createRec
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
 import { useUser } from '../../contexts/UserContext';
+import { useIsMobile } from '../../hooks/use-mobile';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../types/account';
@@ -40,7 +41,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag, AlignLeft, RefreshCw, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const transactionSchema = z.object({
@@ -135,6 +136,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
   const [isMac, setIsMac] = useState(false);
+  const isMobile = useIsMobile();
   const [openCategory, setOpenCategory] = useState(false);
 
   useEffect(() => {
@@ -329,381 +331,345 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
 
   return (
     <>
-      <Card className="w-full shadow-sm border-gray-100">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-xl font-semibold text-center text-black">
-            {initialData ? 'Editar Transação' : 'Nova Transação'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <Card className="w-full shadow-lg border border-zinc-100 rounded-3xl overflow-hidden">  
+        <CardContent className="p-6 md:p-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             
-            {/* Valor em destaque */}
-            <div className="flex flex-col items-center space-y-3 w-full">
-              <Label className="text-gray-500 font-medium">Valor</Label>
-              <div className="w-full flex justify-center">
-                <Controller
-                  name="amount"
-                  control={control}
-                  render={({ field }) => (
-                    <CurrencyInput
-                      value={field.value || 0}
-                      onValueChange={field.onChange}
-                      placeholder="0,00"
-                      className="text-3xl font-semibold"
-                      symbolClassName="text-3xl font-semibold text-gray-400"
-                      autoResize
-                    />
-                  )}
-                />
-              </div>
-              {errors.amount && (
-                <p className="text-sm text-red-600 text-center">{errors.amount.message}</p>
-              )}
-            </div>
-
-            <div className={`grid gap-4 ${selectedType === TransactionType.EXPENSE ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              {/* Tipo */}
-              <div className="space-y-2">
-                <Label htmlFor="type" className="text-gray-600">Tipo</Label>
+            {/* 1. SEÇÃO DE VALOR E TIPO (Destaque) */}
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="flex items-center gap-4 bg-zinc-50 p-1.5 rounded-full">
                 <Controller
                   name="type"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={(value) => {
-                      field.onChange(value);
-                      handleTypeChange(value);
-                    }}>
-                      <SelectTrigger id="type" className="w-full h-10 border-gray-200 focus:ring-black">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={TransactionType.EXPENSE}>Despesa</SelectItem>
-                        <SelectItem value={TransactionType.INCOME}>Receita</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { field.onChange(TransactionType.EXPENSE); handleTypeChange(TransactionType.EXPENSE); }}
+                        className={cn(
+                          "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+                          field.value === TransactionType.EXPENSE ? "bg-white text-red-500 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                        )}
+                      >
+                        Despesa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { field.onChange(TransactionType.INCOME); handleTypeChange(TransactionType.INCOME); }}
+                        className={cn(
+                          "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+                          field.value === TransactionType.INCOME ? "bg-white text-blue-500 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                        )}
+                      >
+                        Receita
+                      </button>
+                    </>
                   )}
                 />
               </div>
 
-              {/* Categoria */}
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-gray-600">Categoria</Label>
+              <div className="w-full text-center">
                 <Controller
-                  name="category"
+                  name="amount"
                   control={control}
                   render={({ field }) => (
-                    <Popover open={openCategory} onOpenChange={setOpenCategory}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openCategory}
-                          className="w-full h-10 justify-between border-gray-200 focus:ring-black"
-                        >
-                          {field.value
-                            ? getSortedCategories().find((cat) => cat.key === field.value)?.label
-                            : 'Selecione...'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command
-                          filter={(value, search) => {
-                            const categories = getSortedCategories();
-                            const category = categories.find(c => c.key === value);
-                            if (!category) return 0;
-                            
-                            const searchNormalized = search.toLowerCase();
-                            const labelNormalized = category.label.toLowerCase();
-                            const keyNormalized = category.key.toLowerCase();
-                            
-                            if (labelNormalized.includes(searchNormalized) || keyNormalized.includes(searchNormalized)) {
-                              return 1;
-                            }
-                            return 0;
-                          }}
-                        >
-                          <CommandInput placeholder="Pesquisar categoria..." />
-                          <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
-                          <CommandList>
-                            <CommandGroup>
-                              {getSortedCategories().map((category) => (
-                                <CommandItem
-                                  key={category.key}
-                                  value={category.key}
-                                  onSelect={(currentValue) => {
-                                    field.onChange(currentValue === field.value ? '' : currentValue);
-                                    setOpenCategory(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4',
-                                      field.value === category.key ? 'opacity-100' : 'opacity-0'
-                                    )}
-                                  />
-                                  {category.label}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                />
-              </div>
-
-              {/* Centro de Custo (Apenas para Despesas) */}
-              {selectedType === TransactionType.EXPENSE && (
-                <div className="space-y-2">
-                  <Label htmlFor="costCenter" className="text-gray-600 text-sm">Centro de Custo</Label>
-                  <Controller
-                    name="costCenterId"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value || ''} onValueChange={field.onChange}>
-                        <SelectTrigger id="costCenter" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {costCenters.map((center) => (
-                            <SelectItem key={center.id} value={center.id}>
-                              {center.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-            {errors.category && (
-              <p className="text-sm text-red-600 -mt-2">{errors.category.message}</p>
-            )}
-
-            {/* Seleção de Patrimônio (Apenas para Investimentos) */}
-            {selectedType === TransactionType.EXPENSE && selectedCategory === 'INVESTMENT' && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <Label htmlFor="equityId" className="text-gray-600">Destino do Investimento (Opcional)</Label>
-                <Controller
-                  name="equityId"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full h-10 border-gray-200 focus:ring-black">
-                        <SelectValue placeholder="Investimentos Gerais (Automático)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {equities
-                          .filter(e => ['stocks', 'crypto', 'business', 'other'].includes(e.type)) // Filter relevant types
-                          .map((equity) => (
-                          <SelectItem key={equity.id} value={equity.id}>
-                            {equity.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <p className="text-xs text-gray-500">
-                  Se vazio, será adicionado a "Investimentos Gerais".
-                </p>
-              </div>
-            )}
-
-            {/* Parcelamento (Apenas Despesas) */}
-            {selectedType === TransactionType.EXPENSE && (
-              <div className="space-y-3 pt-2 border-t border-gray-100">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="is-installment" className="text-gray-600 font-medium text-sm">Parcelar?</Label>
-                    <Switch
-                      id="is-installment"
-                      checked={isInstallment}
-                      onCheckedChange={setIsInstallment}
-                      disabled={isRecurring}
-                    />
-                  </div>
-
-                  {isInstallment && !isRecurring && (
-                    <div className="flex-1 animate-in fade-in slide-in-from-top-2">
-                      <Label htmlFor="installments" className="text-gray-600 text-sm">Parcelas</Label>
-                      <Input
-                        id="installments"
-                        type="number"
-                        min="2"
-                        placeholder="12"
-                        className="border-gray-200 focus:border-black focus:ring-black h-9 text-sm mt-1"
-                        {...register('installments', { valueAsNumber: true })}
+                    <div className="relative inline-block">
+                       <CurrencyInput
+                        value={field.value || 0}
+                        onValueChange={field.onChange}
+                        placeholder="0,00"
+                        className={cn(
+                          "text-5xl font-bold text-center bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-zinc-200",
+                          selectedType === TransactionType.INCOME ? "text-blue-500" : "text-red-900"
+                        )}
+                        symbolClassName={cn("text-2xl align-top mr-1 font-medium", selectedType === TransactionType.INCOME ? "text-blue-300" : "text-zinc-300")}
+                        autoResize
                       />
-                      {errors.installments && (
-                        <p className="text-sm text-red-600">{errors.installments.message}</p>
-                      )}
                     </div>
                   )}
-                </div>
+                />
+                {errors.amount && <p className="text-sm text-red-500 mt-1">{errors.amount.message}</p>}
               </div>
-            )}
+            </div>
 
-            {/* Recorrência */}
-            {!isInstallment && (
-              <div className="space-y-3 pt-2 border-t border-gray-100">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="is-recurring" className="text-gray-600 font-medium text-sm">Recorrente?</Label>
-                    <Switch
-                      id="is-recurring"
-                      checked={isRecurring}
-                      onCheckedChange={setIsRecurring}
-                    />
+            {/* 2. GRID PRINCIPAL (Dados Essenciais) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              
+              {/* Data & Conta */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-zinc-400 font-medium ml-1">Data</Label>
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white transition-all"
+                        {...register('date')}
+                      />
+                      <Calendar className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+                    </div>
+                  </div>
+                  
+                  {/* Toggle Pago */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-zinc-400 font-medium ml-1">Status</Label>
+                    <div 
+                        className={cn(
+                          "h-11 flex items-center justify-between px-3 rounded-md border transition-all",
+                          isPaid ? "bg-green-50 border-green-100" : "bg-zinc-50 border-zinc-100"
+                        )}
+                      >
+                      <span className={cn("text-sm font-medium", isPaid ? "text-green-600" : "text-zinc-500")}>
+                        {isPaid ? "Pago" : "Pendente"}
+                      </span>
+                      <Switch checked={isPaid} onCheckedChange={(v) => setIsPaid(!!v)} className="scale-75 data-[state=checked]:bg-green-500" />
+                    </div>
                   </div>
                 </div>
 
-                {isRecurring && (
-                  <div className="space-y-2 grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                    <div className="col-span-2">
-                      <Label htmlFor="frequency" className="text-gray-600 text-sm">Frequência</Label>
-                      <Controller
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-medium ml-1">Conta / Cartão</Label>
+                  <Controller
+                    name="paymentMethod"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
+                          <SelectTrigger className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white">
+                            <SelectValue placeholder="Selecione a origem" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Contas</SelectLabel>
+                              {accounts.map((acc) => (
+                                <SelectItem key={acc.id} value={`account:${acc.id}`}>{acc.name}</SelectItem>
+                              ))}
+                            </SelectGroup>
+                            {cards.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel>Cartões</SelectLabel>
+                                {cards.map((c) => (
+                                  <SelectItem key={c.id} value={`card:${c.id}`}>{c.name}</SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <CardIcon className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+                      </div>
+                    )}
+                  />
+                  {errors.paymentMethod && <p className="text-xs text-red-500 ml-1">{errors.paymentMethod.message}</p>}
+                </div>
+              </div>
+
+              {/* Categoria & Descrição */}
+              <div className="space-y-4">
+                 <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-medium ml-1">Categoria</Label>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Popover open={openCategory} onOpenChange={setOpenCategory}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full pl-9 h-11 justify-between bg-zinc-50 border-zinc-100 hover:bg-white hover:border-zinc-300 focus:bg-white text-zinc-900 font-normal",
+                              !field.value && "text-zinc-400"
+                            )}
+                          >
+                            <Tag className="w-4 h-4 text-zinc-400 absolute left-3" />
+                            {field.value
+                              ? getSortedCategories().find((cat) => cat.key === field.value)?.label
+                              : 'Selecione a categoria'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command filter={(value, search) => {
+                             const cat = getSortedCategories().find(c => c.key === value);
+                             if(!cat) return 0;
+                             const s = search.toLowerCase();
+                             return (cat.label.toLowerCase().includes(s) || cat.key.toLowerCase().includes(s)) ? 1 : 0;
+                          }}>
+                            <CommandInput placeholder="Buscar..." />
+                            <CommandList>
+                              <CommandEmpty>Nada encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {getSortedCategories().map((cat) => (
+                                  <CommandItem
+                                    key={cat.key}
+                                    value={cat.key}
+                                    onSelect={(val) => {
+                                      field.onChange(val === field.value ? '' : val);
+                                      setOpenCategory(false);
+                                    }}
+                                  >
+                                    <Check className={cn('mr-2 h-4 w-4', field.value === cat.key ? 'opacity-100' : 'opacity-0')} />
+                                    {cat.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  />
+                  {errors.category && <p className="text-xs text-red-500 ml-1">{errors.category.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-medium ml-1">Descrição</Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Ex: Almoço de domingo"
+                      className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white"
+                      {...register('description')}
+                    />
+                    <AlignLeft className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+                  </div>
+                  {errors.description && <p className="text-xs text-red-500 ml-1">{errors.description.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Campos Condicionais (Investimento / Centro de Custo) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {selectedType === TransactionType.EXPENSE && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-zinc-400 font-medium ml-1">Centro de Custo (Opcional)</Label>
+                    <Controller
+                      name="costCenterId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value || ''} onValueChange={field.onChange}>
+                          <SelectTrigger className="h-9 text-xs bg-white border-zinc-100">
+                            <SelectValue placeholder="Nenhum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {costCenters.map((center) => (
+                              <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+               )}
+                {selectedType === TransactionType.EXPENSE && selectedCategory === 'INVESTMENT' && (
+                  <div className="space-y-1.5 animate-in fade-in">
+                    <Label className="text-xs text-zinc-400 font-medium ml-1">Vincular a Ativo</Label>
+                    <Controller
+                      name="equityId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="h-9 text-xs bg-white border-zinc-100">
+                            <SelectValue placeholder="Investimento Geral" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {equities.filter(e => ['stocks', 'crypto', 'business', 'other'].includes(e.type)).map((eq) => (
+                              <SelectItem key={eq.id} value={eq.id}>{eq.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                )}
+            </div>
+
+            {/* 3. OPÇÕES AVANÇADAS (Compactas) */}
+            <div className="bg-zinc-50/80 rounded-2xl p-4 border border-zinc-100 space-y-4">
+               <div className="flex gap-4 overflow-x-auto pb-1">
+                 {/* Botão Recorrência */}
+                 <button
+                   type="button"
+                   onClick={() => { setIsRecurring(!isRecurring); setIsInstallment(false); }}
+                   className={cn(
+                     "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all whitespace-nowrap",
+                     isRecurring ? "bg-white border-blue-200 text-blue-600 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
+                   )}
+                 >
+                   <RefreshCw className="w-4 h-4" />
+                   {isRecurring ? "Recorrente: Sim" : "Tornar Recorrente"}
+                 </button>
+
+                 {/* Botão Parcelamento */}
+                 {selectedType === TransactionType.EXPENSE && (
+                   <button
+                    type="button"
+                    onClick={() => { setIsInstallment(!isInstallment); setIsRecurring(false); }}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all whitespace-nowrap",
+                      isInstallment ? "bg-white border-blue-200 text-blue-600 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
+                    )}
+                   >
+                     <Layers className="w-4 h-4" />
+                     {isInstallment ? "Parcelado: Sim" : "Parcelar Compra"}
+                   </button>
+                 )}
+               </div>
+
+               {/* Inputs Condicionais das Opções */}
+               {isRecurring && (
+                  <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+                    <div className="space-y-1">
+                       <Label className="text-xs">Frequência</Label>
+                       <Controller
                         name="frequency"
                         control={control}
                         render={({ field }) => (
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full h-9 border-gray-200 focus:ring-black text-sm">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
+                            <SelectTrigger className="h-9 bg-white"><SelectValue placeholder="Selecione" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="DAILY">Diário</SelectItem>
                               <SelectItem value="WEEKLY">Semanal</SelectItem>
                               <SelectItem value="MONTHLY">Mensal</SelectItem>
-                              <SelectItem value="QUARTERLY">Trimestral</SelectItem>
-                              <SelectItem value="SEMI_ANNUAL">Semestral</SelectItem>
                               <SelectItem value="ANNUAL">Anual</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="endDate" className="text-gray-600 text-sm">Fim (Opcional)</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        className="h-9 border-gray-200 focus:border-black focus:ring-black block w-full text-sm mt-1"
-                        {...register('endDate')}
-                      />
+                    <div className="space-y-1">
+                       <Label className="text-xs">Data Final (Opcional)</Label>
+                       <Input type="date" className="h-9 bg-white" {...register('endDate')} />
                     </div>
                   </div>
-                )}
-              </div>
-            )}
+               )}
 
-            {/* Conta / Cartão e Descrição */}
-            <div className="grid grid-cols-3 gap-4">
-              {/* Conta / Cartão */}
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="paymentMethod" className="text-gray-600 text-sm">Conta / Cartão</Label>
-                <Controller
-                  name="paymentMethod"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
-                      <SelectTrigger id="paymentMethod" className="w-full h-10 border-gray-200 focus:ring-black text-sm">
-                        <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Contas</SelectLabel>
-                          {accounts.map((account) => (
-                            <SelectItem key={account.id} value={`account:${account.id}`}>
-                              {account.name} {account.type === 'WALLET' && '(Dinheiro)'}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                        {cards.length > 0 && (
-                          <SelectGroup>
-                            <SelectLabel>Cartões de Crédito</SelectLabel>
-                            {cards.map((card) => (
-                              <SelectItem key={card.id} value={`card:${card.id}`}>
-                                {card.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.paymentMethod && (
-                  <p className="text-sm text-red-600">{errors.paymentMethod.message}</p>
-                )}
-              </div>
-
-              {/* Data */}
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-gray-600 text-sm">Data</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  className="h-10 border-gray-200 focus:border-black focus:ring-black block w-full text-sm"
-                  {...register('date')}
-                />
-                {errors.date && (
-                  <p className="text-sm text-red-600">{errors.date.message}</p>
-                )}
-              </div>
+               {isInstallment && !isRecurring && (
+                 <div className="max-w-[150px] animate-in slide-in-from-top-2 space-y-1">
+                    <Label className="text-xs">Número de Parcelas</Label>
+                    <Input type="number" min="2" className="h-9 bg-white" {...register('installments', { valueAsNumber: true })} />
+                 </div>
+               )}
             </div>
 
-            {/* Descrição */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-600 text-sm">Descrição</Label>
-              <Input
-                id="description"
-                placeholder="Ex: Compras do mês"
-                className="h-10 border-gray-200 focus:border-black focus:ring-black text-sm"
-                {...register('description')}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-600">{errors.description.message}</p>
-              )}
-            </div>
-
-            {/* Status de Pagamento */}
-            <div className="space-y-4 pt-2 border-t border-gray-100">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="is-paid" className="text-gray-600 font-medium text-sm">Marcar como pago?</Label>
-                <Switch
-                  id="is-paid"
-                  checked={isPaid}
-                  onCheckedChange={setIsPaid}
-                />
-              </div>
-
-              {isPaid && (
-                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                  <div>
-                    <Label htmlFor="paidDate" className="text-gray-600 text-sm">Data do Pagamento</Label>
-                    <Input
-                      id="paidDate"
-                      type="date"
-                      className="h-9 border-gray-200 focus:border-black focus:ring-black block w-full text-sm mt-1"
-                      {...register('paidDate')}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
+            {/* Botão Salvar */}
             <Button
               type="submit"
-              className="w-full bg-blue-400 hover:bg-blue-500 text-white h-11 text-base font-medium rounded-lg mt-4 transition-all flex items-center justify-center gap-2"
+              className={cn(
+                "w-full h-12 text-base font-semibold rounded-xl shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]",
+                selectedType === TransactionType.INCOME 
+                  ? "bg-blue-400 hover:bg-blue-500 text-white shadow-blue-100" 
+                  : "bg-red-900 hover:bg-zinc-800 text-white shadow-zinc-200"
+              )}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar' : 'Salvar')}
-              {!isSubmitting && <Kbd className="bg-gray-700 text-white border-gray-600 text-xs">{isMac ? '⌘' : 'Ctrl'}+Enter</Kbd>}
+              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar Movimentação' : 'Registrar Movimentação')}
+              {!isSubmitting && !isMobile && (
+                <Kbd className="ml-2 bg-white/20 text-white border-white/20 text-xs">
+                  {isMac ? '⌘' : 'Ctrl'}+Enter
+                </Kbd>
+              )}
             </Button>
+
           </form>
         </CardContent>
       </Card>
@@ -715,11 +681,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           requiredAmount={balanceInfo.requiredAmount}
           finalBalance={balanceInfo.finalBalance}
           onConfirm={handleConfirmNegativeBalance}
-          onCancel={() => {
-            setShowBalanceDialog(false);
-            setBalanceInfo(null);
-            setPendingPayload(null);
-          }}
+          onCancel={() => { setShowBalanceDialog(false); setBalanceInfo(null); setPendingPayload(null); }}
           isLoading={isSubmitting}
         />
       )}

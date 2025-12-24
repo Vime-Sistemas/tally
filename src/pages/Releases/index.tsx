@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.15',
+    date: '23 de dezembro de 2025',
+    description: 'Novo Dashboard',
+    features: [],
+    fixes: ['Bug de switch de transação não-paga'],
+    improvements: ['Melhoramos significativamente o visual do formulário de transação', 'Melhoramos o visual da listagem de contas e cartões', 'Removemos a funcionalidade de cor da conta', 'Melhoramos o formulário de transferência'],
+  },
+  {
     version: '1.5.14',
     date: '23 de dezembro de 2025',
     description: 'Novo Dashboard',

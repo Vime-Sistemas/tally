@@ -907,7 +907,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               <div className="space-y-1 flex items-end">
                 <div className="flex items-center gap-2 w-full">
                   <label className="text-xs font-medium">Pago?</label>
-                  <Switch checked={editingIsPaid} onCheckedChange={setEditingIsPaid} />
+                  <Switch checked={editingIsPaid} onCheckedChange={(v) => setEditingIsPaid(!!v)} />
                 </div>
               </div>
             </div>

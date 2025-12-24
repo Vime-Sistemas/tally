@@ -361,7 +361,7 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
                                 <p className="font-medium text-gray-900">Modo Empresarial</p>
                                 <p className="text-sm text-gray-500">Habilita funções para PJ</p>
                               </div>
-                              <Switch checked={hasBusiness} onCheckedChange={setHasBusiness} />
+                              <Switch checked={hasBusiness} onCheckedChange={(v) => setHasBusiness(!!v)} />
                             </div>
                             <div className="p-4 bg-gray-50 rounded-xl space-y-3">
                               <div className="flex items-center justify-between">

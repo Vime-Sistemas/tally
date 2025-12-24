@@ -302,9 +302,9 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                                     </span>
                                 </div>
                                 <Switch
-                                    id="business-mode"
-                                    checked={hasBusiness}
-                                    onCheckedChange={setHasBusiness}
+                                  id="business-mode"
+                                  checked={hasBusiness}
+                                  onCheckedChange={(v) => setHasBusiness(!!v)}
                                 />
                             </div>
                             <Separator />

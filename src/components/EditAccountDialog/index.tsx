@@ -309,34 +309,6 @@ export function EditAccountDialog({
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="color" className="text-gray-600">Cor</Label>
-                <Controller
-                  name="color"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="color" className="w-full h-10 border-gray-200 focus:ring-black">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accountColors.map((color) => (
-                          <SelectItem key={color.value} value={color.value}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-4 h-4 rounded ${color.value}`}></div>
-                              {color.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.color && (
-                  <p className="text-sm text-red-600 mt-1">{errors.color.message}</p>
-                )}
-              </div>
-
               <div className="flex gap-2 justify-between pt-4 border-t">
                 <Button
                   type="button"
