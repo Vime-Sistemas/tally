@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
+import { 
+  Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote, 
+  Building2, LandPlot, Bike, TrendingUp, Wallet, Zap, Palette, Calendar,
+} from "lucide-react";
+import { type Equity, EQUITY_TYPES } from "../../types/equity";
+import { cn } from "../../lib/utils";
+import { equityService } from "../../services/equities";
+import { toast } from "sonner";
+import type { Page } from "../../types/navigation";
+import { EditEquityDialog } from "../../components/EditEquityDialog";
+import { EquityCardMenu } from "../../components/EquityCardMenu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,107 +19,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
-import { 
-  Plus, Car, Home, Briefcase, Gem, Smartphone, Banknote, 
-  Building2, LandPlot, Bike, TrendingUp, Wallet, Zap, Palette
-} from "lucide-react";
-import { type Equity, EQUITY_TYPES } from "../../types/equity";
-import { cn } from "../../lib/utils";
-import { equityService } from "../../services/equities";
-import { toast } from "sonner";
-import type { Page } from "../../types/navigation";
-import { EditEquityDialog } from "../../components/EditEquityDialog";
-import { EquityCardMenu } from "../../components/EquityCardMenu";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
 
-const getCardStyle = (type: string) => {
-  // Real Estate
-  if (type === 'real-estate-house') return {
-    gradient: "bg-gradient-to-br from-stone-500 to-stone-700",
-    icon: Home,
-    shadow: "shadow-stone-500/20",
-    pattern: "radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent 50%)"
-  };
-  if (type === 'real-estate-apt') return {
-    gradient: "bg-gradient-to-br from-slate-500 to-slate-700",
-    icon: Building2,
-    shadow: "shadow-slate-500/20",
-    pattern: "linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)"
-  };
-  if (type === 'real-estate-land') return {
-    gradient: "bg-gradient-to-br from-emerald-600 to-teal-700",
-    icon: LandPlot,
-    shadow: "shadow-emerald-500/20",
-    pattern: "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 10px, transparent 10px, transparent 20px)"
+// Configuração de Estilo por Tipo (Sóbrio & Elegante)
+const getEquityStyle = (type: string) => {
+  const styles: Record<string, { icon: any, color: string, bg: string, ring: string }> = {
+    // Imóveis (Tons Terrosos/Sólidos)
+    'real-estate-house': { icon: Home, color: "text-stone-600", bg: "bg-stone-100", ring: "group-hover:ring-stone-200" },
+    'real-estate-apt': { icon: Building2, color: "text-slate-600", bg: "bg-slate-100", ring: "group-hover:ring-slate-200" },
+    'real-estate-land': { icon: LandPlot, color: "text-emerald-700", bg: "bg-emerald-100", ring: "group-hover:ring-emerald-200" },
+
+    // Veículos (Tons de Ação)
+    'vehicle-car': { icon: Car, color: "text-blue-600", bg: "bg-blue-100", ring: "group-hover:ring-blue-200" },
+    'vehicle-motorcycle': { icon: Bike, color: "text-orange-600", bg: "bg-orange-100", ring: "group-hover:ring-orange-200" },
+
+    // Investimentos (Tons de Dinheiro/Tech)
+    'stocks': { icon: TrendingUp, color: "text-green-600", bg: "bg-green-100", ring: "group-hover:ring-green-200" },
+    'crypto': { icon: Zap, color: "text-violet-600", bg: "bg-violet-100", ring: "group-hover:ring-violet-200" },
+    'business': { icon: Briefcase, color: "text-amber-600", bg: "bg-amber-100", ring: "group-hover:ring-amber-200" },
+
+    // Pessoais (Tons Vibrantes mas suaves)
+    'electronics': { icon: Smartphone, color: "text-zinc-700", bg: "bg-zinc-100", ring: "group-hover:ring-zinc-200" },
+    'jewelry': { icon: Gem, color: "text-rose-600", bg: "bg-rose-100", ring: "group-hover:ring-rose-200" },
+    'art': { icon: Palette, color: "text-purple-600", bg: "bg-purple-100", ring: "group-hover:ring-purple-200" },
+
+    // Outros
+    'cash': { icon: Wallet, color: "text-teal-600", bg: "bg-teal-100", ring: "group-hover:ring-teal-200" },
   };
 
-  // Vehicles
-  if (type === 'vehicle-car') return {
-    gradient: "bg-gradient-to-br from-blue-600 to-indigo-700",
-    icon: Car,
-    shadow: "shadow-blue-500/20",
-    pattern: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%)"
-  };
-  if (type === 'vehicle-motorcycle') return {
-    gradient: "bg-gradient-to-br from-red-600 to-orange-700",
-    icon: Bike,
-    shadow: "shadow-red-500/20",
-    pattern: "radial-gradient(circle at bottom left, rgba(255,255,255,0.2), transparent 60%)"
-  };
-
-  // Investments
-  if (type === 'stocks') return {
-    gradient: "bg-gradient-to-br from-green-500 to-emerald-700",
-    icon: TrendingUp,
-    shadow: "shadow-green-500/20",
-    pattern: "repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.1) 20px)"
-  };
-  if (type === 'crypto') return {
-    gradient: "bg-gradient-to-br from-violet-600 to-fuchsia-700",
-    icon: Zap,
-    shadow: "shadow-violet-500/20",
-    pattern: "radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0 / 10px 10px"
-  };
-  if (type === 'business') return {
-    gradient: "bg-gradient-to-br from-amber-500 to-orange-600",
-    icon: Briefcase,
-    shadow: "shadow-amber-500/20",
-    pattern: "linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px) 0 0 / 20px 100%"
-  };
-
-  // Personal
-  if (type === 'electronics') return {
-    gradient: "bg-gradient-to-br from-zinc-700 to-black",
-    icon: Smartphone,
-    shadow: "shadow-zinc-500/20",
-    pattern: "linear-gradient(to bottom right, rgba(255,255,255,0.1), transparent)"
-  };
-  if (type === 'jewelry') return {
-    gradient: "bg-gradient-to-br from-pink-500 to-rose-600",
-    icon: Gem,
-    shadow: "shadow-pink-500/20",
-    pattern: "radial-gradient(circle at center, rgba(255,255,255,0.2), transparent)"
-  };
-  if (type === 'art') return {
-    gradient: "bg-gradient-to-br from-purple-500 to-indigo-600",
-    icon: Palette,
-    shadow: "shadow-purple-500/20",
-    pattern: "conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0.1), transparent)"
-  };
-
-  // Cash/Other
-  if (type === 'cash') return {
-    gradient: "bg-gradient-to-br from-teal-500 to-cyan-600",
-    icon: Wallet,
-    shadow: "shadow-teal-500/20",
-    pattern: "repeating-linear-gradient(-45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 5px, transparent 5px, transparent 10px)"
-  };
-
-  return {
-    gradient: "bg-gradient-to-br from-blue-500 to-blue-600",
-    icon: Banknote,
-    shadow: "shadow-blue-500/20",
-    pattern: ""
-  };
+  return styles[type] || { icon: Banknote, color: "text-blue-600", bg: "bg-blue-100", ring: "group-hover:ring-blue-200" };
 };
 
 const getLabelForType = (type: string) => {
@@ -146,16 +84,14 @@ export function EquityList({ onNavigate }: EquityListProps) {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-
     try {
       setIsDeleting(true);
       await equityService.delete(deleteConfirm.id);
-      toast.success("Patrimônio deletado com sucesso!");
+      toast.success("Item removido com sucesso!");
       setEquities(equities.filter((e) => e.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (error) {
-      console.error("Failed to delete equity:", error);
-      toast.error("Erro ao deletar patrimônio");
+      toast.error("Erro ao remover item");
     } finally {
       setIsDeleting(false);
     }
@@ -164,160 +100,154 @@ export function EquityList({ onNavigate }: EquityListProps) {
   const totalValue = equities.reduce((acc, item) => acc + item.value, 0);
 
   if (loading) {
-    return <div className="p-8 text-center">Carregando...</div>;
+    return (
+      <div className="min-h-screen bg-zinc-50/50 p-8 flex items-center justify-center">
+        <div className="text-zinc-400 animate-pulse">Carregando patrimônio...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Patrimônio</h2>
-          <p className="text-muted-foreground">Gerencie seus bens e ativos.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden md:block">
-            <p className="text-sm text-muted-foreground">Valor Total Estimado</p>
-            <p className="text-2xl font-bold">
-              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalValue)}
-            </p>
+    <div className="min-h-screen bg-zinc-50/50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* --- Header --- */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Patrimônio</h1>
+            <p className="text-zinc-500 mt-1">Gerencie seus ativos, bens e investimentos.</p>
           </div>
-          <Button 
-            className="bg-blue-400 hover:bg-blue-500 text-white gap-2"
-            onClick={() => onNavigate('equity-new')}
-          >
-            <Plus className="h-4 w-4" />
-            Novo Item
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Total Display */}
-      <Card className="md:hidden bg-gray-50 border-dashed">
-        <CardContent className="pt-6 text-center">
-          <p className="text-sm text-muted-foreground">Valor Total Estimado</p>
-          <p className="text-3xl font-bold mt-1">
-            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalValue)}
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {equities.map((item) => {
-          const style = getCardStyle(item.type);
-          const Icon = style.icon;
           
-          return (
-            <div 
-              key={item.id} 
-              className={cn(
-                "relative overflow-hidden rounded-2xl p-6 text-white shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer group h-[220px] flex flex-col justify-between border border-white/10",
-                style.gradient,
-                style.shadow
-              )}
+          <div className="flex items-center gap-4 bg-white p-2 pr-2 pl-6 rounded-2xl shadow-sm border border-zinc-100">
+            <div className="text-right mr-2">
+              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Total Acumulado</p>
+              <p className="text-xl font-bold text-zinc-900">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalValue)}
+              </p>
+            </div>
+            <Button 
+              className="h-10 rounded-xl bg-blue-400 hover:bg-blue-500 text-white shadow-lg shadow-zinc-200 gap-2 px-4"
+              onClick={() => onNavigate('equity-new')}
             >
-              {/* Background Pattern */}
-              <div 
-                className="absolute inset-0 opacity-30 pointer-events-none mix-blend-overlay" 
-                style={{ backgroundImage: style.pattern }}
-              />
-              
-              {/* Large Background Icon Watermark */}
-              <div className="absolute -right-6 -bottom-6 text-white/10 transform rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-500">
-                <Icon className="h-48 w-48" strokeWidth={1} />
-              </div>
-              
-              {/* Header */}
-              <div className="relative z-10 flex justify-between items-start">
-                <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-xl border border-white/20 shadow-sm">
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <EquityCardMenu
-                  onEdit={() => setEditingEquity(item)}
-                  onDelete={() => setDeleteConfirm(item)}
-                />
-              </div>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar Bem</span>
+            </Button>
+          </div>
+        </div>
 
-              {/* Content */}
-              <div className="relative z-10 space-y-2">
-                <div>
-                  <p className="text-white/70 text-xs font-semibold tracking-wider uppercase mb-1">
-                    {getLabelForType(item.type)}
-                  </p>
-                  <h3 className="text-2xl font-bold tracking-tight truncate leading-tight" title={item.name}>
+        {/* --- Grid de Cards --- */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          
+          {/* Add New Placeholder (Primeiro item para fácil acesso) */}
+          <div 
+            onClick={() => onNavigate('equity-new')}
+            className="group flex flex-col items-center justify-center h-[200px] rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 hover:bg-white hover:border-blue-300 hover:shadow-lg transition-all cursor-pointer gap-3"
+          >
+            <div className="h-12 w-12 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:text-blue-500 group-hover:border-blue-200 transition-colors">
+              <Plus className="h-6 w-6" />
+            </div>
+            <span className="font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">Adicionar Novo</span>
+          </div>
+
+          {equities.map((item) => {
+            const style = getEquityStyle(item.type);
+            const Icon = style.icon;
+            
+            return (
+              <div 
+                key={item.id} 
+                className={cn(
+                  "group relative bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between h-[200px] overflow-hidden",
+                  `hover:ring-1 ${style.ring}`
+                )}
+              >
+                {/* Header: Icon & Menu */}
+                <div className="flex justify-between items-start z-10">
+                  <div className={cn("p-3 rounded-2xl transition-colors", style.bg, style.color)}>
+                    <Icon className="h-6 w-6" strokeWidth={2} />
+                  </div>
+                  <EquityCardMenu
+                    onEdit={() => setEditingEquity(item)}
+                    onDelete={() => setDeleteConfirm(item)}
+                  />
+                </div>
+
+                {/* Content: Name & Type */}
+                <div className="space-y-1 z-10">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-zinc-50 text-zinc-500 hover:bg-zinc-100 text-[10px] px-2 h-5 font-normal">
+                      {getLabelForType(item.type)}
+                    </Badge>
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-900 truncate leading-tight" title={item.name}>
                     {item.name}
                   </h3>
                 </div>
-                
-                <div className="pt-3 border-t border-white/10 flex justify-between items-end">
+
+                {/* Footer: Value & Date */}
+                <div className="pt-4 border-t border-zinc-50 flex justify-between items-end z-10">
                   <div>
-                    <p className="text-xs text-white/60 mb-0.5">Valor Atual</p>
-                    <p className="text-xl font-bold tracking-tight">
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold mb-0.5">Valor Atual</p>
+                    <p className={cn("text-xl font-bold tracking-tight", style.color)}>
                       {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.value)}
                     </p>
                   </div>
+                  
                   {item.acquisitionDate && (
                     <div className="text-right">
-                      <p className="text-[10px] text-white/50 uppercase tracking-wider">Desde</p>
-                      <p className="text-sm font-medium text-white/80">
-                        {new Date(item.acquisitionDate).getFullYear()}
-                      </p>
+                      <div className="flex items-center gap-1 text-zinc-400" title="Data de aquisição">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-xs font-medium">{new Date(item.acquisitionDate).getFullYear()}</span>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          );
-        })}
 
-        {/* Add New Card Placeholder */}
-        <div 
-          className="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer h-[220px] gap-4 group"
-          onClick={() => onNavigate('equity-new')}
-        >
-          <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:shadow-md transition-all duration-300">
-            <Plus className="h-7 w-7" />
-          </div>
-          <span className="font-medium text-lg">Adicionar novo bem</span>
+                {/* Background Decorativo Suave (Opala) */}
+                <div className={cn(
+                  "absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none blur-3xl",
+                  style.bg.replace('bg-', 'bg-') // Reutiliza a cor de fundo
+                )} />
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Edit Dialog */}
+      {/* --- Dialogs --- */}
       {editingEquity && (
         <EditEquityDialog
           open={!!editingEquity}
           equity={editingEquity}
           onOpenChange={(open) => !open && setEditingEquity(null)}
-          onSuccess={() => {
-            loadEquities();
-            setEditingEquity(null);
-          }}
+          onSuccess={() => { loadEquities(); setEditingEquity(null); }}
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent className="rounded-3xl border-zinc-100 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Deletar Patrimônio</AlertDialogTitle>
+            <AlertDialogTitle>Remover Item?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja deletar "{deleteConfirm?.name}"? Esta ação não pode ser desfeita.
+              Você está prestes a remover <strong>{deleteConfirm?.name}</strong> do seu patrimônio.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="bg-gray-50 p-3 rounded-lg text-sm">
-            <p className="text-gray-600">
-              Valor: <span className="font-semibold text-gray-900">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(deleteConfirm?.value || 0)}
-              </span>
-            </p>
+          
+          <div className="bg-zinc-50 p-4 rounded-2xl flex items-center justify-between">
+             <span className="text-sm text-zinc-500">Valor do item</span>
+             <span className="font-bold text-zinc-900">
+               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(deleteConfirm?.value || 0)}
+             </span>
           </div>
-          <div className="flex justify-end gap-3">
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <AlertDialogCancel className="rounded-xl border-zinc-200">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-500 hover:bg-red-600 rounded-xl"
             >
-              {isDeleting ? "Deletando..." : "Deletar"}
+              {isDeleting ? "Removendo..." : "Remover"}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -325,4 +255,3 @@ export function EquityList({ onNavigate }: EquityListProps) {
     </div>
   );
 }
-

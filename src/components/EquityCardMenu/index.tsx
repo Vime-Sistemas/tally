@@ -19,7 +19,7 @@ export function EquityCardMenu({ onEdit, onDelete }: EquityCardMenuProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="text-white/70 hover:text-white hover:bg-white/20 h-8 w-8"
+          className="text-black hover:text-black hover:bg-white/20 h-8 w-8"
         >
           <MoreHorizontal className="h-5 w-5" />
         </Button>
