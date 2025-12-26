@@ -20,6 +20,7 @@ import { Button } from '../ui/button';
 import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../services/api';
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
+import { CategoryService, type Category } from '../../services/categoryService';
 import { useUser } from '../../contexts/UserContext';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
@@ -41,7 +42,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag, AlignLeft, RefreshCw, Layers } from 'lucide-react';
+import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag as TagIcon, AlignLeft, RefreshCw, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const transactionSchema = z.object({
@@ -115,6 +116,7 @@ const expenseCategoriesLabels: Record<string, string> = {
 interface TransactionFormProps {
   onSuccess?: () => void;
   initialData?: Transaction;
+  onNavigate?: (page: any) => void;
 }
 
 export function TransactionForm({ onSuccess, initialData }: TransactionFormProps) {
@@ -131,6 +133,8 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
+  const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [useUserCategories, setUseUserCategories] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
@@ -142,14 +146,16 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accData, cardData, eqData] = await Promise.all([
+        const [accData, cardData, eqData, catData] = await Promise.all([
           getAccounts(),
           getCards(),
-          equityService.getAll()
+          equityService.getAll(),
+          CategoryService.getCategories()
         ]);
         setAccounts(accData);
         setCards(cardData);
         setEquities(eqData);
+        setUserCategories(catData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados');
@@ -164,10 +170,19 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   }, []);
 
   const getSortedCategories = () => {
-    const labels = selectedType === TransactionType.INCOME ? incomeCategoriesLabels : expenseCategoriesLabels;
-    return Object.entries(labels)
-      .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, 'pt-BR'))
-      .map(([key, label]) => ({ key, label }));
+    if (useUserCategories) {
+      // Usar categorias do usuário
+      const filteredCategories = userCategories.filter(cat => cat.type === (selectedType === TransactionType.INCOME ? 'INCOME' : 'EXPENSE'));
+      return filteredCategories
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+        .map(cat => ({ key: cat.id, label: cat.name, color: cat.color }));
+    } else {
+      // Usar categorias globais
+      const labels = selectedType === TransactionType.INCOME ? incomeCategoriesLabels : expenseCategoriesLabels;
+      return Object.entries(labels)
+        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, 'pt-BR'))
+        .map(([key, label]) => ({ key, label }));
+    }
   };
   
 
@@ -466,7 +481,18 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
               {/* Categoria & Descrição */}
               <div className="space-y-4">
                  <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-400 font-medium ml-1">Categoria</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-zinc-400 font-medium ml-1">Categoria</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500">Padrão</span>
+                      <Switch
+                        checked={useUserCategories}
+                        onCheckedChange={setUseUserCategories}
+                        className="scale-75"
+                      />
+                      <span className="text-xs text-zinc-500">Minhas</span>
+                    </div>
+                  </div>
                   <Controller
                     name="category"
                     control={control}
@@ -481,11 +507,19 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                               !field.value && "text-zinc-400"
                             )}
                           >
-                            <Tag className="w-4 h-4 text-zinc-400 absolute left-3" />
+                            <TagIcon className="w-4 h-4 text-zinc-400 absolute left-3" />
                             {field.value
                               ? getSortedCategories().find((cat) => cat.key === field.value)?.label
                               : 'Selecione a categoria'}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            {field.value && useUserCategories && (
+                              <div
+                                className="ml-2 w-3 h-3 rounded-full border border-white"
+                                style={{
+                                  backgroundColor: (getSortedCategories().find((cat) => cat.key === field.value) as any)?.color || '#60a5fa'
+                                }}
+                              />
+                            )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0">
@@ -509,6 +543,12 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                                     }}
                                   >
                                     <Check className={cn('mr-2 h-4 w-4', field.value === cat.key ? 'opacity-100' : 'opacity-0')} />
+                                    {useUserCategories && (cat as any).color && (
+                                      <div
+                                        className="mr-2 w-3 h-3 rounded-full border border-gray-300"
+                                        style={{ backgroundColor: (cat as any).color }}
+                                      />
+                                    )}
                                     {cat.label}
                                   </CommandItem>
                                 ))}
