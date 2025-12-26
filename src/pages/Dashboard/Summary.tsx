@@ -48,7 +48,7 @@ const equityConfig: Record<string, { label: string; color: string }> = {
   'Outros': { label: "Outros", color: "#dbeafe" },
 };
 
-// Labels para tradução das categorias
+// Labels para tradução das categorias (mapa base) — labels adicionais serão geradas dinamicamente
 const CATEGORY_LABELS: Record<string, string> = {
   'HOUSING': 'Moradia',
   'TRANSPORT': 'Transporte',
@@ -63,7 +63,24 @@ const CATEGORY_LABELS: Record<string, string> = {
   'OTHER_EXPENSE': 'Outros',
   'INVESTMENT': 'Investimentos',
   'SALARY': 'Salário',
-  'OTHER_INCOME': 'Outras Receitas'
+  'OTHER_INCOME': 'Outras Receitas',
+  'GROCERIES': 'Mercearia',
+  'RENT': 'Aluguel',
+  'MORTGAGE': 'Hipoteca',
+  'INSURANCE': 'Seguros',
+  'SUBSCRIPTIONS': 'Assinaturas',
+  'TAXES': 'Impostos',
+  'SAVINGS': 'Poupança'
+};
+
+// Gera um rótulo humano para categorias não mapeadas explicitamente
+const humanizeCategory = (key: string) => {
+  if (!key) return '—';
+  if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
+  return key
+    .split(/[_\s-]+/)
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+    .join(' ');
 };
 
 const BLUE_GRADIENT = ["#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe", "#eff6ff", "#2563eb", "#1d4ed8"];
@@ -140,26 +157,28 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const prevMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), prevMonthStart));
 
   const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
+  // Incluir investimentos nas despesas para refletir o histórico completo
+  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
 
   const prevIncome = prevMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
+  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
 
   const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
   const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
 
   // 3. Category Expenses (Pie Chart Data)
   const expensesByCategoryMap = currentMonthTxs
-    .filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT)
+    .filter(t => t.type === 'EXPENSE')
     .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const key = t.category || 'OTHER_EXPENSE';
+      acc[key] = (acc[key] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
   const expensesByCategoryData = Object.entries(expensesByCategoryMap)
     .map(([key, value], idx) => ({ 
       name: key, 
-      label: CATEGORY_LABELS[key] || key,
+      label: humanizeCategory(key),
       value,
       fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length] 
     }))
@@ -179,7 +198,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
     return {
       month: format(date, 'MMM', { locale: ptBR }),
       income: monthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0),
-      expense: monthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0),
+      expense: monthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0),
       date
     };
   }).reverse();
