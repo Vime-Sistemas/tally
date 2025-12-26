@@ -12,10 +12,20 @@ import {
   ArrowRightLeft,
   BanknoteX,
   Settings,
+  LogOut,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 import type { Page } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -92,7 +102,8 @@ const menuItems = [
 ];
 
 export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCollapse }: SidebarProps) {
-  const { user } = useUser();
+  const { user, logout } = useUser();
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   // Effect: Auto-expand the menu group if the current page is inside it
@@ -265,6 +276,43 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
           <Settings className="h-4 w-4 shrink-0" />
           {!collapsed && <span className="ml-3 text-sm">Configurações</span>}
         </Button>
+        <Button
+          variant="ghost"
+          title="Sair"
+          onClick={() => setLogoutOpen(true)}
+          className={cn(
+            "w-full justify-start h-10",
+            collapsed ? "justify-center px-0" : "px-3",
+            "text-red-500 hover:bg-red-50"
+          )}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span className="ml-3 text-sm">Sair</span>}
+        </Button>
+        <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+          <AlertDialogContent className="rounded-2xl border-zinc-100 shadow-2xl max-w-[400px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-lg">Sair da conta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você precisará fazer login novamente para acessar suas informações financeiras.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end gap-3 mt-4">
+              <AlertDialogCancel className="rounded-xl border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setLogoutOpen(false);
+                  logout();
+                }}
+                className="rounded-xl bg-red-500 hover:bg-red-600 text-white shadow-sm"
+              >
+                Sair
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
