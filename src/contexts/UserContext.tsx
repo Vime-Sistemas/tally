@@ -82,6 +82,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 createdAt: parsed.createdAt || new Date().toISOString(),
                 updatedAt: parsed.updatedAt || new Date().toISOString(),
               } as User;
+              try {
+                // persist migrated user to new key (sanitized) and remove legacy entry
+                const sanitized = {
+                  id: possibleUser.id,
+                  auth0Id: possibleUser.auth0Id,
+                  email: possibleUser.email,
+                  name: possibleUser.name,
+                  picture: possibleUser.picture,
+                  coverImage: possibleUser.coverImage,
+                  menuPreference: possibleUser.menuPreference,
+                  createdAt: possibleUser.createdAt,
+                  updatedAt: possibleUser.updatedAt,
+                };
+                localStorage.setItem('user', JSON.stringify(sanitized));
+                localStorage.removeItem('tally_u');
+              } catch (e) {
+                // ignore
+              }
               return possibleUser;
             }
           }
@@ -100,7 +118,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUserState(u);
     try {
       if (u) {
-        localStorage.setItem('user', JSON.stringify(u));
+        // sanitize before persisting to localStorage: avoid storing sensitive fields
+        const sanitized = {
+          id: u.id,
+          auth0Id: u.auth0Id,
+          email: u.email,
+          name: u.name,
+          picture: u.picture,
+          coverImage: u.coverImage,
+          menuPreference: u.menuPreference,
+          createdAt: u.createdAt,
+          updatedAt: u.updatedAt,
+        };
+        localStorage.setItem('user', JSON.stringify(sanitized));
+        // ensure legacy key is removed after we write the canonical user
+        try { localStorage.removeItem('tally_u'); } catch (e) { /* ignore */ }
       } else {
         localStorage.removeItem('user');
       }

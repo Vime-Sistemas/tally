@@ -66,7 +66,23 @@ function AppContent() {
             name: auth0User.name
           });
           
-          setUser(response.data);
+          // Preserve any locally-stored menuPreference (server may not persist this yet)
+          let existingMenuPref: 'header' | 'sidebar' | undefined = undefined;
+          try {
+            const raw = localStorage.getItem('user');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              existingMenuPref = parsed?.menuPreference;
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          const mergedUser = {
+            ...(response.data || {}),
+            menuPreference: response.data?.menuPreference || existingMenuPref,
+          };
+          setUser(mergedUser);
 
           // Load cost centers
           const costCenters = await costCenterService.getCostCenters();
