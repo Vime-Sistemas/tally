@@ -59,7 +59,7 @@ export function Transactions({ onNavigate }: TransactionsProps) {
   );
 
   return (
-    <div className={cn("min-h-screen bg-zinc-50/50", isMobile ? "p-4" : "p-8")}>
+    <div className={cn("min-h-screen bg-white", isMobile ? "p-4" : "p-8")}>
       <div className="mx-auto max-w-4xl space-y-6">
         
         {/* Header Compacto */}

@@ -177,7 +177,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
             {/* --- Seção Cartões de Crédito --- */}
             <section className="space-y-6">
               <h2 className="text-xl font-semibold text-zinc-900 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-purple-500" />
+                <CreditCard className="w-5 h-5 text-blue-500" />
                 Cartões de Crédito
               </h2>
 

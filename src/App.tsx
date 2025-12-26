@@ -20,6 +20,7 @@ import { Debts } from './pages/Debts'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
+import { Sidebar } from './components/Sidebar'
 import { LoadingScreen } from './components/LoadingScreen'
 import type { Page, AppContext } from './types/navigation'
 import { UserProvider, useUser } from './contexts/UserContext'
@@ -30,7 +31,7 @@ import './App.css'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
-  const { setUser, setCostCenters } = useUser();
+  const { setUser, setCostCenters, user } = useUser();
   
   // Detect initial page from pathname
   const getInitialPage = (): Page => {
@@ -44,6 +45,7 @@ function AppContent() {
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -121,7 +123,7 @@ function AppContent() {
             e.preventDefault();
             setCurrentPage('budgets');
             break;
-          case 'd': // Dívidas (Debts)
+          case 'v': // Dívidas (Debts) - Alt+V (D reserved for Dashboard)
             e.preventDefault();
             setCurrentPage('debts');
             break;
@@ -211,22 +213,48 @@ function AppContent() {
     }
   };
 
+  const menuPreference = user?.menuPreference || 'header';
+  const showSidebar = menuPreference === 'sidebar' && !isMobile && !['signup', 'login', 'releases'].includes(currentPage);
+
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
       {!['signup', 'login', 'releases'].includes(currentPage) && (
-        <Header 
-          onNavigate={setCurrentPage} 
-          hasBusiness={hasBusiness}
-          currentContext={currentContext}
-          onContextChange={setCurrentContext}
-          currentPage={currentPage}
-        />
+        <>
+          {showSidebar ? (
+            <div className="flex">
+              <Sidebar
+                onNavigate={setCurrentPage}
+                currentPage={currentPage}
+                collapsed={sidebarCollapsed}
+                onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+              />
+              <div className="flex-1 transition-all duration-300">
+                <main className={`w-full pb-24 bg-white md:pb-0 ${showSidebar ? (sidebarCollapsed ? 'pl-16' : 'pl-64') : 'px-4 md:px-8'}`}>
+                  <div key={currentPage}>
+                    {renderPage()}
+                  </div>
+                </main>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Header 
+                onNavigate={setCurrentPage} 
+                hasBusiness={hasBusiness}
+                currentContext={currentContext}
+                onContextChange={setCurrentContext}
+                currentPage={currentPage}
+              />
+              <main className={`w-full pb-24 md:pb-0 ${showSidebar ? (sidebarCollapsed ? 'pl-16' : 'pl-64') : 'px-4 md:px-8'}`}>
+                <div key={currentPage}>
+                  {renderPage()}
+                </div>
+              </main>
+            </>
+          )}
+        </>
       )}
-      <main className="w-full pb-24 md:pb-0">
-        <div key={currentPage}>
-          {renderPage()}
-        </div>
-      </main>
+      {/* main is already rendered above together with Header or Sidebar; no duplicate rendering */}
       <SessionExpiredDialog onRedirect={() => setCurrentPage('login')} />
       <Toaster />
       <Analytics />

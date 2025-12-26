@@ -202,14 +202,15 @@ export function PayDebtDialog({ debt, open, onOpenChange, onSuccess }: PayDebtDi
             {...register('description')}
           />
         </div>
-
-        <Button
+        <div className='flex justify-center'>
+         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-400 text-white hover:bg-blue-500"
-        >
+          className="w-45 bg-blue-400 text-white hover:bg-blue-500"
+          >
           {isSubmitting ? 'Registrando...' : 'Registrar Pagamento'}
-        </Button>
+        </Button>       
+        </div>
       </form>
     </div>
   );

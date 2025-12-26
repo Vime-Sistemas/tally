@@ -436,9 +436,9 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Saídas</p>
               <p className="text-2xl font-bold text-red-500">- {summary.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
            </div>
-           <div className={cn("p-4 rounded-2xl border shadow-sm", (summary.income - summary.expense) >= 0 ? "bg-blue-50 border-blue-100" : "bg-red-50 border-red-100")}>
-              <p className={cn("text-xs uppercase tracking-wider font-semibold", (summary.income - summary.expense) >= 0 ? "text-blue-600" : "text-red-600")}>Resultado</p>
-              <p className={cn("text-2xl font-bold", (summary.income - summary.expense) >= 0 ? "text-blue-700" : "text-red-700")}>
+           <div className={cn("p-4 rounded-2xl border shadow-sm", (summary.income - summary.expense) >= 0 ? "bg-white border-zinc-100" : "bg-red-50 border-red-100")}>
+              <p className={cn("text-xs uppercase tracking-wider font-semibold", (summary.income - summary.expense) >= 0 ? "text-zinc-500" : "text-red-600")}>Resultado</p>
+              <p className={cn("text-2xl font-bold", (summary.income - summary.expense) >= 0 ? "text-blue-500" : "text-red-700")}>
                  {(summary.income - summary.expense).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
            </div>

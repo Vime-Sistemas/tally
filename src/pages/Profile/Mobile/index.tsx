@@ -94,7 +94,11 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
         const base64String = reader.result as string;
         try {
           const response = await api.put('/users/me', { picture: base64String });
-          setUser(response.data);
+            const merged = {
+              ...(response.data || {}),
+              menuPreference: response.data?.menuPreference || user?.menuPreference,
+            };
+            setUser(merged);
           toast.success("Foto atualizada com sucesso!");
         } catch (error) {
           console.error("Erro ao atualizar foto:", error);
@@ -115,7 +119,11 @@ export function MobileProfile({ hasBusiness, setHasBusiness, onLogout }: Profile
         businessName: data.businessName,
         businessCnpj: data.businessCnpj,
       });
-      setUser(response.data);
+      const merged = {
+        ...(response.data || {}),
+        menuPreference: response.data?.menuPreference || user?.menuPreference,
+      };
+      setUser(merged);
       toast.success("Perfil atualizado com sucesso!");
       setActiveSheet(null);
     } catch (error) {

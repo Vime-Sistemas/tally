@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.20',
+    date: '26 de dezembro de 2025',
+    description: 'Novo Sidebar',
+    features: ['Implementamos uma nova opção de menu lateral'],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.19',
     date: '26 de dezembro de 2025',
     description: 'Pequenas Melhorias',

@@ -15,6 +15,7 @@ export interface User {
   occupation?: string;
   businessName?: string;
   businessCnpj?: string;
+  menuPreference?: 'header' | 'sidebar';
   createdAt: string;
   updatedAt: string;
 }
@@ -30,8 +31,27 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const setUser = (u: User | null) => {
+    setUserState(u);
+    try {
+      if (u) {
+        localStorage.setItem('user', JSON.stringify(u));
+      } else {
+        localStorage.removeItem('user');
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  };
   const { logout: auth0Logout } = useAuth0();
 
   const logout = () => {

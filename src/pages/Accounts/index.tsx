@@ -30,7 +30,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 p-4 md:p-8">
+    <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="mx-auto max-w-3xl space-y-8">
         
         {/* Header */}

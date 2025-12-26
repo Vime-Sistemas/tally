@@ -4,11 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
   Building2, User, Mail, Phone, Briefcase, Camera, ShieldAlert, CreditCard,
-  MapPin, Globe
+  MapPin, Globe, Menu, Sidebar
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ const profileSchema = z.object({
   businessName: z.string().optional(),
   businessCnpj: z.string().optional(),
   businessWebsite: z.string().optional(),
+  menuPreference: z.enum(['header', 'sidebar']).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -58,6 +60,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
       businessName: user?.businessName || "",
       businessCnpj: user?.businessCnpj || "",
       businessWebsite: "",
+      menuPreference: user?.menuPreference || "header",
     },
   });
 
@@ -72,6 +75,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         coverImage: user.coverImage || "",
         businessName: user.businessName || "",
         businessCnpj: user.businessCnpj || "",
+        menuPreference: user.menuPreference || "header",
       });
     }
   }, [user, form]);
@@ -101,8 +105,13 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         coverImage: data.coverImage,
         businessName: data.businessName,
         businessCnpj: data.businessCnpj,
+        menuPreference: data.menuPreference,
       });
-      setUser(response.data);
+      const merged = {
+        ...(response.data || {}),
+        menuPreference: data.menuPreference ?? response.data?.menuPreference,
+      };
+      setUser(merged);
       toast.success("Perfil atualizado com sucesso!");
       form.reset(data); // Reset dirty state
     } catch (error) {
@@ -411,6 +420,44 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                           </p>
                         </div>
                         <Switch defaultChecked />
+                      </div>
+
+                      <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Menu className="w-4 h-4 text-zinc-500" />
+                            <Label className="text-base font-medium text-zinc-900">Tipo de Menu</Label>
+                          </div>
+                          <p className="text-sm text-zinc-500">
+                            Escolha como você prefere navegar pela aplicação.
+                          </p>
+                          <RadioGroup
+                            value={form.watch("menuPreference") || "header"}
+                            onValueChange={(value) => form.setValue("menuPreference", value as "header" | "sidebar", { shouldDirty: true })}
+                            className="grid grid-cols-2 gap-4"
+                          >
+                            <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border border-zinc-200 hover:bg-zinc-50 cursor-pointer">
+                              <RadioGroupItem value="header" id="header" />
+                              <Label htmlFor="header" className="flex items-center gap-2 cursor-pointer flex-1">
+                                <Menu className="w-4 h-4 text-zinc-500" />
+                                <div>
+                                  <div className="font-medium text-sm">Menu Superior</div>
+                                  <div className="text-xs text-zinc-500">Navegação horizontal</div>
+                                </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border border-zinc-200 hover:bg-zinc-50 cursor-pointer">
+                              <RadioGroupItem value="sidebar" id="sidebar" />
+                              <Label htmlFor="sidebar" className="flex items-center gap-2 cursor-pointer flex-1">
+                                <Sidebar className="w-4 h-4 text-zinc-500" />
+                                <div>
+                                  <div className="font-medium text-sm">Menu Lateral</div>
+                                  <div className="text-xs text-zinc-500">Navegação vertical</div>
+                                </div>
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
                       </div>
 
                     </CardContent>
