@@ -6,8 +6,8 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "./ui/breadcrumb";
-import type { Page } from "../types/navigation";
+} from "../ui/breadcrumb";
+import type { Page } from "../../types/navigation";
 
 // Define the structure for a breadcrumb path
 type BreadcrumbPath = {

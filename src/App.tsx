@@ -28,7 +28,7 @@ import { Toaster } from "./components/ui/sonner"
 import { SessionExpiredDialog } from './components/SessionExpiredDialog'
 import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
-import { AppBreadcrumb } from './components/AppBreadCrumb'
+import { AppBreadcrumb } from './components/AppBreadCrumb/AppBreadcrumb'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
