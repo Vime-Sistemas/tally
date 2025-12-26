@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Boxes,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -85,6 +86,12 @@ const menuItems = [
     title: 'Dívidas',
     icon: BanknoteX,
     page: 'debts' as Page,
+  },
+  {
+    id: 'params',
+    title: 'Parâmetros',
+    icon: Boxes,
+    page: 'params' as Page,
   },
   {
     id: 'goals',

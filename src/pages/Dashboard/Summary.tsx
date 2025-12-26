@@ -16,7 +16,7 @@ import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
 import { getCards, getBudgets, getBudgetComparison } from "../../services/api"; // Certifique-se que getBudgets/Comparison estão exportados aqui
 import { type Account, type CreditCard } from "../../types/account";
-import { TransactionCategory, type Transaction } from "../../types/transaction";
+import { type Transaction } from "../../types/transaction";
 import type { Equity } from "../../types/equity";
 import type { Budget, BudgetComparison } from "../../types/budget";
 import type { Page } from "../../types/navigation";
