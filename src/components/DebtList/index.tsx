@@ -124,7 +124,7 @@ export function DebtList() {
                   key={debt.id} 
                   className={cn(
                     "group border-zinc-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between h-full",
-                    isPaid ? "bg-zinc-50/50" : "bg-white"
+                    isPaid ? "bg-white" : "bg-white"
                   )}
                 >
                   <CardHeader className="pb-4">

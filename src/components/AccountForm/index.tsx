@@ -145,14 +145,15 @@ export function AccountForm({ onSuccess }: { onSuccess?: () => void }) {
               </div>
             </div>
           </div>
-
-          <Button
+          <div className='flex justify-center'>
+            <Button
             type="submit"
-            className="w-full h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-zinc-200 mt-6 transition-all hover:scale-[1.01] active:scale-[0.99]"
+            className="w-45 h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-zinc-200 mt-6 transition-all hover:scale-[1.01] active:scale-[0.99]"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Criando...' : 'Criar Conta'}
           </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
