@@ -17,6 +17,8 @@ import { Login } from './pages/Login'
 import { Releases } from './pages/Releases'
 import { BudgetsPage } from './pages/Budgets/index'
 import { Debts } from './pages/Debts'
+import { Categories } from './pages/Params/Categories'
+import { Tags } from './pages/Params/Tags'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
@@ -226,6 +228,10 @@ function AppContent() {
         return <BudgetsPage />;
       case 'debts':
         return <Debts onNavigate={setCurrentPage} />;
+      case 'params-categories':
+        return <Categories />;
+      case 'params-tags':
+        return <Tags />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }

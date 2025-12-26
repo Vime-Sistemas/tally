@@ -15,6 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Boxes,
+  CaseUpper,
+  ClipboardPen
 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -92,6 +94,10 @@ const menuItems = [
     title: 'Parâmetros',
     icon: Boxes,
     page: 'params' as Page,
+    submenu: [
+      { title: 'Categorias', icon: ClipboardPen, page: 'params-categories' as Page },
+      { title: 'Tags', icon: CaseUpper, page: 'params-tags' as Page },
+    ]
   },
   {
     id: 'goals',

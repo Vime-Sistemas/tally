@@ -56,6 +56,14 @@ const BREADCRUMB_MAP: Partial<Record<Page, BreadcrumbPath[]>> = {
   'profile': [
     { label: 'Configurações' },
     { label: 'Perfil' }
+  ],
+  'params-categories': [
+    { label: 'Parâmetros' },
+    { label: 'Categorias' }
+  ],
+  'params-tags': [
+    { label: 'Parâmetros' },
+    { label: 'Tags' }
   ]
 };
 

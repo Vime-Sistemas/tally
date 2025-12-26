@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.23',
+    date: '26 de dezembro de 2025',
+    description: 'Categorias e Tags',
+    features: ['Cheirinho de liberdade... Agora você consegue gerenciar as suas próprias categorias e tags'],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.22',
     date: '26 de dezembro de 2025',
     description: 'Extrato em PDF',

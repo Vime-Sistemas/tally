@@ -13,6 +13,8 @@ export type Page =
   | 'profile' 
   | 'signup' 
   | 'login'
-  | 'releases';
+  | 'releases'
+  | 'params-categories'
+  | 'params-tags';
 
 export type AppContext = 'PERSONAL' | 'BUSINESS';
