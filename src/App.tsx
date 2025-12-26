@@ -257,7 +257,7 @@ function AppContent() {
     }
   }
 
-  const menuPreference = user?.menuPreference || 'header';
+  const menuPreference = user?.menuPreference || 'sidebar';
   const isAuthPage = ['signup', 'login', 'releases'].includes(currentPage);
   const showSidebar = menuPreference === 'sidebar' && !isMobile && !['signup', 'login', 'releases'].includes(currentPage);
 
