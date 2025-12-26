@@ -28,6 +28,7 @@ import { Toaster } from "./components/ui/sonner"
 import { SessionExpiredDialog } from './components/SessionExpiredDialog'
 import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
+import { AppBreadcrumb } from './components/AppBreadCrumb'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
@@ -257,12 +258,13 @@ function AppContent() {
   }
 
   const menuPreference = user?.menuPreference || 'header';
+  const isAuthPage = ['signup', 'login', 'releases'].includes(currentPage);
   const showSidebar = menuPreference === 'sidebar' && !isMobile && !['signup', 'login', 'releases'].includes(currentPage);
 
   // Main padding: when sidebar is shown we offset the content; for auth pages we want full-bleed (no horizontal padding)
   const mainPadding = showSidebar
     ? (sidebarCollapsed ? 'pl-16' : 'pl-64')
-    : (['signup', 'login', 'releases'].includes(currentPage) ? 'px-0' : 'px-4 md:px-8');
+    : (isAuthPage ? 'px-0' : 'px-4 md:px-8');
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
       {/* debug panel removed */}
@@ -277,10 +279,19 @@ function AppContent() {
           <div className="flex-1 transition-all duration-300">
             <main className={`w-full pb-24 bg-white md:pb-0 ${mainPadding}`}>
               <ErrorBoundary>
-                <div key={currentPage}>
-                  {renderPage()}
-                </div>
-              </ErrorBoundary>
+                  {/* Insert Breadcrumb Here */}
+                  {!isAuthPage && (
+                    <AppBreadcrumb 
+                      currentPage={currentPage} 
+                      onNavigate={setCurrentPage} 
+                    />
+                  )}
+                  
+                  {/* Content Wrapper for padding consistency */}
+                  <div className="px-4 md:px-8">
+                     {renderPage()}
+                  </div>
+               </ErrorBoundary>
             </main>
           </div>
         </div>
