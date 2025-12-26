@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import CryptoJS from 'crypto-js';
 import type { ReactNode } from 'react';
 import { setAuthToken } from '../services/api';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -34,13 +35,68 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(() => {
     try {
       const raw = localStorage.getItem('user');
-      return raw ? (JSON.parse(raw) as User) : null;
+      if (raw) {
+        try {
+          return JSON.parse(raw) as User;
+        } catch (err) {
+          // Try decrypting value if it was stored encrypted
+          try {
+            const secret = import.meta.env.VITE_CRYPTO_SECRET || '';
+            if (secret) {
+              const decrypted = CryptoJS.AES.decrypt(raw, secret).toString(CryptoJS.enc.Utf8);
+              if (decrypted) {
+                return JSON.parse(decrypted) as User;
+              }
+            }
+          } catch (e2) {
+            // ignore and continue to fallback
+          }
+          // Invalid value — remove to avoid future errors
+          localStorage.removeItem('user');
+          return null;
+        }
+      }
+
+      // Fallback: try legacy encrypted key 'tally_u'
+      const legacy = localStorage.getItem('tally_u');
+      if (legacy) {
+        try {
+          const secret = import.meta.env.VITE_CRYPTO_SECRET || '';
+          if (secret) {
+            const decrypted = CryptoJS.AES.decrypt(legacy, secret).toString(CryptoJS.enc.Utf8);
+            if (decrypted) {
+              const parsed = JSON.parse(decrypted);
+              // Try to map common fields
+              const possibleUser = {
+                id: parsed.id || parsed.account?.id || '',
+                auth0Id: parsed.auth0Id || parsed.account?.auth0Id || '',
+                email: parsed.email || parsed.account?.email || parsed.account?.user?.email || '',
+                name: parsed.name || parsed.account?.name || parsed.social?.name || '',
+                picture: parsed.picture || parsed.account?.picture || parsed.social?.picture || undefined,
+                coverImage: parsed.coverImage || undefined,
+                phone: parsed.phone || undefined,
+                occupation: parsed.occupation || undefined,
+                businessName: parsed.businessName || undefined,
+                businessCnpj: parsed.businessCnpj || undefined,
+                menuPreference: parsed.menuPreference || undefined,
+                createdAt: parsed.createdAt || new Date().toISOString(),
+                updatedAt: parsed.updatedAt || new Date().toISOString(),
+              } as User;
+              return possibleUser;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      return null;
     } catch (e) {
       return null;
     }
   });
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
-  const setUser = (u: User | null) => {
+  const setUser = useCallback((u: User | null) => {
     setUserState(u);
     try {
       if (u) {
@@ -51,7 +107,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       // ignore storage errors
     }
-  };
+  }, []);
   const { logout: auth0Logout } = useAuth0();
 
   const logout = () => {
@@ -71,8 +127,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const value = useMemo(() => ({ user, setUser, costCenters, setCostCenters, logout }), [user, setUser, costCenters, setCostCenters, logout]);
+
   return (
-    <UserContext.Provider value={{ user, setUser, costCenters, setCostCenters, logout }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Component } from 'react'
 import { useAuth0 } from "@auth0/auth0-react"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/react"
@@ -47,6 +47,7 @@ function AppContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
+  
 
   useEffect(() => {
     const syncUser = async () => {
@@ -213,45 +214,78 @@ function AppContent() {
     }
   };
 
+  class ErrorBoundary extends Component<any, { error: Error | null }> {
+    constructor(props: any) {
+      super(props);
+      this.state = { error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+      return { error };
+    }
+    componentDidCatch(error: Error, info: any) {
+      // eslint-disable-next-line no-console
+      console.error('Uncaught error in page render:', error, info);
+    }
+    render() {
+      if (this.state.error) {
+        return (
+          <div className="p-8">
+            <h2 className="text-xl font-semibold text-red-600">Erro ao renderizar a página</h2>
+            <pre className="mt-2 text-sm text-zinc-700">{String(this.state.error)}</pre>
+          </div>
+        );
+      }
+      // @ts-ignore
+      return this.props.children;
+    }
+  }
+
   const menuPreference = user?.menuPreference || 'header';
   const showSidebar = menuPreference === 'sidebar' && !isMobile && !['signup', 'login', 'releases'].includes(currentPage);
 
+  // Main padding: when sidebar is shown we offset the content; for auth pages we want full-bleed (no horizontal padding)
+  const mainPadding = showSidebar
+    ? (sidebarCollapsed ? 'pl-16' : 'pl-64')
+    : (['signup', 'login', 'releases'].includes(currentPage) ? 'px-0' : 'px-4 md:px-8');
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
-      {!['signup', 'login', 'releases'].includes(currentPage) && (
-        <>
-          {showSidebar ? (
-            <div className="flex">
-              <Sidebar
-                onNavigate={setCurrentPage}
-                currentPage={currentPage}
-                collapsed={sidebarCollapsed}
-                onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-              />
-              <div className="flex-1 transition-all duration-300">
-                <main className={`w-full pb-24 bg-white md:pb-0 ${showSidebar ? (sidebarCollapsed ? 'pl-16' : 'pl-64') : 'px-4 md:px-8'}`}>
-                  <div key={currentPage}>
-                    {renderPage()}
-                  </div>
-                </main>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Header 
-                onNavigate={setCurrentPage} 
-                hasBusiness={hasBusiness}
-                currentContext={currentContext}
-                onContextChange={setCurrentContext}
-                currentPage={currentPage}
-              />
-              <main className={`w-full pb-24 md:pb-0 ${showSidebar ? (sidebarCollapsed ? 'pl-16' : 'pl-64') : 'px-4 md:px-8'}`}>
+      {/* debug panel removed */}
+      {showSidebar ? (
+        <div className="flex">
+          <Sidebar
+            onNavigate={setCurrentPage}
+            currentPage={currentPage}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+          <div className="flex-1 transition-all duration-300">
+            <main className={`w-full pb-24 bg-white md:pb-0 ${mainPadding}`}>
+              <ErrorBoundary>
                 <div key={currentPage}>
                   {renderPage()}
                 </div>
-              </main>
-            </>
+              </ErrorBoundary>
+            </main>
+          </div>
+        </div>
+      ) : (
+        <>
+          {!['signup', 'login', 'releases'].includes(currentPage) && (
+            <Header 
+              onNavigate={setCurrentPage} 
+              hasBusiness={hasBusiness}
+              currentContext={currentContext}
+              onContextChange={setCurrentContext}
+              currentPage={currentPage}
+            />
           )}
+          <main className={`w-full pb-24 md:pb-0 ${mainPadding}`}>
+            <ErrorBoundary>
+              <div key={currentPage}>
+                {renderPage()}
+              </div>
+            </ErrorBoundary>
+          </main>
         </>
       )}
       {/* main is already rendered above together with Header or Sidebar; no duplicate rendering */}
