@@ -23,6 +23,7 @@ export const TransactionCategory = {
   ENTERTAINMENT: 'ENTERTAINMENT',
   EDUCATION: 'EDUCATION',
   SHOPPING: 'SHOPPING',
+  DEBT_PAYMENT: 'DEBT_PAYMENT',
   OTHER_EXPENSE: 'OTHER_EXPENSE',
   
   // Transferência

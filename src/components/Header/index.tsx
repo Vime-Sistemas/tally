@@ -21,7 +21,8 @@ import {
   BarChart3,
   Landmark,
   LayoutDashboard,
-  ArrowRightLeft
+  ArrowRightLeft,
+  BanknoteX
 } from "lucide-react";
 import {
   Select,
@@ -233,6 +234,15 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                     </div>
                     <ListItem href="#" title="Meus Bens" icon={Landmark} onClick={(e) => { e.preventDefault(); onNavigate('equity-list'); }}>
                        Imóveis, veículos e investimentos.
+                    </ListItem>
+
+                    <div className="h-px bg-zinc-100 my-1 mx-2" />
+                    
+                    <div className="px-3 pt-2 pb-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                        Dívidas
+                    </div>
+                    <ListItem href="#" title="Dívidas" icon={BanknoteX} onClick={(e) => { e.preventDefault(); onNavigate('debts'); }}>
+                       Registre as suas dívidas.
                     </ListItem>
                    </ul>
                 </NavigationMenuContent>

@@ -6,6 +6,7 @@ export type Page =
   | 'accounts-new' 
   | 'accounts-list' 
   | 'budgets'
+  | 'debts'
   | 'reports' 
   | 'equity-list' 
   | 'equity-new' 

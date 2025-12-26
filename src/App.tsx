@@ -16,6 +16,7 @@ import { SignUp } from './pages/SignUp'
 import { Login } from './pages/Login'
 import { Releases } from './pages/Releases'
 import { BudgetsPage } from './pages/Budgets/index'
+import { Debts } from './pages/Debts'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AccountsList } from './components/AccountsList'
 import { Header } from './components/Header'
@@ -120,6 +121,10 @@ function AppContent() {
             e.preventDefault();
             setCurrentPage('budgets');
             break;
+          case 'd': // Dívidas (Debts)
+            e.preventDefault();
+            setCurrentPage('debts');
+            break;
         }
       }
     };
@@ -199,6 +204,8 @@ function AppContent() {
         return <Releases onNavigate={setCurrentPage} />;
       case 'budgets':
         return <BudgetsPage />;
+      case 'debts':
+        return <Debts onNavigate={setCurrentPage} />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }

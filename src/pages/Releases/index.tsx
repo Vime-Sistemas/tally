@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.18',
+    date: '26 de dezembro de 2025',
+    description: 'Dívidas',
+    features: ['Agora você consegue adicionar e monitorar as suas dívidas.'],
+    fixes: [],
+    improvements: [],
+  },
+  {
     version: '1.5.17',
     date: '26 de dezembro de 2025',
     description: 'Pequenas Melhorias',

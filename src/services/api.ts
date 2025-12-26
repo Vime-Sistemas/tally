@@ -5,6 +5,32 @@ import type { Transaction } from '../types/transaction';
 import type { CreateTransactionDTO } from '../types/transaction';
 import type { Goal, CreateGoalDTO, UpdateGoalDTO } from '../types/goal';
 import type { Budget, CreateBudgetDTO, BudgetComparison } from '../types/budget';
+
+export interface Debt {
+  id: string;
+  name: string;
+  totalAmount: number;
+  remainingAmount: number;
+  interestRate?: number;
+  dueDate?: string;
+  creditor?: string;
+  description?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDebtDTO {
+  name: string;
+  totalAmount: number;
+  remainingAmount: number;
+  interestRate?: number;
+  dueDate?: string;
+  creditor?: string;
+  description?: string;
+  status?: string;
+}
+
 // import { encryptPayload, decryptPayload } from '../utils/crypto';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -223,6 +249,27 @@ export const deleteBudget = async (id: string): Promise<void> => {
 export const getBudgetComparison = async (id: string): Promise<BudgetComparison> => {
   const response = await api.get(`/budgets/${id}/comparison`);
   return response.data;
+};
+
+// DEBTS API
+
+export const getDebts = async (): Promise<Debt[]> => {
+  const response = await api.get('/debts');
+  return response.data;
+};
+
+export const createDebt = async (data: CreateDebtDTO): Promise<Debt> => {
+  const response = await api.post('/debts', data);
+  return response.data;
+};
+
+export const updateDebt = async (id: string, data: Partial<CreateDebtDTO>): Promise<Debt> => {
+  const response = await api.put(`/debts/${id}`, data);
+  return response.data;
+};
+
+export const deleteDebt = async (id: string): Promise<void> => {
+  await api.delete(`/debts/${id}`);
 };
 
 export default api;
