@@ -18,6 +18,14 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.22',
+    date: '26 de dezembro de 2025',
+    description: 'Extrato em PDF',
+    features: ['Agora você consegue emitir o seu extrato em PDF!'],
+    fixes: [],
+    improvements: ['Pequenas melhorias visuais e cores'],
+  },
+  {
     version: '1.5.21',
     date: '26 de dezembro de 2025',
     description: 'Pequenas Melhorias',

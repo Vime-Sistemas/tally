@@ -37,8 +37,10 @@ import {
   Building2,
   Globe,
   X,
-  Check
+  Check,
+  Download
 } from 'lucide-react';
+import { exportTransactionsToPDF } from "../../tools/pdfExporter";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { toast } from "sonner";
@@ -315,6 +317,15 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     return { groups, summary: stats };
   }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter, dateRange]);
 
+  const handleExportPDF = () => {
+    const filteredTransactions = Object.values(groupedTransactions).flat();
+    exportTransactionsToPDF(
+      { transactions: filteredTransactions, summary, dateRange },
+      accounts,
+      cards
+    );
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-zinc-500 animate-pulse">Carregando histórico...</div>;
   }
@@ -329,14 +340,23 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
             <h2 className="text-3xl font-bold tracking-tight text-zinc-900">Histórico</h2>
             <p className="text-zinc-500 text-sm">Visualize e gerencie suas movimentações.</p>
           </div>
-          {onNavigate && (
+          <div className="flex gap-2">
             <Button 
-              onClick={() => onNavigate('transactions-new')}
-              className="bg-blue-400 hover:bg-blue-500 text-white rounded-full shadow-md shadow-blue-100 transition-all hover:scale-[1.02]"
+              onClick={handleExportPDF}
+              variant="outline"
+              className="border-green-200 text-green-600 hover:bg-green-50 rounded-full shadow-md transition-all hover:scale-[1.02]"
             >
-              <Plus className="mr-2 h-4 w-4" /> Nova Transação
+              <Download className="mr-2 h-4 w-4" /> Exportar PDF
             </Button>
-          )}
+            {onNavigate && (
+              <Button 
+                onClick={() => onNavigate('transactions-new')}
+                className="bg-blue-400 hover:bg-blue-500 text-white rounded-full shadow-md shadow-blue-100 transition-all hover:scale-[1.02]"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nova Transação
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filter Bar */}

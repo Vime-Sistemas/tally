@@ -6,7 +6,6 @@ import {
   PlusCircle,
   List,
   Target,
-  BarChart3,
   Landmark,
   LayoutDashboard,
   ArrowRightLeft,
@@ -92,12 +91,6 @@ const menuItems = [
     title: 'Metas',
     icon: Target,
     page: 'dashboard-goals' as Page,
-  },
-  {
-    id: 'reports',
-    title: 'Relatórios',
-    icon: BarChart3,
-    page: 'reports' as Page,
   },
 ];
 
