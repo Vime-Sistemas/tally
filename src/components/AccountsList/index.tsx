@@ -83,7 +83,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
   // Para garantir o design clean, vou usar estilos inline para opacidade se for cor sólida.
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 p-8">
+    <div className="min-h-screen bg-white p-8">
       <div className="max-w-6xl mx-auto space-y-12">
         
         {/* --- Header --- */}

@@ -455,7 +455,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                             )}
                           </SelectContent>
                         </Select>
-                        <CardIcon className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+                        <CardIcon className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
                       </div>
                     )}
                   />

@@ -217,7 +217,7 @@ export function TransferForm() {
                               </SelectGroup>
                             </SelectContent>
                           </Select>
-                          <div className="absolute left-3 top-4 w-6 h-6 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors pointer-events-none">
+                          <div className="absolute left-3 top-1.5 w-6 h-6 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors pointer-events-none">
                              <Wallet className="w-3.5 h-3.5" />
                           </div>
                         </div>
@@ -264,7 +264,7 @@ export function TransferForm() {
                               </SelectGroup>
                             </SelectContent>
                           </Select>
-                          <div className="absolute left-3 top-4 w-6 h-6 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors pointer-events-none">
+                          <div className="absolute left-3 top-1.5 w-6 h-6 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors pointer-events-none">
                              <Building2 className="w-3.5 h-3.5" />
                           </div>
                         </div>

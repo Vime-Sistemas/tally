@@ -514,7 +514,7 @@ export function BudgetsPage() {
           {/* FORM TAB */}
           <TabsContent value="form" className="focus-visible:outline-none">
              <Card className="border-zinc-200 shadow-lg max-w-2xl mx-auto">
-                <CardHeader className="border-b border-zinc-100 bg-zinc-50/50">
+                <CardHeader className="border-b border-zinc-100 bg-white">
                    <CardTitle className="text-xl">
                       {selectedBudget ? 'Editar Orçamento' : 'Criar Novo Orçamento'}
                    </CardTitle>

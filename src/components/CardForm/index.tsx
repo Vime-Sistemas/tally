@@ -228,7 +228,7 @@ export function CardForm({ onSuccess }: { onSuccess?: () => void }) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Landmark className="w-4 h-4 text-zinc-400 absolute left-3 top-4 pointer-events-none" />
+                    <Landmark className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5 pointer-events-none" />
                   </div>
                 )}
               />
