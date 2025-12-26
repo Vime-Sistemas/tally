@@ -108,7 +108,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 p-4 md:p-8">
+    <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* --- Header --- */}
