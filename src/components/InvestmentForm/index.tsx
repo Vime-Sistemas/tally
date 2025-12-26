@@ -325,10 +325,10 @@ export function InvestmentForm() {
                   </div>
                </div>
             </div>
-
-            <Button
+            <div className='flex justify-center'>
+              <Button
               type="submit"
-              className="w-full h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-blue-100 mt-4 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-75 h-12 bg-blue-400 hover:bg-blue-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-blue-100 mt-4 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Salvando...' : 'Confirmar Aplicação'}
@@ -336,6 +336,7 @@ export function InvestmentForm() {
                  <Kbd className="bg-white/20 text-white border-white/20 text-xs">{isMac ? '⌘' : 'Ctrl'}+Enter</Kbd>
               )}
             </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

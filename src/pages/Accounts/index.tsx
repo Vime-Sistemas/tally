@@ -31,7 +31,7 @@ export function Accounts({ onNavigate }: AccountsProps) {
 
   return (
     <div className="min-h-screen bg-zinc-50/50 p-4 md:p-8">
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="mx-auto max-w-3xl space-y-8">
         
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -18,6 +18,22 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
+    version: '1.5.19',
+    date: '26 de dezembro de 2025',
+    description: 'Pequenas Melhorias',
+    features: [],
+    fixes: [],
+    improvements: ['Mais melhorias visuais.'],
+  },
+  {
+    version: '1.5.18',
+    date: '26 de dezembro de 2025',
+    description: 'Dívidas',
+    features: [],
+    fixes: [],
+    improvements: ['Agora ao lançar um patrimônio financiado, a dívida já é automaticamente gerada.'],
+  },
+  {
     version: '1.5.18',
     date: '26 de dezembro de 2025',
     description: 'Dívidas',

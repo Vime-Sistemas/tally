@@ -320,7 +320,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   }
 
   return (
-    <div className="w-full min-h-screen bg-white p-4 md:p-2 space-y-8">
+    <div className="w-full min-h-screen max-w-6xl bg-white p-4 md:p-2 space-y-8">
       
       {/* --- Header & Controls --- */}
       <div className="space-y-6">

@@ -652,10 +652,11 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
             </div>
 
             {/* Botão Salvar */}
-            <Button
+            <div className='flex justify-center'>
+              <Button
               type="submit"
               className={cn(
-                "w-full h-12 text-base font-semibold rounded-xl shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]",
+                "w-75 h-12 text-base font-semibold rounded-xl shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]",
                 selectedType === TransactionType.INCOME 
                   ? "bg-blue-400 hover:bg-blue-500 text-white shadow-blue-100" 
                   : "bg-red-900 hover:bg-red-800 text-white shadow-zinc-200"
@@ -669,7 +670,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                 </Kbd>
               )}
             </Button>
-
+            </div>
           </form>
         </CardContent>
       </Card>

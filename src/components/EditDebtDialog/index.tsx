@@ -230,7 +230,7 @@ export function EditDebtDialog({ debt, open, onOpenChange, onSuccess }: EditDebt
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-black text-white hover:bg-zinc-800"
+            className="flex-1 bg-blue-400 text-white hover:bg-blue-500"
           >
             {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
           </Button>

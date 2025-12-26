@@ -176,7 +176,7 @@ function AppContent() {
       case 'accounts-list':
         return (
           <div className="p-4 md:p-8">
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-8xl">
               <AccountsList onNavigate={setCurrentPage} />
             </div>
           </div>

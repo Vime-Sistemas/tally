@@ -31,7 +31,7 @@ export function Debts({ onNavigate: _onNavigate }: DebtsProps) {
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
-      <div className="mx-auto max-w-4xl space-y-8">
+      <div className="mx-auto max-w-7xl space-y-8">
 
         {/* Header */}
         <div className="flex items-center justify-between">
