@@ -140,8 +140,8 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
       {/* --- Header --- */}
       <div className="flex items-center justify-between p-4 h-16 border-b border-zinc-100">
         <div className={cn("flex items-center gap-2 overflow-hidden whitespace-nowrap transition-all", collapsed && "opacity-0 w-0")}>
-          <div className="w-9 h-8 bg-blue-400 rounded-lg flex flex-shrink-0 items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-sm">CDF</span>
+          <div className="w-9 h-8 bg-white rounded-lg flex flex-shrink-0 items-center justify-center shadow-sm">
+            <img src="/icon.svg"></img>
           </div>
         </div>
         
