@@ -27,6 +27,7 @@ interface UserContextType {
   costCenters: CostCenter[];
   setCostCenters: (costCenters: CostCenter[]) => void;
   logout: () => void;
+  getRoles: () => string[];
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -140,7 +141,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // ignore storage errors
     }
   }, []);
-  const { logout: auth0Logout } = useAuth0();
+  const { user: auth0User, logout: auth0Logout } = useAuth0();
+
+  const getRoles = useCallback(() => {
+    const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+    return auth0User ? (auth0User[`https://${domain}/roles`] as string[] || []) : [];
+  }, [auth0User]);
 
   const logout = () => {
     try {
@@ -159,7 +165,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = useMemo(() => ({ user, setUser, costCenters, setCostCenters, logout }), [user, setUser, costCenters, setCostCenters, logout]);
+  const value = useMemo(() => ({ user, setUser, costCenters, setCostCenters, logout, getRoles }), [user, setUser, costCenters, setCostCenters, logout, getRoles]);
 
   return (
     <UserContext.Provider value={value}>

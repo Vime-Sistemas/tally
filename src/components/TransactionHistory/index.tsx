@@ -41,6 +41,7 @@ import {
   Download
 } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
+import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { toast } from "sonner";
@@ -85,6 +86,7 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
 }
 
 function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
+  const { getRoles } = useUser();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -138,7 +140,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
       }
     };
     loadData();
-  }, []);
+  }, [getRoles]);
 
   // --- Helpers ---
   const getSourceName = (transaction: Transaction): string => {
