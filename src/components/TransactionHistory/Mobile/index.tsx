@@ -23,6 +23,7 @@ import {
 import { cn } from "../../../lib/utils";
 import { getTransactions, getAccounts, getCards } from "../../../services/api";
 import { transactionService } from "../../../services/transactions";
+import { CategoryService, type Category } from "../../../services/categoryService";
 import { toast } from "sonner";
 import type { Transaction } from "../../../types/transaction";
 import type { Account, CreditCard } from "../../../types/account";
@@ -57,6 +58,16 @@ import { MobileTransactionDialog } from "../../TransactionDialog/Mobile";
 import { TransactionForm } from "../../TransactionForm";
 import { formatCurrency } from "../../../utils/formatters";
 
+// Local interface for display categories (includes label property)
+interface DisplayCategory {
+  id: string;
+  name: string;
+  label: string;
+  type: 'INCOME' | 'EXPENSE';
+  icon?: string;
+  color?: string;
+}
+
 export const getCategoryIcon = (category: string) => {
   switch (category) {
     case 'FOOD': return <Coffee className="h-5 w-5" />;
@@ -74,6 +85,41 @@ export const getCategoryIcon = (category: string) => {
     default: return <DollarSign className="h-5 w-5" />;
   }
 };
+
+const globalIncomeCategories: DisplayCategory[] = [
+  { id: 'salary', name: 'SALARY', label: 'Salário', type: 'INCOME', icon: 'Briefcase' },
+  { id: 'bonus', name: 'BONUS', label: 'Bônus / PLR', type: 'INCOME', icon: 'Banknote' },
+  { id: 'freelance', name: 'FREELANCE', label: 'Freelance', type: 'INCOME', icon: 'DollarSign' },
+  { id: 'self_employed', name: 'SELF_EMPLOYED', label: 'Autônomo / PJ', type: 'INCOME', icon: 'DollarSign' },
+  { id: 'dividends', name: 'DIVIDENDS', label: 'Dividendos', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'interest', name: 'INTEREST', label: 'Juros', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'rent', name: 'RENT', label: 'Aluguel', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'investment_income', name: 'INVESTMENT_INCOME', label: 'Rendimentos', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'pension_income', name: 'PENSION_INCOME', label: 'Previdência', type: 'INCOME', icon: 'PiggyBank' },
+];
+
+const globalExpenseCategories: DisplayCategory[] = [
+  { id: 'housing', name: 'HOUSING', label: 'Moradia', type: 'EXPENSE', icon: 'Home' },
+  { id: 'utilities', name: 'UTILITIES', label: 'Contas Fixas', type: 'EXPENSE', icon: 'Zap' },
+  { id: 'food', name: 'FOOD', label: 'Alimentação', type: 'EXPENSE', icon: 'Coffee' },
+  { id: 'transport', name: 'TRANSPORT', label: 'Transporte', type: 'EXPENSE', icon: 'Car' },
+  { id: 'healthcare', name: 'HEALTHCARE', label: 'Saúde', type: 'EXPENSE', icon: 'Heart' },
+  { id: 'insurance', name: 'INSURANCE', label: 'Seguros', type: 'EXPENSE', icon: 'Shield' },
+  { id: 'education', name: 'EDUCATION', label: 'Educação', type: 'EXPENSE', icon: 'GraduationCap' },
+  { id: 'shopping', name: 'SHOPPING', label: 'Compras', type: 'EXPENSE', icon: 'ShoppingBag' },
+  { id: 'clothing', name: 'CLOTHING', label: 'Vestuário', type: 'EXPENSE', icon: 'Shirt' },
+  { id: 'entertainment', name: 'ENTERTAINMENT', label: 'Lazer', type: 'EXPENSE', icon: 'Gamepad2' },
+  { id: 'subscriptions', name: 'SUBSCRIPTIONS', label: 'Assinaturas', type: 'EXPENSE', icon: 'Repeat' },
+  { id: 'taxes', name: 'TAXES', label: 'Impostos', type: 'EXPENSE', icon: 'Landmark' },
+  { id: 'fees', name: 'FEES', label: 'Taxas e Tarifas', type: 'EXPENSE', icon: 'Receipt' },
+  { id: 'pets', name: 'PETS', label: 'Pets', type: 'EXPENSE', icon: 'PawPrint' },
+  { id: 'donations', name: 'DONATIONS', label: 'Doações', type: 'EXPENSE', icon: 'Gift' },
+  { id: 'travel', name: 'TRAVEL', label: 'Viagens', type: 'EXPENSE', icon: 'Plane' },
+  { id: 'investment', name: 'INVESTMENT', label: 'Investimentos', type: 'EXPENSE', icon: 'TrendingUp' },
+  { id: 'transfer', name: 'TRANSFER', label: 'Transferência', type: 'EXPENSE', icon: 'ArrowRightLeft' },
+];
+
+const globalCategories = [...globalIncomeCategories, ...globalExpenseCategories];
 
 export const getCategoryColor = (category: string) => {
   switch (category) {
@@ -118,6 +164,7 @@ export function MobileTransactionHistory() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userCategories, setUserCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
@@ -136,14 +183,16 @@ export function MobileTransactionHistory() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [transactionsData, accountsData, cardsData] = await Promise.all([
+        const [transactionsData, accountsData, cardsData, userCategoriesData] = await Promise.all([
           getTransactions(),
           getAccounts(),
           getCards(),
+          CategoryService.getCategories(),
         ]);
         setTransactions(transactionsData);
         setAccounts(accountsData);
         setCards(cardsData);
+        setUserCategories(userCategoriesData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar transações');
@@ -153,6 +202,30 @@ export function MobileTransactionHistory() {
     };
     loadData();
   }, []);
+
+  const getSortedCategories = (): DisplayCategory[] => {
+    // Convert user categories to DisplayCategory format
+    const userDisplayCategories: DisplayCategory[] = userCategories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      label: cat.name, // Use name as label for user categories
+      type: cat.type,
+      icon: cat.icon,
+      color: cat.color
+    }));
+
+    const allCategories = [...userDisplayCategories, ...globalCategories];
+    const uniqueCategories = allCategories.filter((cat, index, self) =>
+      index === self.findIndex(c => c.name === cat.name)
+    );
+    return uniqueCategories.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const getCategoryLabel = (categoryName: string) => {
+    const allCategories = getSortedCategories();
+    const category = allCategories.find(cat => cat.name === categoryName);
+    return category ? category.label : categoryName;
+  };
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
@@ -375,18 +448,9 @@ export function MobileTransactionHistory() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="ALL">Todas as categorias</SelectItem>
-                            <SelectItem value="FOOD">Alimentação</SelectItem>
-                            <SelectItem value="TRANSPORT">Transporte</SelectItem>
-                            <SelectItem value="HOUSING">Moradia</SelectItem>
-                            <SelectItem value="SHOPPING">Compras</SelectItem>
-                            <SelectItem value="SALARY">Salário</SelectItem>
-                            <SelectItem value="INVESTMENT">Investimento</SelectItem>
-                            <SelectItem value="UTILITIES">Contas</SelectItem>
-                            <SelectItem value="HEALTHCARE">Saúde</SelectItem>
-                            <SelectItem value="ENTERTAINMENT">Lazer</SelectItem>
-                            <SelectItem value="EDUCATION">Educação</SelectItem>
-                            <SelectItem value="FREELANCE">Freelance</SelectItem>
-                            <SelectItem value="OTHER_EXPENSE">Outros</SelectItem>
+                            {getSortedCategories().map(cat => (
+                              <SelectItem key={cat.name} value={cat.name}>{cat.label}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

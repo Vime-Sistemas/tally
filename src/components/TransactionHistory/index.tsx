@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label"; // Importante para o Dialog
 import { TransactionType } from "../../types/transaction";
@@ -38,12 +40,14 @@ import {
   Globe,
   X,
   Check,
-  Download
+  Download,
+  ChevronsUpDown
 } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
+import { CategoryService, type Category } from "../../services/categoryService";
 import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account, CreditCard } from "../../types/account";
@@ -51,7 +55,6 @@ import { Button } from "../ui/button";
 import { format, isToday, isYesterday, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "../ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import type { DateRange } from "react-day-picker";
 import {
   Dialog,
@@ -62,6 +65,16 @@ import {
 } from "../ui/dialog";
 import type { Page } from "../../types/navigation";
 
+// Local interface for display categories (includes label property)
+interface DisplayCategory {
+  id: string;
+  name: string;
+  label: string;
+  type: 'INCOME' | 'EXPENSE';
+  icon?: string;
+  color?: string;
+}
+
 // Helper to parse UTC date string as local date (ignoring time)
 const parseUTCDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -70,6 +83,41 @@ const parseUTCDate = (dateString: string) => {
 
 import { MobileTransactionHistory } from "./Mobile";
 import { useIsMobile } from "../../hooks/use-mobile";
+
+const globalIncomeCategories: DisplayCategory[] = [
+  { id: 'salary', name: 'SALARY', label: 'Salário', type: 'INCOME', icon: 'Briefcase' },
+  { id: 'bonus', name: 'BONUS', label: 'Bônus / PLR', type: 'INCOME', icon: 'Banknote' },
+  { id: 'freelance', name: 'FREELANCE', label: 'Freelance', type: 'INCOME', icon: 'DollarSign' },
+  { id: 'self_employed', name: 'SELF_EMPLOYED', label: 'Autônomo / PJ', type: 'INCOME', icon: 'DollarSign' },
+  { id: 'dividends', name: 'DIVIDENDS', label: 'Dividendos', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'interest', name: 'INTEREST', label: 'Juros', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'rent', name: 'RENT', label: 'Aluguel', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'investment_income', name: 'INVESTMENT_INCOME', label: 'Rendimentos', type: 'INCOME', icon: 'TrendingUp' },
+  { id: 'pension_income', name: 'PENSION_INCOME', label: 'Previdência', type: 'INCOME', icon: 'PiggyBank' },
+];
+
+const globalExpenseCategories: DisplayCategory[] = [
+  { id: 'housing', name: 'HOUSING', label: 'Moradia', type: 'EXPENSE', icon: 'Home' },
+  { id: 'utilities', name: 'UTILITIES', label: 'Contas Fixas', type: 'EXPENSE', icon: 'Zap' },
+  { id: 'food', name: 'FOOD', label: 'Alimentação', type: 'EXPENSE', icon: 'Coffee' },
+  { id: 'transport', name: 'TRANSPORT', label: 'Transporte', type: 'EXPENSE', icon: 'Car' },
+  { id: 'healthcare', name: 'HEALTHCARE', label: 'Saúde', type: 'EXPENSE', icon: 'Heart' },
+  { id: 'insurance', name: 'INSURANCE', label: 'Seguros', type: 'EXPENSE', icon: 'Shield' },
+  { id: 'education', name: 'EDUCATION', label: 'Educação', type: 'EXPENSE', icon: 'GraduationCap' },
+  { id: 'shopping', name: 'SHOPPING', label: 'Compras', type: 'EXPENSE', icon: 'ShoppingBag' },
+  { id: 'clothing', name: 'CLOTHING', label: 'Vestuário', type: 'EXPENSE', icon: 'Shirt' },
+  { id: 'entertainment', name: 'ENTERTAINMENT', label: 'Lazer', type: 'EXPENSE', icon: 'Gamepad2' },
+  { id: 'subscriptions', name: 'SUBSCRIPTIONS', label: 'Assinaturas', type: 'EXPENSE', icon: 'Repeat' },
+  { id: 'taxes', name: 'TAXES', label: 'Impostos', type: 'EXPENSE', icon: 'Landmark' },
+  { id: 'fees', name: 'FEES', label: 'Taxas e Tarifas', type: 'EXPENSE', icon: 'Receipt' },
+  { id: 'pets', name: 'PETS', label: 'Pets', type: 'EXPENSE', icon: 'PawPrint' },
+  { id: 'donations', name: 'DONATIONS', label: 'Doações', type: 'EXPENSE', icon: 'Gift' },
+  { id: 'travel', name: 'TRAVEL', label: 'Viagens', type: 'EXPENSE', icon: 'Plane' },
+  { id: 'investment', name: 'INVESTMENT', label: 'Investimentos', type: 'EXPENSE', icon: 'TrendingUp' },
+  { id: 'transfer', name: 'TRANSFER', label: 'Transferência', type: 'EXPENSE', icon: 'ArrowRightLeft' },
+];
+
+const globalCategories = [...globalIncomeCategories, ...globalExpenseCategories];
 
 interface TransactionHistoryProps {
   onNavigate?: (page: Page) => void;
@@ -91,6 +139,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userCategories, setUserCategories] = useState<Category[]>([]);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,6 +150,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
+  const [openCategory, setOpenCategory] = useState(false);
 
   // Editing State
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -124,14 +174,16 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [transactionsData, accountsData, cardsData] = await Promise.all([
+        const [transactionsData, accountsData, cardsData, userCategoriesData] = await Promise.all([
           getTransactions(),
           getAccounts(),
           getCards(),
+          CategoryService.getCategories(),
         ]);
         setTransactions(transactionsData);
         setAccounts(accountsData);
         setCards(cardsData);
+        setUserCategories(userCategoriesData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar transações');
@@ -156,58 +208,66 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     return '-';
   };
 
-  const getCategoryIcon = (category: string) => {
-    const iconProps = { className: "h-5 w-5" };
-    switch (category) {
-      // DESPESAS
-      case 'HOUSING': return <Home {...iconProps} />;
-      case 'UTILITIES': return <Zap {...iconProps} />;
-      case 'FOOD': return <Coffee {...iconProps} />;
-      case 'TRANSPORT': return <Car {...iconProps} />;
-      case 'HEALTHCARE': return <Heart {...iconProps} />;
-      case 'INSURANCE': return <Shield {...iconProps} />;
-      case 'EDUCATION': return <GraduationCap {...iconProps} />;
-      case 'SHOPPING': return <ShoppingBag {...iconProps} />;
-      case 'CLOTHING': return <Shirt {...iconProps} />;
-      case 'ENTERTAINMENT': return <Gamepad2 {...iconProps} />;
-      case 'SUBSCRIPTIONS': return <Repeat {...iconProps} />;
-      case 'TAXES': return <Landmark {...iconProps} />;
-      case 'FEES': return <Receipt {...iconProps} />;
-      case 'PETS': return <PawPrint {...iconProps} />;
-      case 'DONATIONS': return <Gift {...iconProps} />;
-      case 'TRAVEL': return <Plane {...iconProps} />;
-      // RECEITAS
-      case 'SALARY': return <Briefcase {...iconProps} />;
-      case 'BONUS': return <Banknote {...iconProps} />;
-      case 'FREELANCE': case 'SELF_EMPLOYED': return <DollarSign {...iconProps} />;
-      case 'DIVIDENDS': case 'INTEREST': case 'RENT': case 'INVESTMENT_INCOME': return <TrendingUp {...iconProps} />;
-      case 'PENSION_INCOME': return <PiggyBank {...iconProps} />;
-      // INVESTIMENTOS
-      case 'INVESTMENT': return <TrendingUp {...iconProps} />;
-      case 'PENSION_CONTRIBUTION': return <PiggyBank {...iconProps} />;
-      case 'SAVINGS': return <Wallet {...iconProps} />;
-      case 'CRYPTO': return <Coins {...iconProps} />;
-      case 'REAL_ESTATE': case 'REAL_ESTATE_FUNDS': return <Building2 {...iconProps} />;
-      case 'FOREIGN_INVESTMENT': return <Globe {...iconProps} />;
-      // TRANSF
-      case 'TRANSFER': return <ArrowRightLeft {...iconProps} />;
-      default: return <MoreHorizontal {...iconProps} />;
+  const getCategoryIcon = (categoryName: string) => {
+    const allCategories = getSortedCategories();
+    const category = allCategories.find(cat => cat.name === categoryName);
+    if (category) {
+      const iconProps = { className: "h-5 w-5" };
+      switch (category.icon) {
+        case 'Home': return <Home {...iconProps} />;
+        case 'Zap': return <Zap {...iconProps} />;
+        case 'Coffee': return <Coffee {...iconProps} />;
+        case 'Car': return <Car {...iconProps} />;
+        case 'Heart': return <Heart {...iconProps} />;
+        case 'Shield': return <Shield {...iconProps} />;
+        case 'GraduationCap': return <GraduationCap {...iconProps} />;
+        case 'ShoppingBag': return <ShoppingBag {...iconProps} />;
+        case 'Shirt': return <Shirt {...iconProps} />;
+        case 'Gamepad2': return <Gamepad2 {...iconProps} />;
+        case 'Repeat': return <Repeat {...iconProps} />;
+        case 'Landmark': return <Landmark {...iconProps} />;
+        case 'Receipt': return <Receipt {...iconProps} />;
+        case 'PawPrint': return <PawPrint {...iconProps} />;
+        case 'Gift': return <Gift {...iconProps} />;
+        case 'Plane': return <Plane {...iconProps} />;
+        case 'Briefcase': return <Briefcase {...iconProps} />;
+        case 'DollarSign': return <DollarSign {...iconProps} />;
+        case 'TrendingUp': return <TrendingUp {...iconProps} />;
+        case 'PiggyBank': return <PiggyBank {...iconProps} />;
+        case 'Coins': return <Coins {...iconProps} />;
+        case 'Banknote': return <Banknote {...iconProps} />;
+        case 'Wallet': return <Wallet {...iconProps} />;
+        case 'Building2': return <Building2 {...iconProps} />;
+        case 'Globe': return <Globe {...iconProps} />;
+        case 'ArrowRightLeft': return <ArrowRightLeft {...iconProps} />;
+        default: return <MoreHorizontal {...iconProps} />;
+      }
     }
+    return <MoreHorizontal className="h-5 w-5" />;
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      HOUSING: 'Moradia', UTILITIES: 'Contas Fixas', FOOD: 'Alimentação', TRANSPORT: 'Transporte',
-      HEALTHCARE: 'Saúde', INSURANCE: 'Seguros', EDUCATION: 'Educação', SHOPPING: 'Compras',
-      CLOTHING: 'Vestuário', ENTERTAINMENT: 'Lazer', SUBSCRIPTIONS: 'Assinaturas', TAXES: 'Impostos',
-      FEES: 'Taxas e Tarifas', PETS: 'Pets', DONATIONS: 'Doações', TRAVEL: 'Viagens',
-      SALARY: 'Salário', BONUS: 'Bônus / PLR', FREELANCE: 'Freelance', SELF_EMPLOYED: 'Autônomo / PJ',
-      DIVIDENDS: 'Dividendos', INTEREST: 'Juros', RENT: 'Aluguel', INVESTMENT_INCOME: 'Rendimentos',
-      PENSION_INCOME: 'Previdência', INVESTMENT: 'Investimentos', PENSION_CONTRIBUTION: 'Previdência Privada',
-      SAVINGS: 'Poupança', CRYPTO: 'Criptomoedas', REAL_ESTATE: 'Imóveis', REAL_ESTATE_FUNDS: 'FIIs',
-      FOREIGN_INVESTMENT: 'Exterior', TRANSFER: 'Transferência', OTHER_EXPENSE: 'Outros'
-    };
-    return labels[category] || category;
+  const getCategoryLabel = (categoryName: string) => {
+    const allCategories = getSortedCategories();
+    const category = allCategories.find(cat => cat.name === categoryName);
+    return category ? category.label : categoryName;
+  };
+
+  const getSortedCategories = (): DisplayCategory[] => {
+    // Convert user categories to DisplayCategory format
+    const userDisplayCategories: DisplayCategory[] = userCategories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      label: cat.name, // Use name as label for user categories
+      type: cat.type,
+      icon: cat.icon,
+      color: cat.color
+    }));
+
+    const allCategories = [...userDisplayCategories, ...globalCategories];
+    const uniqueCategories = allCategories.filter((cat, index, self) =>
+      index === self.findIndex(c => c.name === cat.name)
+    );
+    return uniqueCategories.sort((a, b) => a.name.localeCompare(b.name));
   };
 
   // --- Handlers ---
@@ -391,21 +451,64 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               </PopoverContent>
             </Popover>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[160px] h-10 rounded-xl border-zinc-200">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas Categorias</SelectItem>
-                <SelectItem value="FOOD">Alimentação</SelectItem>
-                <SelectItem value="TRANSPORT">Transporte</SelectItem>
-                <SelectItem value="HOUSING">Moradia</SelectItem>
-                <SelectItem value="SALARY">Salário</SelectItem>
-                <SelectItem value="INVESTMENT">Investimento</SelectItem>
-                {/* Adicione outras categorias conforme necessário */}
-                <SelectItem value="OTHER_EXPENSE">Outros</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover open={openCategory} onOpenChange={setOpenCategory}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className={cn(
+                    "w-[160px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
+                    !categoryFilter && "text-zinc-400"
+                  )}
+                >
+                  {categoryFilter ? getSortedCategories().find(cat => cat.name === categoryFilter)?.label : "Categoria"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar categoria..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="ALL"
+                        onSelect={() => {
+                          setCategoryFilter("ALL");
+                          setOpenCategory(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            categoryFilter === "ALL" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        Todas Categorias
+                      </CommandItem>
+                      {getSortedCategories().map((cat) => (
+                        <CommandItem
+                          key={cat.name}
+                          value={cat.name}
+                          onSelect={(value) => {
+                            setCategoryFilter(value === categoryFilter ? "ALL" : value);
+                            setOpenCategory(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              categoryFilter === cat.name ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {cat.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             <Select value={accountFilter} onValueChange={setAccountFilter}>
               <SelectTrigger className="w-[160px] h-10 rounded-xl border-zinc-200">
@@ -585,11 +688,9 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                    <Select value={editingCategory} onValueChange={setEditingCategory}>
                       <SelectTrigger className="bg-white border-zinc-200 h-11"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                         <SelectItem value="FOOD">Alimentação</SelectItem>
-                         <SelectItem value="HOUSING">Moradia</SelectItem>
-                         <SelectItem value="TRANSPORT">Transporte</SelectItem>
-                         {/* Add all options here similarly to main filter */}
-                         <SelectItem value="OTHER_EXPENSE">Outros</SelectItem>
+                         {getSortedCategories().map(cat => (
+                           <SelectItem key={cat.name} value={cat.name}>{cat.label}</SelectItem>
+                         ))}
                       </SelectContent>
                    </Select>
                 </div>
