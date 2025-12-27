@@ -68,6 +68,11 @@ import {
   Key,
   MapPin,
   Users,
+  Smartphone,
+  Glasses,
+  KeyRound,
+  Ticket,
+  Wifi
 } from 'lucide-react';
 import { toast } from "sonner";
 import { CategoryService, type Category } from "../../services/categoryService";
@@ -180,13 +185,13 @@ export function Categories() {
     'Coffee','Car','Home','Zap','Heart','ShoppingBag','Shirt','Gamepad2','GraduationCap','Briefcase',
     'DollarSign','TrendingUp','ArrowRightLeft','PiggyBank','Coins','Banknote','Wallet','Building2','Globe',
     'Repeat','Landmark','Receipt','PawPrint','Gift','Plane','MoreHorizontal',
-    'Shield','Percent','Key','MapPin','Users'
+    'Shield','Percent','Key','MapPin','Users', 'Smartphone', 'Glasses', 'KeyRound', 'Ticket', 'Wifi'
   ];
 
   const ICON_COMPONENTS: Record<string, any> = {
     Coffee,Car,Home,Zap,Heart,ShoppingBag,Shirt,Gamepad2,GraduationCap,Briefcase,
     DollarSign,TrendingUp,ArrowRightLeft,PiggyBank,Coins,Banknote,Wallet,Building2,Globe,
-    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal,Shield,Percent,Key,MapPin,Users
+    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal,Shield,Percent,Key,MapPin,Users,Smartphone, Glasses, KeyRound, Ticket, Wifi
   };
 
   return (

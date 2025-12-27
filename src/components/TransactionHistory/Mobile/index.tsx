@@ -34,6 +34,7 @@ import {
   Plane,
   Shield
 } from "lucide-react";
+import { Percent, Key, MapPin, Users } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { getTransactions, getAccounts, getCards } from "../../../services/api";
 import { transactionService } from "../../../services/transactions";
@@ -251,7 +252,7 @@ export function MobileTransactionHistory() {
   const ICON_COMPONENTS: Record<string, any> = {
     Coffee, Car, Home, Zap, Heart, ShoppingBag, Shirt, Gamepad2, GraduationCap, Briefcase,
     DollarSign, TrendingUp, ArrowRightLeft, PiggyBank, Coins, Banknote, Wallet, Building2, Globe,
-    Repeat, Landmark, Receipt, PawPrint, Gift, Plane, Shield
+    Repeat, Landmark, Receipt, PawPrint, Gift, Plane, Shield, Percent, Key, MapPin, Users
   };
 
   const renderCategoryIconForTransaction = (tx: Transaction) => {

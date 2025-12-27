@@ -44,7 +44,13 @@ import {
   Gift,
   Plane,
   Shield,
+  Smartphone,
+  Glasses,
+  KeyRound,
+  Ticket,
+  Wifi
 } from 'lucide-react';
+import { Percent, Key, MapPin, Users } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
@@ -238,7 +244,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
 const ICON_COMPONENTS: Record<string, any> = {
   Coffee, Car, Home, Zap, Heart, ShoppingBag, Shirt, Gamepad2, GraduationCap, Briefcase,
   DollarSign, TrendingUp, ArrowRightLeft, PiggyBank, Coins, Banknote, Wallet, Building2, Globe,
-  Repeat, Landmark, Receipt, PawPrint, Gift, Plane, MoreHorizontal, Shield
+  Repeat, Landmark, Receipt, PawPrint, Gift, Plane, MoreHorizontal, Shield, Percent, Key, MapPin, Users, Smartphone, Glasses, KeyRound, Ticket, Wifi
 };
 
 const renderCategoryIconForTransaction = (tx: Transaction) => {
