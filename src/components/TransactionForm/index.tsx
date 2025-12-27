@@ -17,10 +17,12 @@ import {
 } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../services/api';
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
 import { CategoryService, type Category } from '../../services/categoryService';
+import { TagService, type Tag } from '../../services/tagService';
 import { useUser } from '../../contexts/UserContext';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
@@ -42,7 +44,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag as TagIcon, AlignLeft, RefreshCw, Layers } from 'lucide-react';
+import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag as TagIcon, AlignLeft, RefreshCw, Layers, Plus, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const transactionSchema = z.object({
@@ -60,6 +62,7 @@ const transactionSchema = z.object({
   endDate: z.string().optional(),
   isPaid: z.boolean().optional(),
   paidDate: z.string().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -134,6 +137,8 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
   const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [userTags, setUserTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [useUserCategories, setUseUserCategories] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
@@ -146,16 +151,18 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accData, cardData, eqData, catData] = await Promise.all([
+        const [accData, cardData, eqData, catData, tagData] = await Promise.all([
           getAccounts(),
           getCards(),
           equityService.getAll(),
-          CategoryService.getCategories()
+          CategoryService.getCategories(),
+          TagService.getTags()
         ]);
         setAccounts(accData);
         setCards(cardData);
         setEquities(eqData);
         setUserCategories(catData);
+        setUserTags(tagData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados');
@@ -209,20 +216,16 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
       installments: initialData?.installments || undefined,
       isPaid: initialData?.isPaid ?? true,
       paidDate: initialData?.paidDate ? new Date(initialData.paidDate).toISOString().split('T')[0] : undefined,
+      tags: initialData?.tags?.map(tag => tag.id) || [],
     },
   });
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleSubmit(onSubmit)();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSubmit]);
+    if (initialData?.tags) {
+      const tagIds = initialData.tags.map(tag => tag.id);
+      setSelectedTags(tagIds);
+    }
+  }, [initialData]);
 
   const selectedCategory = watch('category');
 
@@ -249,6 +252,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
 
         reset();
         setIsRecurring(false);
+        setSelectedTags([]);
         const count = result.transactionsGenerated || 1;
         toast.success(`${count} transação${count > 1 ? 's' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`);
       } else {
@@ -266,6 +270,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
           installments: isInstallment ? data.installments : undefined,
           isPaid: isPaid,
           paidDate: isPaid ? (data.paidDate || data.date) : undefined,
+          tags: data.tags || [],
         };
 
         if (initialData) {
@@ -277,6 +282,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
         } else {
           await createTransaction(payload);
           reset();
+          setSelectedTags([]);
           toast.success('Movimentação registrada com sucesso!');
         }
       }
@@ -302,6 +308,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
             cardId: methodType === 'card' ? methodId : undefined,
             isPaid: isPaid,
             paidDate: isPaid ? (data.paidDate || data.date) : undefined,
+            tags: data.tags || [],
         };
         setPendingPayload(payload);
         setShowBalanceDialog(true);
@@ -573,6 +580,85 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                     <AlignLeft className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
                   </div>
                   {errors.description && <p className="text-xs text-red-500 ml-1">{errors.description.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-medium ml-1">Tags (Opcional)</Label>
+                  <Controller
+                    name="tags"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="flex flex-wrap gap-1 p-2 min-h-[44px] bg-zinc-50 border border-zinc-100 rounded-md focus-within:bg-white focus-within:border-zinc-300">
+                        {selectedTags.map((tagId) => {
+                          const tag = userTags.find(t => t.id === tagId);
+                          return tag ? (
+                            <Badge
+                              key={tagId}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                              style={{ backgroundColor: tag.color + '20', color: tag.color }}
+                            >
+                              {tag.name}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newTags = selectedTags.filter(id => id !== tagId);
+                                  setSelectedTags(newTags);
+                                  field.onChange(newTags);
+                                }}
+                                className="ml-1 hover:bg-black/10 rounded-full p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
+                          ) : null;
+                        })}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-zinc-400 hover:text-zinc-600"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Adicionar
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[200px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar tags..." />
+                              <CommandList>
+                                <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
+                                <CommandGroup>
+                                  {userTags
+                                    .filter(tag => !selectedTags.includes(tag.id))
+                                    .map((tag) => (
+                                      <CommandItem
+                                        key={tag.id}
+                                        onSelect={() => {
+                                          const newTags = [...selectedTags, tag.id];
+                                          setSelectedTags(newTags);
+                                          field.onChange(newTags);
+                                        }}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <div
+                                            className="w-3 h-3 rounded-full border border-gray-300"
+                                            style={{ backgroundColor: tag.color }}
+                                          />
+                                          {tag.name}
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  />
                 </div>
               </div>
             </div>

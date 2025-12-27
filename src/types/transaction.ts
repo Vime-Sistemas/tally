@@ -32,6 +32,8 @@ export const TransactionCategory = {
 
 export type TransactionCategory = typeof TransactionCategory[keyof typeof TransactionCategory];
 
+import type { Tag } from './params';
+
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -51,6 +53,7 @@ export interface Transaction {
   recurringTransactionId?: string; // Reference to recurring transaction
   isPaid: boolean;
   paidDate?: string;
+  tags?: Tag[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -72,6 +75,7 @@ export interface CreateTransactionDTO {
   totalInstallments?: number;
   isPaid?: boolean;
   paidDate?: string;
+  tags?: string[];
 }
 
 export interface UpdateTransactionDTO extends Partial<CreateTransactionDTO> {
