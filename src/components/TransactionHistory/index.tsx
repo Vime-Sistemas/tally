@@ -17,28 +17,14 @@ import {
   Coffee,
   Car,
   Heart,
-  Shield,
   GraduationCap,
   ShoppingBag,
-  Shirt,
   Gamepad2,
-  Repeat,
-  Landmark,
-  Receipt,
-  PawPrint,
-  Gift,
-  Plane,
   MoreHorizontal,
   Briefcase,
   DollarSign,
   TrendingUp,
   ArrowRightLeft,
-  PiggyBank,
-  Coins,
-  Banknote,
-  Wallet,
-  Building2,
-  Globe,
   X,
   Check,
   Download,
@@ -46,7 +32,6 @@ import {
   Tag as TagIcon
 } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
-import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { CategoryService, type Category } from "../../services/categoryService";
@@ -137,7 +122,7 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
 }
 
 function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
-  const { getRoles } = useUser();
+  // não precisamos de getRoles aqui — evitar aviso de variável não usada
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -200,7 +185,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
       }
     };
     loadData();
-  }, [getRoles]);
+  }, []);
 
   // --- Helpers ---
   const getSourceName = (transaction: Transaction): string => {
@@ -217,47 +202,30 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   };
 
   const getCategoryIcon = (categoryName: string) => {
-    const allCategories = getSortedCategories();
-    const category = allCategories.find(cat => cat.name === categoryName);
-    if (category) {
-      const iconProps = { className: "h-5 w-5" };
-      switch (category.icon) {
-        case 'Home': return <Home {...iconProps} />;
-        case 'Zap': return <Zap {...iconProps} />;
-        case 'Coffee': return <Coffee {...iconProps} />;
-        case 'Car': return <Car {...iconProps} />;
-        case 'Heart': return <Heart {...iconProps} />;
-        case 'Shield': return <Shield {...iconProps} />;
-        case 'GraduationCap': return <GraduationCap {...iconProps} />;
-        case 'ShoppingBag': return <ShoppingBag {...iconProps} />;
-        case 'Shirt': return <Shirt {...iconProps} />;
-        case 'Gamepad2': return <Gamepad2 {...iconProps} />;
-        case 'Repeat': return <Repeat {...iconProps} />;
-        case 'Landmark': return <Landmark {...iconProps} />;
-        case 'Receipt': return <Receipt {...iconProps} />;
-        case 'PawPrint': return <PawPrint {...iconProps} />;
-        case 'Gift': return <Gift {...iconProps} />;
-        case 'Plane': return <Plane {...iconProps} />;
-        case 'Briefcase': return <Briefcase {...iconProps} />;
-        case 'DollarSign': return <DollarSign {...iconProps} />;
-        case 'TrendingUp': return <TrendingUp {...iconProps} />;
-        case 'PiggyBank': return <PiggyBank {...iconProps} />;
-        case 'Coins': return <Coins {...iconProps} />;
-        case 'Banknote': return <Banknote {...iconProps} />;
-        case 'Wallet': return <Wallet {...iconProps} />;
-        case 'Building2': return <Building2 {...iconProps} />;
-        case 'Globe': return <Globe {...iconProps} />;
-        case 'ArrowRightLeft': return <ArrowRightLeft {...iconProps} />;
-        default: return <MoreHorizontal {...iconProps} />;
-      }
+    const iconProps = { className: 'h-5 w-5' };
+    switch (categoryName) {
+      case 'FOOD': return <Coffee {...iconProps} />;
+      case 'TRANSPORT': return <Car {...iconProps} />;
+      case 'HOUSING': return <Home {...iconProps} />;
+      case 'SHOPPING': return <ShoppingBag {...iconProps} />;
+      case 'UTILITIES': return <Zap {...iconProps} />;
+      case 'HEALTHCARE': return <Heart {...iconProps} />;
+      case 'ENTERTAINMENT': return <Gamepad2 {...iconProps} />;
+      case 'EDUCATION': return <GraduationCap {...iconProps} />;
+      case 'SALARY': return <DollarSign {...iconProps} />;
+      case 'FREELANCE': return <Briefcase {...iconProps} />;
+      case 'INVESTMENT': return <TrendingUp {...iconProps} />;
+      case 'TRANSFER': return <ArrowRightLeft {...iconProps} />;
+      default: return <MoreHorizontal {...iconProps} />;
     }
-    return <MoreHorizontal className="h-5 w-5" />;
   };
 
-  const getCategoryLabel = (categoryName: string) => {
+  const getCategoryLabel = (categoryKey: string) => {
     const allCategories = getSortedCategories();
-    const category = allCategories.find(cat => cat.name === categoryName);
-    return category ? category.label : categoryName;
+    // Try to find by canonical name first, then by id (user categories may be stored by id)
+    let category = allCategories.find(cat => cat.name === categoryKey);
+    if (!category) category = allCategories.find(cat => cat.id === categoryKey);
+    return category ? category.label : categoryKey;
   };
 
   const getSortedCategories = (): DisplayCategory[] => {
@@ -354,7 +322,17 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     const filtered = transactions.filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = typeFilter === "ALL" || t.type === typeFilter || (typeFilter === TransactionType.EXPENSE && t.type === 'INVOICE_PAYMENT');
-        const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(t.category);
+        // Normalize transaction category: transaction may store either the category name (e.g. 'FOOD')
+        // or the user category id (GUID). Try to map id -> name using merged categories.
+        const allCats = getSortedCategories();
+        const txCategoryName = (() => {
+          const byName = allCats.find(c => c.name === t.category);
+          if (byName) return byName.name;
+          const byId = allCats.find(c => c.id === t.category);
+          if (byId) return byId.name;
+          return t.category;
+        })();
+        const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(txCategoryName);
         const matchesTag = tagFilter.length === 0 || (t.tags && t.tags.some(tag => tagFilter.includes(tag.id)));
         const matchesAccount = accountFilter === "ALL" || (t.accountId === accountFilter) || (t.cardId === accountFilter);
         const transactionDate = startOfDay(parseUTCDate(t.date));

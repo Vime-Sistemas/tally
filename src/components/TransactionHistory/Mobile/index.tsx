@@ -227,10 +227,11 @@ export function MobileTransactionHistory() {
     return uniqueCategories.sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  const getCategoryLabel = (categoryName: string) => {
+  const getCategoryLabel = (categoryKey: string) => {
     const allCategories = getSortedCategories();
-    const category = allCategories.find(cat => cat.name === categoryName);
-    return category ? category.label : categoryName;
+    let category = allCategories.find(cat => cat.name === categoryKey);
+    if (!category) category = allCategories.find(cat => cat.id === categoryKey);
+    return category ? category.label : categoryKey;
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -271,7 +272,16 @@ export function MobileTransactionHistory() {
     return transactions.filter(transaction => {
       const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === "ALL" || transaction.type === typeFilter;
-      const matchesCategory = categoryFilter === "ALL" || transaction.category === categoryFilter;
+      // Normalize transaction category (handle case where stored value is category id)
+      const allCats = getSortedCategories();
+      const txCategoryName = (() => {
+        const byName = allCats.find(c => c.name === transaction.category);
+        if (byName) return byName.name;
+        const byId = allCats.find(c => c.id === transaction.category);
+        if (byId) return byId.name;
+        return transaction.category;
+      })();
+      const matchesCategory = categoryFilter === "ALL" || txCategoryName === categoryFilter;
       const matchesTag = tagFilter === "ALL" || (transaction.tags && transaction.tags.some(tag => tag.id === tagFilter));
       
       let matchesAccount = true;

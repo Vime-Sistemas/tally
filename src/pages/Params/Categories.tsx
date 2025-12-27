@@ -36,6 +36,34 @@ import {
 } from "../../components/ui/alert-dialog";
 import { Badge } from "../../components/ui/badge";
 import { Plus, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import {
+  Coffee,
+  Car,
+  Home,
+  Zap,
+  Heart,
+  ShoppingBag,
+  Shirt,
+  Gamepad2,
+  GraduationCap,
+  Briefcase,
+  DollarSign,
+  TrendingUp,
+  ArrowRightLeft,
+  PiggyBank,
+  Coins,
+  Banknote,
+  Wallet,
+  Building2,
+  Globe,
+  Repeat,
+  Landmark,
+  Receipt,
+  PawPrint,
+  Gift,
+  Plane,
+  MoreHorizontal,
+} from 'lucide-react';
 import { toast } from "sonner";
 import { CategoryService, type Category } from "../../services/categoryService";
 
@@ -61,6 +89,7 @@ export function Categories() {
     name: '',
     type: 'EXPENSE' as 'INCOME' | 'EXPENSE',
     color: '#3b82f6',
+    icon: '' as string | undefined,
   });
 
   useEffect(() => {
@@ -128,7 +157,7 @@ export function Categories() {
 
   const resetForm = () => {
     setEditingCategory(null);
-    setFormData({ name: '', type: 'EXPENSE', color: '#3b82f6' });
+    setFormData({ name: '', type: 'EXPENSE', color: '#3b82f6', icon: undefined });
   };
 
   const openEdit = (category: Category) => {
@@ -137,8 +166,21 @@ export function Categories() {
       name: category.name,
       type: category.type,
       color: category.color || '#3b82f6',
+      icon: category.icon || undefined,
     });
     setIsDialogOpen(true);
+  };
+
+  const ICON_OPTIONS = [
+    'Coffee','Car','Home','Zap','Heart','ShoppingBag','Shirt','Gamepad2','GraduationCap','Briefcase',
+    'DollarSign','TrendingUp','ArrowRightLeft','PiggyBank','Coins','Banknote','Wallet','Building2','Globe',
+    'Repeat','Landmark','Receipt','PawPrint','Gift','Plane','MoreHorizontal'
+  ];
+
+  const ICON_COMPONENTS: Record<string, any> = {
+    Coffee,Car,Home,Zap,Heart,ShoppingBag,Shirt,Gamepad2,GraduationCap,Briefcase,
+    DollarSign,TrendingUp,ArrowRightLeft,PiggyBank,Coins,Banknote,Wallet,Building2,Globe,
+    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal
   };
 
   return (
@@ -311,6 +353,33 @@ export function Categories() {
                     +
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ícone</Label>
+              <div className="grid grid-cols-6 gap-2">
+                <button
+                  type="button"
+                  className={`p-2 rounded-lg border ${!formData.icon ? 'ring-2 ring-offset-2 ring-black' : 'hover:border-zinc-300'}`}
+                  onClick={() => setFormData(prev => ({ ...prev, icon: undefined }))}
+                >
+                  -
+                </button>
+                {ICON_OPTIONS.map(name => {
+                  const Icon = ICON_COMPONENTS[name];
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, icon: name }))}
+                      className={`p-2 rounded-lg border flex items-center justify-center gap-2 ${formData.icon === name ? 'ring-2 ring-offset-2 ring-black' : 'hover:border-zinc-300'}`}
+                      title={name}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
