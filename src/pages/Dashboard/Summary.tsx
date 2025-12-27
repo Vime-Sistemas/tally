@@ -59,6 +59,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   'ENTERTAINMENT': 'Lazer',
   'EDUCATION': 'Educação',
   'SHOPPING': 'Compras',
+  'CLOTHING': 'Roupas',
+  'DEBT_PAYMENT': 'Dívidas',
   'FINANCIAL': 'Serviços Financeiros',
   'TRAVEL': 'Viagem',
   'OTHER_EXPENSE': 'Outros',
