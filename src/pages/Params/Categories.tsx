@@ -63,6 +63,11 @@ import {
   Gift,
   Plane,
   MoreHorizontal,
+  Shield,
+  Percent,
+  Key,
+  MapPin,
+  Users,
 } from 'lucide-react';
 import { toast } from "sonner";
 import { CategoryService, type Category } from "../../services/categoryService";
@@ -174,13 +179,14 @@ export function Categories() {
   const ICON_OPTIONS = [
     'Coffee','Car','Home','Zap','Heart','ShoppingBag','Shirt','Gamepad2','GraduationCap','Briefcase',
     'DollarSign','TrendingUp','ArrowRightLeft','PiggyBank','Coins','Banknote','Wallet','Building2','Globe',
-    'Repeat','Landmark','Receipt','PawPrint','Gift','Plane','MoreHorizontal'
+    'Repeat','Landmark','Receipt','PawPrint','Gift','Plane','MoreHorizontal',
+    'Shield','Percent','Key','MapPin','Users'
   ];
 
   const ICON_COMPONENTS: Record<string, any> = {
     Coffee,Car,Home,Zap,Heart,ShoppingBag,Shirt,Gamepad2,GraduationCap,Briefcase,
     DollarSign,TrendingUp,ArrowRightLeft,PiggyBank,Coins,Banknote,Wallet,Building2,Globe,
-    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal
+    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal,Shield,Percent,Key,MapPin,Users
   };
 
   return (
@@ -349,7 +355,11 @@ export function Categories() {
                     onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                   />
-                  <div className="w-6 h-6 rounded-full bg-conic-gradient border border-zinc-200 flex items-center justify-center text-[10px] bg-white">
+                  <div
+                    className="w-6 h-6 rounded-full border border-zinc-200 flex items-center justify-center text-[10px]"
+                    style={{ backgroundColor: formData.color }}
+                    aria-hidden
+                  >
                     +
                   </div>
                 </div>
