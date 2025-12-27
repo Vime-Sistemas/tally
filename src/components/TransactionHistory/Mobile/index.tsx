@@ -18,12 +18,14 @@ import {
   Filter,
   X,
   CreditCard as CreditCardIcon,
-  Tag
+  Tag as TagIcon
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { getTransactions, getAccounts, getCards } from "../../../services/api";
 import { transactionService } from "../../../services/transactions";
 import { CategoryService, type Category } from "../../../services/categoryService";
+import { TagService } from "../../../services/tagService";
+import type { Tag } from "../../../services/tagService";
 import { toast } from "sonner";
 import type { Transaction } from "../../../types/transaction";
 import type { Account, CreditCard } from "../../../types/account";
@@ -165,9 +167,11 @@ export function MobileTransactionHistory() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [tagFilter, setTagFilter] = useState<string>("ALL");
   const [accountFilter, setAccountFilter] = useState<string>("ALL");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
@@ -183,16 +187,18 @@ export function MobileTransactionHistory() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [transactionsData, accountsData, cardsData, userCategoriesData] = await Promise.all([
+        const [transactionsData, accountsData, cardsData, userCategoriesData, tagsData] = await Promise.all([
           getTransactions(),
           getAccounts(),
           getCards(),
           CategoryService.getCategories(),
+          TagService.getTags(),
         ]);
         setTransactions(transactionsData);
         setAccounts(accountsData);
         setCards(cardsData);
         setUserCategories(userCategoriesData);
+        setTags(tagsData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar transações');
@@ -266,6 +272,7 @@ export function MobileTransactionHistory() {
       const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === "ALL" || transaction.type === typeFilter;
       const matchesCategory = categoryFilter === "ALL" || transaction.category === categoryFilter;
+      const matchesTag = tagFilter === "ALL" || (transaction.tags && transaction.tags.some(tag => tag.id === tagFilter));
       
       let matchesAccount = true;
       if (accountFilter !== "ALL") {
@@ -291,9 +298,9 @@ export function MobileTransactionHistory() {
         }
       }
 
-      return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
+      return matchesSearch && matchesType && matchesCategory && matchesTag && matchesAccount && matchesDate;
     }).sort((a, b) => new Date(b.date.substring(0, 10) + 'T12:00:00').getTime() - new Date(a.date.substring(0, 10) + 'T12:00:00').getTime());
-  }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter, dateRange]);
+  }, [transactions, searchTerm, typeFilter, categoryFilter, tagFilter, accountFilter, dateRange]);
 
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
@@ -346,6 +353,7 @@ export function MobileTransactionHistory() {
                       onClick={() => {
                         setTypeFilter("ALL");
                         setCategoryFilter("ALL");
+                        setTagFilter("ALL");
                         setAccountFilter("ALL");
                         setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
                       }}
@@ -441,7 +449,7 @@ export function MobileTransactionHistory() {
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                           <SelectTrigger className="w-full border-none shadow-none h-12 text-base focus:ring-0">
                             <div className="flex items-center gap-3 text-gray-500">
-                              <Tag className="h-5 w-5" />
+                              <TagIcon className="h-5 w-5" />
                               <span className="text-gray-900">Categoria</span>
                             </div>
                             <SelectValue />
@@ -450,6 +458,24 @@ export function MobileTransactionHistory() {
                             <SelectItem value="ALL">Todas as categorias</SelectItem>
                             {getSortedCategories().map(cat => (
                               <SelectItem key={cat.name} value={cat.name}>{cat.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="p-1">
+                        <Select value={tagFilter} onValueChange={setTagFilter}>
+                          <SelectTrigger className="w-full border-none shadow-none h-12 text-base focus:ring-0">
+                            <div className="flex items-center gap-3 text-gray-500">
+                              <Filter className="h-5 w-5" />
+                              <span className="text-gray-900">Tag</span>
+                            </div>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ALL">Todas as tags</SelectItem>
+                            {tags.map(tag => (
+                              <SelectItem key={tag.id} value={tag.id}>{tag.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -472,7 +498,7 @@ export function MobileTransactionHistory() {
           </div>
 
         {/* Active Filters Chips */}
-        {(typeFilter !== "ALL" || categoryFilter !== "ALL" || accountFilter !== "ALL") && (
+        {(typeFilter !== "ALL" || categoryFilter !== "ALL" || tagFilter !== "ALL" || accountFilter !== "ALL") && (
           <div className="flex gap-2 overflow-x-auto pt-2 scrollbar-hide">
             {typeFilter !== "ALL" && (
               <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
@@ -484,6 +510,12 @@ export function MobileTransactionHistory() {
               <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
                 {getCategoryLabel(categoryFilter)}
                 <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setCategoryFilter("ALL")} />
+              </div>
+            )}
+            {tagFilter !== "ALL" && (
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+                {tags.find(t => t.id === tagFilter)?.name}
+                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setTagFilter("ALL")} />
               </div>
             )}
           </div>

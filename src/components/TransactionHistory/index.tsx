@@ -3,6 +3,7 @@ import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label"; // Importante para o Dialog
 import { TransactionType } from "../../types/transaction";
@@ -41,13 +42,15 @@ import {
   X,
   Check,
   Download,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Tag as TagIcon
 } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
 import { useUser } from "../../contexts/UserContext";
 import { cn } from "../../lib/utils";
 import { getTransactions, getAccounts, getCards, updateTransaction, deleteTransaction } from "../../services/api";
 import { CategoryService, type Category } from "../../services/categoryService";
+import { TagService, type Tag } from "../../services/tagService";
 import { toast } from "sonner";
 import type { Transaction } from "../../types/transaction";
 import type { Account, CreditCard } from "../../types/account";
@@ -140,17 +143,20 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [accountFilter, setAccountFilter] = useState<string>("ALL");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
   const [openCategory, setOpenCategory] = useState(false);
+  const [openTag, setOpenTag] = useState(false);
 
   // Editing State
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -174,16 +180,18 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [transactionsData, accountsData, cardsData, userCategoriesData] = await Promise.all([
+        const [transactionsData, accountsData, cardsData, userCategoriesData, tagsData] = await Promise.all([
           getTransactions(),
           getAccounts(),
           getCards(),
           CategoryService.getCategories(),
+          TagService.getTags(),
         ]);
         setTransactions(transactionsData);
         setAccounts(accountsData);
         setCards(cardsData);
         setUserCategories(userCategoriesData);
+        setTags(tagsData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar transações');
@@ -346,11 +354,12 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     const filtered = transactions.filter(t => {
         const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = typeFilter === "ALL" || t.type === typeFilter || (typeFilter === TransactionType.EXPENSE && t.type === 'INVOICE_PAYMENT');
-        const matchesCategory = categoryFilter === "ALL" || t.category === categoryFilter;
+        const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(t.category);
+        const matchesTag = tagFilter.length === 0 || (t.tags && t.tags.some(tag => tagFilter.includes(tag.id)));
         const matchesAccount = accountFilter === "ALL" || (t.accountId === accountFilter) || (t.cardId === accountFilter);
         const transactionDate = startOfDay(parseUTCDate(t.date));
         const matchesDate = (!dateRange?.from || transactionDate >= startOfDay(dateRange.from)) && (!dateRange?.to || transactionDate <= endOfDay(dateRange.to));
-        return matchesSearch && matchesType && matchesCategory && matchesAccount && matchesDate;
+        return matchesSearch && matchesType && matchesCategory && matchesTag && matchesAccount && matchesDate;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -377,7 +386,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     });
 
     return { groups, summary: stats };
-  }, [transactions, searchTerm, typeFilter, categoryFilter, accountFilter, dateRange]);
+  }, [transactions, searchTerm, typeFilter, categoryFilter, tagFilter, accountFilter, dateRange]);
 
   const handleExportPDF = () => {
     const filteredTransactions = Object.values(groupedTransactions).flat();
@@ -457,51 +466,122 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                   variant="outline"
                   role="combobox"
                   className={cn(
-                    "w-[160px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
-                    !categoryFilter && "text-zinc-400"
+                    "w-[200px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
+                    categoryFilter.length === 0 && "text-zinc-400"
                   )}
                 >
-                  {categoryFilter ? getSortedCategories().find(cat => cat.name === categoryFilter)?.label : "Categoria"}
+                  <div className="flex items-center gap-1 truncate">
+                    {categoryFilter.length === 0 ? (
+                      "Categorias"
+                    ) : categoryFilter.length === 1 ? (
+                      getSortedCategories().find(cat => cat.name === categoryFilter[0])?.label
+                    ) : (
+                      <span className="text-xs">{categoryFilter.length} selecionadas</span>
+                    )}
+                  </div>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="w-[250px] p-0">
                 <Command>
                   <CommandInput placeholder="Buscar categoria..." />
                   <CommandList>
                     <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
-                        value="ALL"
+                        value="CLEAR"
                         onSelect={() => {
-                          setCategoryFilter("ALL");
+                          setCategoryFilter([]);
                           setOpenCategory(false);
                         }}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            categoryFilter === "ALL" ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Todas Categorias
+                        <Check className="mr-2 h-4 w-4 opacity-0" />
+                        Limpar seleção
                       </CommandItem>
                       {getSortedCategories().map((cat) => (
                         <CommandItem
                           key={cat.name}
                           value={cat.name}
                           onSelect={(value) => {
-                            setCategoryFilter(value === categoryFilter ? "ALL" : value);
-                            setOpenCategory(false);
+                            setCategoryFilter(prev => 
+                              prev.includes(value) 
+                                ? prev.filter(c => c !== value)
+                                : [...prev, value]
+                            );
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              categoryFilter === cat.name ? "opacity-100" : "opacity-0"
+                              categoryFilter.includes(cat.name) ? "opacity-100" : "opacity-0"
                             )}
                           />
                           {cat.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            <Popover open={openTag} onOpenChange={setOpenTag}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className={cn(
+                    "w-[160px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
+                    tagFilter.length === 0 && "text-zinc-400"
+                  )}
+                >
+                  <div className="flex items-center gap-1 truncate">
+                    {tagFilter.length === 0 ? (
+                      "Tags"
+                    ) : tagFilter.length === 1 ? (
+                      tags.find(tag => tag.id === tagFilter[0])?.name
+                    ) : (
+                      <span className="text-xs">{tagFilter.length} selecionadas</span>
+                    )}
+                  </div>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar tag..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="CLEAR"
+                        onSelect={() => {
+                          setTagFilter([]);
+                          setOpenTag(false);
+                        }}
+                      >
+                        <Check className="mr-2 h-4 w-4 opacity-0" />
+                        Limpar seleção
+                      </CommandItem>
+                      {tags.map((tag) => (
+                        <CommandItem
+                          key={tag.id}
+                          value={tag.id}
+                          onSelect={(value) => {
+                            setTagFilter(prev => 
+                              prev.includes(value) 
+                                ? prev.filter(t => t !== value)
+                                : [...prev, value]
+                            );
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              tagFilter.includes(tag.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {tag.name}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -521,13 +601,44 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
               </SelectContent>
             </Select>
 
-            {(categoryFilter !== "ALL" || accountFilter !== "ALL" || searchTerm !== "") && (
-               <Button variant="ghost" size="icon" onClick={() => { setCategoryFilter("ALL"); setAccountFilter("ALL"); setSearchTerm(""); }} className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-xl" title="Limpar Filtros">
+            {(categoryFilter.length > 0 || tagFilter.length > 0 || accountFilter !== "ALL" || searchTerm !== "") && (
+               <Button variant="ghost" size="icon" onClick={() => { setCategoryFilter([]); setTagFilter([]); setAccountFilter("ALL"); setSearchTerm(""); }} className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-xl" title="Limpar Filtros">
                  <X className="h-4 w-4" />
                </Button>
             )}
           </div>
         </div>
+
+        {/* Active Filters */}
+        {(categoryFilter.length > 0 || tagFilter.length > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {categoryFilter.map(catName => {
+              const cat = getSortedCategories().find(c => c.name === catName);
+              return cat ? (
+                <Badge key={catName} variant="secondary" className="flex items-center gap-1">
+                  {cat.label}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                    onClick={() => setCategoryFilter(prev => prev.filter(c => c !== catName))}
+                  />
+                </Badge>
+              ) : null;
+            })}
+            {tagFilter.map(tagId => {
+              const tag = tags.find(t => t.id === tagId);
+              return tag ? (
+                <Badge key={tagId} variant="outline" className="flex items-center gap-1">
+                  <TagIcon className="h-3 w-3" />
+                  {tag.name}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                    onClick={() => setTagFilter(prev => prev.filter(t => t !== tagId))}
+                  />
+                </Badge>
+              ) : null;
+            })}
+          </div>
+        )}
 
         {/* Type Filter Tabs (Centered) */}
         <div className="flex justify-center">
