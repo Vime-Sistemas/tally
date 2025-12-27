@@ -15,6 +15,7 @@ import { accountService } from "../../services/accounts";
 import { CategoryService, type Category } from "../../services/categoryService";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
+import { useUser } from "../../contexts/UserContext";
 import { getCards, getBudgets, getBudgetComparison } from "../../services/api"; // Certifique-se que getBudgets/Comparison estão exportados aqui
 import { type Account, type CreditCard } from "../../types/account";
 import { type Transaction } from "../../types/transaction";
@@ -94,6 +95,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const [equities, setEquities] = useState<Equity[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const { costCenters } = useUser();
   
   // Novos estados para Orçamentos
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -220,6 +222,33 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
 
+  // 3.b Cost Center Expenses (Pie Chart Data)
+  const expensesByCostCenterMap = currentMonthTxs
+    .filter(t => t.type === 'EXPENSE')
+    .reduce((acc, t) => {
+      const rawId = t.costCenterId || 'NO_COST_CENTER';
+      const found = costCenters.find(c => c.id === rawId);
+      const label = found ? found.name : (rawId === 'NO_COST_CENTER' ? 'Sem Centro de Custo' : rawId);
+      acc[label] = (acc[label] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+  const rawCostCenters = Object.entries(expensesByCostCenterMap)
+    .map(([key, value], idx) => ({ name: key, label: key, value, fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length] }))
+    .sort((a, b) => b.value - a.value);
+
+  let expensesByCostCenterData = [] as typeof rawCostCenters;
+  if (rawCostCenters.length <= MAX_SLICES) {
+    expensesByCostCenterData = rawCostCenters;
+  } else {
+    const top = rawCostCenters.slice(0, MAX_SLICES);
+    const others = rawCostCenters.slice(MAX_SLICES);
+    const otherSum = others.reduce((s, it) => s + it.value, 0);
+    expensesByCostCenterData = [...top, { name: 'OTHER_COST_CENTER', label: 'Outros', value: otherSum, fill: '#f3f4f6' }];
+  }
+
+  const costCenterConfig = expensesByCostCenterData.reduce((acc, item) => { acc[item.name] = { label: item.label, color: item.fill }; return acc; }, {} as Record<string, { label: string; color: string }>);
+
 
   // 4. Charts Data (Cash Flow & Equity)
   const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
@@ -271,6 +300,8 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
         <h2 className="text-3xl font-bold tracking-tight text-zinc-900">Visão Geral</h2>
         <p className="text-zinc-500">Seu painel de controle financeiro.</p>
       </div>
+
+      
 
       {/* --- ONBOARDING SECTION --- */}
       {completedSteps < onboardingSteps.length && (
@@ -390,42 +421,46 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
           </CardContent>
         </Card>
 
-        {/* Despesas por Categoria (NOVO) */}
-        <Card className="col-span-3 rounded-3xl border-zinc-100 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
-              <PieChartIcon className="w-5 h-5 text-blue-400" />
-              Despesas por Categoria
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {expensesByCategoryData.length > 0 ? (
-              <ChartContainer config={categoryConfig} className="aspect-square h-[250px] mx-auto">
-                <PieChart>
-                  <Pie
-                    data={expensesByCategoryData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    cornerRadius={4}
-                  >
-                    {expensesByCategoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
-                </PieChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-zinc-400 text-sm">
-                Sem despesas este mês
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Despesas por Categoria (NOVO) + Centro de Custo */}
+        <div className="col-span-3 space-y-4">
+          <Card className="rounded-3xl border-zinc-100 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 text-blue-400" />
+                Despesas por Categoria
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {expensesByCategoryData.length > 0 ? (
+                <ChartContainer config={categoryConfig} className="aspect-square h-[250px] mx-auto">
+                  <PieChart>
+                    <Pie
+                      data={expensesByCategoryData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      cornerRadius={4}
+                    >
+                      {expensesByCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                    <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
+                  </PieChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-zinc-400 text-sm">
+                  Sem despesas este mês
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          
+        </div>
       </div>
 
       {/* --- ROW 2: Orçamentos (NOVO) --- */}
@@ -487,28 +522,64 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
         </div>
       )}
 
-      {/* --- ROW 3: Evolução Patrimonial --- */}
-      <Card className="rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-zinc-900">Evolução Patrimonial</CardTitle>
-        </CardHeader>
-        <CardContent className="pl-0">
-          <ChartContainer config={equityConfig} className="h-[250px] w-full">
-            <AreaChart data={equityEvolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="fillVal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f4f4f5" />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{fill: '#a1a1aa', fontSize: 12}} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-              <Area dataKey="value" type="monotone" fill="url(#fillVal)" stroke="#60a5fa" strokeWidth={3} />
-            </AreaChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      {/* --- ROW 3: Evolução Patrimonial & Centro de Custo --- */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4 rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-zinc-900">Evolução Patrimonial</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-0">
+            <ChartContainer config={equityConfig} className="h-[250px] w-full">
+              <AreaChart data={equityEvolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fillVal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f4f4f5" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{fill: '#a1a1aa', fontSize: 12}} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <Area dataKey="value" type="monotone" fill="url(#fillVal)" stroke="#60a5fa" strokeWidth={3} />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-3 rounded-3xl border-zinc-100 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
+              <PieChartIcon className="w-5 h-5 text-blue-400" />
+              Despesas por Centro de Custo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {expensesByCostCenterData.length > 0 ? (
+              <ChartContainer config={costCenterConfig} className="aspect-square h-[250px] mx-auto">
+                <PieChart>
+                  <Pie
+                    data={expensesByCostCenterData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    cornerRadius={4}
+                  >
+                    {expensesByCostCenterData.map((entry, index) => (
+                      <Cell key={`ccell-${index}`} fill={entry.fill} strokeWidth={0} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
+                </PieChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-zinc-400 text-sm">Sem despesas por centro de custo este mês</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       
     </div>
   );
