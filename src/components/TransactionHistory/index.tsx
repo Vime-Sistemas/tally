@@ -71,6 +71,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { useUser } from "../../contexts/UserContext";
 import type { Page } from "../../types/navigation";
 
 // Local interface for display categories (includes label property)
@@ -181,6 +182,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [editingPaidDate, setEditingPaidDate] = useState("");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { costCenters } = useUser();
 
   useEffect(() => {
     const loadData = async () => {
@@ -319,7 +321,7 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
         date: editingDate,
         currentInstallment: editingCurrentInstallment ?? undefined,
         totalInstallments: editingTotalInstallments ?? undefined,
-        costCenterId: editingCostCenterId || undefined,
+        costCenterId: (editingCostCenterId && editingCostCenterId !== '__NONE__') ? editingCostCenterId : undefined,
         accountId: methodType === 'account' ? methodId : undefined,
         cardId: methodType === 'card' ? methodId : undefined,
         isPaid: editingIsPaid,
@@ -786,7 +788,7 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
 
       {/* --- Edit Dialog (Redesigned) --- */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden bg-zinc-50">
+        <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden bg-white">
           <DialogHeader className="p-6 bg-white border-b border-zinc-100">
             <DialogTitle className="text-xl">Detalhes da Transação</DialogTitle>
             <DialogDescription>Edite ou remova este registro.</DialogDescription>
@@ -829,6 +831,28 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
                    <Label className="text-xs text-zinc-500 font-bold uppercase">Data</Label>
                    <Input type="date" value={editingDate} onChange={(e) => setEditingDate(e.target.value)} className="bg-white border-zinc-200 h-11" />
                 </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <Label className="text-xs text-zinc-500 font-bold uppercase">Centro de Custo</Label>
+                 <Select value={editingCostCenterId} onValueChange={setEditingCostCenterId}>
+                   <SelectTrigger className="bg-white border-zinc-200 h-11"><SelectValue placeholder="Sem centro de custo" /></SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="__NONE__">Sem Centro de Custo</SelectItem>
+                     {costCenters.map(cc => (
+                      <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div className="space-y-2">
+                 <Label className="text-xs text-zinc-500 font-bold uppercase">Parcelas</Label>
+                 <div className="flex gap-2">
+                   <Input type="number" value={editingCurrentInstallment ?? ''} onChange={(e) => setEditingCurrentInstallment(e.target.value ? parseInt(e.target.value) : null)} className="bg-white border-zinc-200 h-11" placeholder="Atual" />
+                   <Input type="number" value={editingTotalInstallments ?? ''} onChange={(e) => setEditingTotalInstallments(e.target.value ? parseInt(e.target.value) : null)} className="bg-white border-zinc-200 h-11" placeholder="Total" />
+                 </div>
+               </div>
              </div>
 
              <div className="grid grid-cols-2 gap-4">
