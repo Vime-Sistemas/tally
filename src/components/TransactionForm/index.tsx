@@ -46,6 +46,7 @@ import {
 } from '../ui/popover';
 import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag as TagIcon, AlignLeft, RefreshCw, Layers, Plus, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import DescriptionAutocomplete, { addStoredDescription } from '../DescriptionAutocomplete';
 
 const transactionSchema = z.object({
   type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
@@ -278,9 +279,11 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
             id: initialData.id,
             ...payload
           });
+          addStoredDescription(payload.description || '');
           toast.success('Transação atualizada com sucesso!');
         } else {
           await createTransaction(payload);
+          addStoredDescription(payload.description || '');
           reset();
           setSelectedTags([]);
           toast.success('Movimentação registrada com sucesso!');
@@ -331,7 +334,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
         ...pendingPayload,
         confirmNegativeBalance: true
       });
-
+      addStoredDescription(pendingPayload.description || '');
       reset();
       setShowBalanceDialog(false);
       setPendingPayload(null);
@@ -572,10 +575,22 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                 <div className="space-y-1.5">
                   <Label className="text-xs text-zinc-400 font-medium ml-1">Descrição</Label>
                   <div className="relative">
-                    <Input
-                      placeholder="Ex: Almoço de domingo"
-                      className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white"
-                      {...register('description')}
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field }) => (
+                        <DescriptionAutocomplete
+                          inputProps={{
+                            name: field.name,
+                            onChange: (e: any) => field.onChange(e.target.value),
+                            onBlur: field.onBlur,
+                            ref: field.ref,
+                            value: field.value,
+                          }}
+                          placeholder="Ex: Almoço de domingo"
+                          className="pl-9 h-11"
+                        />
+                      )}
                     />
                     <AlignLeft className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
                   </div>

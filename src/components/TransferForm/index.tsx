@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { getAccounts, createTransaction, confirmTransaction } from '../../services/api';
 import type { Account } from '../../types/account';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
+import DescriptionAutocomplete, { addStoredDescription } from '../../components/DescriptionAutocomplete';
 import { ArrowRight, ArrowDown, ArrowRightLeft, Calendar, AlignLeft, Wallet, Building2 } from 'lucide-react';
 import { useIsMobile } from '../../hooks/use-mobile';
 
@@ -109,6 +110,7 @@ export function TransferForm() {
         accountId: data.sourceAccount,
         destinationAccountId: data.destinationAccount,
       });
+      addStoredDescription(data.description || '');
       reset();
       toast.success('Transferência realizada com sucesso!');
     } catch (error: any) {
@@ -141,6 +143,7 @@ export function TransferForm() {
         confirmNegativeBalance: true
       });
       reset();
+      addStoredDescription(pendingData.description || '');
       setShowBalanceDialog(false);
       setPendingData(null);
       setBalanceInfo(null);
@@ -295,10 +298,22 @@ export function TransferForm() {
                <div className="space-y-1.5">
                   <Label className="text-xs text-zinc-400 font-medium ml-1">Descrição (Opcional)</Label>
                   <div className="relative">
-                    <Input
-                      placeholder="Ex: Reserva de emergência"
-                      className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white transition-all"
-                      {...register('description')}
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field }) => (
+                        <DescriptionAutocomplete
+                          inputProps={{
+                            name: field.name,
+                            onChange: (e: any) => field.onChange(e.target.value),
+                            onBlur: field.onBlur,
+                            ref: field.ref,
+                            value: field.value,
+                          }}
+                          placeholder="Ex: Reserva de emergência"
+                          className="pl-9 h-11"
+                        />
+                      )}
                     />
                     <AlignLeft className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
                   </div>

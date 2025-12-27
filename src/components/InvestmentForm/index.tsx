@@ -35,6 +35,7 @@ import {
 import { Check, ChevronsUpDown, PiggyBank, Calendar, AlignLeft, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useIsMobile } from '../../hooks/use-mobile';
+import DescriptionAutocomplete, { addStoredDescription } from '../DescriptionAutocomplete';
 
 const investmentSchema = z.object({
   amount: z.number().positive('O valor deve ser positivo'),
@@ -130,6 +131,7 @@ export function InvestmentForm() {
         date: data.date,
         accountId: data.sourceAccount,
       });
+      addStoredDescription(data.description || '');
       reset();
       toast.success('Aplicação registrada com sucesso!');
     } catch (error: any) {
@@ -161,6 +163,7 @@ export function InvestmentForm() {
         confirmNegativeBalance: true
       });
       reset();
+      addStoredDescription(pendingData.description || '');
       setShowBalanceDialog(false);
       setPendingData(null);
       setBalanceInfo(null);
@@ -316,10 +319,22 @@ export function InvestmentForm() {
                <div className="space-y-1.5">
                   <Label className="text-xs text-zinc-400 font-medium ml-1">Descrição (Opcional)</Label>
                   <div className="relative">
-                    <Input
-                      placeholder="Ex: Aporte mensal"
-                      className="pl-9 h-11 bg-zinc-50 border-zinc-100 focus:bg-white transition-all"
-                      {...register('description')}
+                    <Controller
+                      name="description"
+                      control={control}
+                      render={({ field }) => (
+                        <DescriptionAutocomplete
+                          inputProps={{
+                            name: field.name,
+                            onChange: (e: any) => field.onChange(e.target.value),
+                            onBlur: field.onBlur,
+                            ref: field.ref,
+                            value: field.value,
+                          }}
+                          placeholder="Ex: Aporte mensal"
+                          className="pl-9 h-11"
+                        />
+                      )}
                     />
                     <AlignLeft className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
                   </div>

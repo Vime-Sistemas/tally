@@ -20,6 +20,14 @@ const releases: ReleaseNote[] = [
   {
     version: '1.5.23',
     date: '26 de dezembro de 2025',
+    description: 'Auto-Complete',
+    features: ['Quer se sentir veloz? Experimente nossa nova funcionalidade de auto-complete'],
+    fixes: [],
+    improvements: [],
+  },
+  {
+    version: '1.5.23',
+    date: '26 de dezembro de 2025',
     description: 'Categorias e Tags',
     features: ['Cheirinho de liberdade... Agora você consegue gerenciar as suas próprias categorias e tags'],
     fixes: [],
