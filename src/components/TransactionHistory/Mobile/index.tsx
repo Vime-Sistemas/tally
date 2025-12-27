@@ -18,7 +18,21 @@ import {
   Filter,
   X,
   CreditCard as CreditCardIcon,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Shirt,
+  PiggyBank,
+  Coins,
+  Banknote,
+  Wallet,
+  Building2,
+  Globe,
+  Repeat,
+  Landmark,
+  Receipt,
+  PawPrint,
+  Gift,
+  Plane,
+  Shield
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { getTransactions, getAccounts, getCards } from "../../../services/api";
@@ -232,6 +246,25 @@ export function MobileTransactionHistory() {
     let category = allCategories.find(cat => cat.name === categoryKey);
     if (!category) category = allCategories.find(cat => cat.id === categoryKey);
     return category ? category.label : categoryKey;
+  };
+
+  const ICON_COMPONENTS: Record<string, any> = {
+    Coffee, Car, Home, Zap, Heart, ShoppingBag, Shirt, Gamepad2, GraduationCap, Briefcase,
+    DollarSign, TrendingUp, ArrowRightLeft, PiggyBank, Coins, Banknote, Wallet, Building2, Globe,
+    Repeat, Landmark, Receipt, PawPrint, Gift, Plane, Shield
+  };
+
+  const renderCategoryIconForTransaction = (tx: Transaction) => {
+    const allCats = getSortedCategories();
+    const byName = allCats.find(c => c.name === tx.category);
+    const byId = allCats.find(c => c.id === tx.category);
+    const cat = byName || byId;
+    if (cat && cat.icon && ICON_COMPONENTS[cat.icon]) {
+      const Icon = ICON_COMPONENTS[cat.icon];
+      return <Icon className="h-5 w-5" />;
+    }
+    // fallback to existing canonical mapping
+    return getCategoryIcon(cat ? cat.name : tx.category);
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -556,7 +589,7 @@ export function MobileTransactionHistory() {
                       onClick={() => handleTransactionClick(transaction)}
                     >
                       <div className={cn("p-2.5 rounded-xl", getCategoryColor(transaction.category))}>
-                        {getCategoryIcon(transaction.category)}
+                        {renderCategoryIconForTransaction(transaction)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">

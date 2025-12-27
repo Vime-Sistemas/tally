@@ -29,7 +29,21 @@ import {
   Check,
   Download,
   ChevronsUpDown,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Shirt,
+  PiggyBank,
+  Coins,
+  Banknote,
+  Wallet,
+  Building2,
+  Globe,
+  Repeat,
+  Landmark,
+  Receipt,
+  PawPrint,
+  Gift,
+  Plane,
+  Shield,
 } from 'lucide-react';
 import { exportTransactionsToPDF } from "../../tools/pdfExporter";
 import { cn } from "../../lib/utils";
@@ -219,6 +233,28 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
       default: return <MoreHorizontal {...iconProps} />;
     }
   };
+
+// Map of icon name -> lucide component (used when categories have an `icon` string)
+const ICON_COMPONENTS: Record<string, any> = {
+  Coffee, Car, Home, Zap, Heart, ShoppingBag, Shirt, Gamepad2, GraduationCap, Briefcase,
+  DollarSign, TrendingUp, ArrowRightLeft, PiggyBank, Coins, Banknote, Wallet, Building2, Globe,
+  Repeat, Landmark, Receipt, PawPrint, Gift, Plane, MoreHorizontal, Shield
+};
+
+const renderCategoryIconForTransaction = (tx: Transaction) => {
+  const allCats = getSortedCategories();
+  const byName = allCats.find(c => c.name === tx.category);
+  const byId = allCats.find(c => c.id === tx.category);
+  const cat = byName || byId;
+  const iconProps = { className: 'h-5 w-5' };
+  if (cat && cat.icon && ICON_COMPONENTS[cat.icon]) {
+    const Icon = ICON_COMPONENTS[cat.icon];
+    return <Icon {...iconProps} />;
+  }
+  // fallback to canonical mapping by name (handles global categories)
+  const nameToUse = cat ? cat.name : tx.category;
+  return getCategoryIcon(nameToUse);
+};
 
   const getCategoryLabel = (categoryKey: string) => {
     const allCategories = getSortedCategories();
@@ -690,7 +726,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
                         "h-12 w-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm",
                         transaction.type === TransactionType.INCOME ? "bg-blue-50 text-blue-500" : "bg-red-50 text-red-500"
                       )}>
-                        {getCategoryIcon(transaction.category)}
+                        {renderCategoryIconForTransaction(transaction)}
                       </div>
                       
                       <div className="space-y-1">
