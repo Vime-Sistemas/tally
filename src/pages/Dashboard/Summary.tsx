@@ -12,6 +12,7 @@ import {
   PieChart as PieChartIcon
 } from "lucide-react";
 import { accountService } from "../../services/accounts";
+import { CategoryService, type Category } from "../../services/categoryService";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
 import { getCards, getBudgets, getBudgetComparison } from "../../services/api"; // Certifique-se que getBudgets/Comparison estão exportados aqui
@@ -90,6 +91,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   // Novos estados para Orçamentos
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -116,6 +118,8 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
         setEquities(eqData);
         setCards(cardsData);
         setBudgets(budgetsData);
+        const cats = await CategoryService.getCategories();
+        setCategories(cats);
         
         // Carregar comparações de cada orçamento
         const comparisons: Record<string, BudgetComparison> = {};
@@ -170,19 +174,43 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const expensesByCategoryMap = currentMonthTxs
     .filter(t => t.type === 'EXPENSE')
     .reduce((acc, t) => {
-      const key = t.category || 'OTHER_EXPENSE';
-      acc[key] = (acc[key] || 0) + t.amount;
+      const raw = t.category || 'OTHER_EXPENSE';
+      let label: string;
+      if (!raw || raw === 'OTHER_EXPENSE') {
+        label = humanizeCategory('OTHER_EXPENSE');
+      } else if (CATEGORY_LABELS[raw]) {
+        label = humanizeCategory(raw);
+      } else {
+        const found = categories.find(c => c.id === raw || c.name === raw);
+        label = found ? (found.name || raw) : raw;
+      }
+      acc[label] = (acc[label] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
 
-  const expensesByCategoryData = Object.entries(expensesByCategoryMap)
-    .map(([key, value], idx) => ({ 
-      name: key, 
-      label: humanizeCategory(key),
+  // build data, then group small slices into "Outros" to avoid clutter
+  const rawExpenses = Object.entries(expensesByCategoryMap)
+    .map(([key, value], idx) => ({
+      name: key,
+      label: key,
       value,
-      fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length] 
+      fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length]
     }))
-    .sort((a, b) => b.value - a.value); // Order by highest expense
+    .sort((a, b) => b.value - a.value);
+
+  const MAX_SLICES = 8;
+  let expensesByCategoryData = [] as typeof rawExpenses;
+  if (rawExpenses.length <= MAX_SLICES) {
+    expensesByCategoryData = rawExpenses;
+  } else {
+    const top = rawExpenses.slice(0, MAX_SLICES);
+    const others = rawExpenses.slice(MAX_SLICES);
+    const otherSum = others.reduce((s, it) => s + it.value, 0);
+    expensesByCategoryData = [
+      ...top,
+      { name: 'OTHER_EXPENSE', label: 'Outros', value: otherSum, fill: '#e6e7ea' }
+    ];
+  }
 
   // Config dinâmica para o gráfico de categorias
   const categoryConfig = expensesByCategoryData.reduce((acc, item) => {
@@ -386,7 +414,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
                     ))}
                   </Pie>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4" />
+                  <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
                 </PieChart>
               </ChartContainer>
             ) : (

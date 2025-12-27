@@ -18,7 +18,7 @@ interface ReleasesProps {
 
 const releases: ReleaseNote[] = [
   {
-    version: '1.5.23',
+    version: '1.5.24',
     date: '26 de dezembro de 2025',
     description: 'Auto-Complete',
     features: ['Quer se sentir veloz? Experimente nossa nova funcionalidade de auto-complete'],
