@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useUser } from "@/contexts/UserContext";
 import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,10 +49,9 @@ interface Request {
 }
 
 export function PlannerClients() {
-  const { user } = useUser();
   const [clients, setClients] = useState<Client[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isInviting, setIsInviting] = useState(false);

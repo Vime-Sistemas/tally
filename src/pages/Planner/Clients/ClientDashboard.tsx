@@ -8,22 +8,35 @@ import {
   CardDescription 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
   TrendingUp, 
-  TrendingDown, 
+  TrendingDown,
   Wallet, 
   CreditCard, 
   Calendar,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  BarChart3
 } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 import {
   Table,
   TableBody,
@@ -44,11 +57,54 @@ interface ClientDashboardProps {
   onBack: () => void;
 }
 
+const globalCategories = [
+  { id: 'salary', name: 'SALARY', label: 'Salário', color: '#10b981' },
+  { id: 'freelance', name: 'FREELANCE', label: 'Freelance', color: '#10b981' },
+  { id: 'food', name: 'FOOD', label: 'Alimentação', color: '#ef4444' },
+  { id: 'transport', name: 'TRANSPORT', label: 'Transporte', color: '#3b82f6' },
+  { id: 'housing', name: 'HOUSING', label: 'Moradia', color: '#f59e0b' },
+  { id: 'utilities', name: 'UTILITIES', label: 'Contas', color: '#6366f1' },
+  { id: 'entertainment', name: 'ENTERTAINMENT', label: 'Lazer', color: '#8b5cf6' },
+  { id: 'shopping', name: 'SHOPPING', label: 'Compras', color: '#ec4899' },
+  { id: 'health', name: 'HEALTH', label: 'Saúde', color: '#ef4444' },
+  { id: 'education', name: 'EDUCATION', label: 'Educação', color: '#3b82f6' },
+  { id: 'other', name: 'OTHER', label: 'Outros', color: '#9ca3af' },
+];
+
+const getCategoryDetails = (transaction: any) => {
+  // 1. Try custom category (categoryModel)
+  if (transaction.categoryModel) {
+    return {
+      name: transaction.categoryModel.name,
+      color: transaction.categoryModel.color || '#9ca3af'
+    };
+  }
+  
+  // 2. Try global category code
+  if (transaction.category) {
+    const global = globalCategories.find(c => c.name === transaction.category);
+    if (global) {
+      return {
+        name: global.label,
+        color: global.color
+      };
+    }
+    // Fallback for unknown code
+    return {
+      name: transaction.category,
+      color: '#9ca3af'
+    };
+  }
+  
+  // 3. No category
+  return null;
+};
+
 export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,6 +141,45 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
   // Cash Flow Ratio (for progress bar)
   const cashFlowTotal = income + expense;
   const incomeRatio = cashFlowTotal > 0 ? (income / cashFlowTotal) * 100 : 0;
+  const netResult = income - expense;
+
+  // Chart Data
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return d;
+  }).reverse();
+
+  const chartData = last6Months.map(date => {
+    const monthTx = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate.getMonth() === date.getMonth() && tDate.getFullYear() === date.getFullYear();
+    });
+    
+    const inc = monthTx.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+    const exp = monthTx.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+    
+    return {
+      name: format(date, 'MMM', { locale: ptBR }).toUpperCase(),
+      receita: inc,
+      despesa: exp
+    };
+  });
+
+  const expensesByCategory = transactions
+    .filter(t => t.type === 'EXPENSE' && (t.category || t.categoryModel) && new Date(t.date) >= thirtyDaysAgo)
+    .reduce((acc, t) => {
+      const catDetails = getCategoryDetails(t);
+      if (!catDetails) return acc;
+      
+      const catName = catDetails.name;
+      if (!acc[catName]) acc[catName] = { name: catName, value: 0, color: catDetails.color };
+      acc[catName].value += t.amount;
+      return acc;
+    }, {} as Record<string, any>);
+    
+  const pieData = Object.values(expensesByCategory).sort((a: any, b: any) => b.value - a.value).slice(0, 5);
+  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
@@ -138,10 +233,14 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
           <CardContent>
             <div className="text-3xl font-bold text-zinc-900">{formatCurrency(totalBalance)}</div>
             <div className="flex items-center gap-2 mt-2 text-sm">
-               <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                 <TrendingUp className="w-3 h-3" /> +12%
+               <span className={cn(
+                 "px-2 py-0.5 rounded-full font-medium flex items-center gap-1",
+                 netResult >= 0 ? "text-emerald-600 bg-emerald-50" : "text-red-600 bg-red-50"
+               )}>
+                 {netResult >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} 
+                 {formatCurrency(Math.abs(netResult))}
                </span>
-               <span className="text-zinc-400">vs. mês anterior</span>
+               <span className="text-zinc-400">resultado (30d)</span>
             </div>
           </CardContent>
         </Card>
@@ -176,6 +275,87 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
                 <span>{incomeRatio.toFixed(0)}% Receita</span>
                 <span>{(100 - incomeRatio).toFixed(0)}% Despesa</span>
              </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-zinc-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-zinc-500" />
+              Evolução Financeira (6 Meses)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#71717a', fontSize: 12 }} 
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#71717a', fontSize: 12 }}
+                    tickFormatter={(value) => `R$${value/1000}k`}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: '#f4f4f5' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="receita" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="despesa" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-zinc-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-zinc-500" />
+              Despesas por Categoria (30d)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full flex items-center justify-center">
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend layout="vertical" verticalAlign="middle" align="right" />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center text-zinc-400">
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Sem dados de despesas recentes</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -295,17 +475,20 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
                         <span className="font-medium text-zinc-700">{t.description}</span>
                       </TableCell>
                       <TableCell>
-                        {t.category ? (
-                          <Badge variant="outline" className="text-zinc-500 border-zinc-200 bg-white font-normal">
-                             <span 
-                               className="w-1.5 h-1.5 rounded-full mr-1.5"
-                               style={{ backgroundColor: t.category.color || '#9ca3af' }}
-                             />
-                             {t.category.name}
-                          </Badge>
-                        ) : (
-                          <span className="text-zinc-400 text-xs">-</span>
-                        )}
+                        {(() => {
+                          const cat = getCategoryDetails(t);
+                          return cat ? (
+                            <Badge variant="outline" className="text-zinc-500 border-zinc-200 bg-white font-normal">
+                               <span 
+                                 className="w-1.5 h-1.5 rounded-full mr-1.5"
+                                 style={{ backgroundColor: cat.color }}
+                               />
+                               {cat.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-zinc-400 text-xs">-</span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className={cn(
