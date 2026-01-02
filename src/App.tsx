@@ -33,7 +33,9 @@ import './App.css'
 import { AppBreadcrumb } from './components/AppBreadCrumb/AppBreadcrumb'
 import { PlannerClients } from './pages/Planner/Clients'
 import { PlannerDashboard } from './pages/Planner/Dashboard'
+import { InviteLandingPage } from './pages/InviteLandingPage'
 import { PlannerInvitesDialog } from './components/PlannerInvitesDialog'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
@@ -70,6 +72,7 @@ function AppContent() {
           setIsTokenReady(true);
           
           const signupAccountType = localStorage.getItem('signup_account_type');
+          const inviteToken = localStorage.getItem('invite_token');
 
           const syncData: any = {
             email: auth0User.email,
@@ -79,11 +82,19 @@ function AppContent() {
           if (signupAccountType) {
             syncData.type = signupAccountType;
           }
+          
+          if (inviteToken) {
+            syncData.inviteToken = inviteToken;
+          }
 
           const response = await api.post('/auth/sync', syncData);
 
           if (signupAccountType) {
             localStorage.removeItem('signup_account_type');
+          }
+          
+          if (inviteToken) {
+            localStorage.removeItem('invite_token');
           }
           
           // Preserve any locally-stored menuPreference (server may not persist this yet)
@@ -377,7 +388,12 @@ function AppContent() {
 function App() {
   return (
     <UserProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
+          <Route path="*" element={<AppContent />} />
+        </Routes>
+      </BrowserRouter>
     </UserProvider>
   );
 }

@@ -6,8 +6,22 @@ import {
   TrendingUp, 
   Target,
   CreditCard,
-  Landmark
+  Landmark,
+  UserPlus,
+  Rocket,
+  Mail
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   PieChart,
   Pie,
@@ -75,6 +89,53 @@ export function PlannerDashboard() {
   const [cashFlow, setCashFlow] = useState<CashFlowData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Onboarding state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
+
+  const [inviteLink, setInviteLink] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+
+  const handleGenerateLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      const response = await api.post('/planner/invites/generate', {});
+      setInviteLink(response.data.link);
+      toast.success("Link gerado com sucesso!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao gerar link.");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(inviteLink);
+    toast.success("Link copiado!");
+  };
+
+  const handleInvite = async () => {
+    if (!inviteEmail) return;
+    setIsInviting(true);
+    try {
+      await api.post('/planner/invite', { email: inviteEmail });
+      toast.success("Convite enviado com sucesso!");
+      setInviteEmail("");
+      setIsInviteOpen(false);
+      
+      // Refresh stats
+      const statsRes = await api.get('/planner/dashboard/stats');
+      setStats(statsRes.data);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.error || "Erro ao enviar convite.");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -106,6 +167,136 @@ export function PlannerDashboard() {
     );
   }
 
+  if (stats && stats.totalClients === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 animate-in fade-in duration-500">
+        <div className="max-w-md w-full text-center space-y-8">
+          <div className="relative mx-auto w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center">
+            <Rocket className="h-12 w-12 text-emerald-600" />
+            <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-full shadow-sm border border-zinc-100">
+              <UserPlus className="h-5 w-5 text-emerald-600" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-zinc-900">Bem-vindo ao CDF Planner!</h1>
+            <p className="text-zinc-500">
+              Você deu o primeiro passo para transformar a gestão financeira dos seus clientes.
+              Para começar a ver dados aqui, convide seu primeiro cliente.
+            </p>
+          </div>
+
+          {stats.pendingRequests > 0 && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-center gap-3 text-left">
+              <Mail className="h-5 w-5 text-blue-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900">Convites pendentes</p>
+                <p className="text-xs text-blue-700">
+                  Você já enviou {stats.pendingRequests} convite{stats.pendingRequests > 1 ? 's' : ''}. 
+                  Assim que eles aceitarem, os dados aparecerão aqui.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+                <UserPlus className="h-5 w-5" />
+                Convidar Primeiro Cliente
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Convidar Cliente</DialogTitle>
+                <DialogDescription>
+                  Escolha como deseja convidar seu cliente.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                {/* Option 1: Email */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center">
+                      <Mail className="h-3 w-3 text-blue-600" />
+                    </div>
+                    <span className="text-sm font-medium">Enviar por Email</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="cliente@email.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                    />
+                    <Button onClick={handleInvite} disabled={isInviting || !inviteEmail} className="bg-blue-600 hover:bg-blue-700">
+                      {isInviting ? "..." : "Enviar"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-zinc-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-zinc-500">Ou</span>
+                  </div>
+                </div>
+
+                {/* Option 2: Link */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                      <Rocket className="h-3 w-3 text-emerald-600" />
+                    </div>
+                    <span className="text-sm font-medium">Link de Cadastro (Magic Link)</span>
+                  </div>
+                  
+                  {!inviteLink ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-dashed border-zinc-300 text-zinc-500 hover:text-zinc-900 hover:border-zinc-400"
+                      onClick={handleGenerateLink}
+                      disabled={isGeneratingLink}
+                    >
+                      {isGeneratingLink ? "Gerando..." : "Gerar Link Único"}
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input value={inviteLink} readOnly className="bg-zinc-50 font-mono text-xs" />
+                      <Button variant="outline" onClick={copyToClipboard}>Copiar</Button>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-zinc-400">
+                    O cliente será automaticamente vinculado à sua conta ao se cadastrar por este link.
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <div className="grid grid-cols-2 gap-4 pt-8">
+            <div className="p-4 rounded-lg border border-zinc-100 bg-zinc-50/50 text-left space-y-2">
+              <div className="h-8 w-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center">
+                <Target className="h-4 w-4 text-zinc-600" />
+              </div>
+              <p className="text-sm font-medium text-zinc-900">Defina Metas</p>
+              <p className="text-xs text-zinc-500">Acompanhe o progresso dos objetivos financeiros.</p>
+            </div>
+            <div className="p-4 rounded-lg border border-zinc-100 bg-zinc-50/50 text-left space-y-2">
+              <div className="h-8 w-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-zinc-600" />
+              </div>
+              <p className="text-sm font-medium text-zinc-900">Monitore Ativos</p>
+              <p className="text-xs text-zinc-500">Visualize a evolução patrimonial em tempo real.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div>
@@ -133,7 +324,7 @@ export function PlannerDashboard() {
         <Card className="border-zinc-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-zinc-500">Investimentos (AUM)</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-zinc-900">
@@ -148,7 +339,7 @@ export function PlannerDashboard() {
         <Card className="border-zinc-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-zinc-500">Passivo Total</CardTitle>
-            <CreditCard className="h-4 w-4 text-red-600" />
+            <CreditCard className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-zinc-900">
@@ -163,7 +354,7 @@ export function PlannerDashboard() {
         <Card className="border-zinc-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-zinc-500">Metas dos Clientes</CardTitle>
-            <Target className="h-4 w-4 text-amber-600" />
+            <Target className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-zinc-900">
