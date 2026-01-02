@@ -58,6 +58,7 @@ export function SignUp({ onNavigate }: LandingPageProps) {
 
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
+    localStorage.setItem('signup_account_type', accountType);
     await loginWithRedirect({
       authorizationParams: {
         screen_hint: 'signup',
@@ -69,6 +70,7 @@ export function SignUp({ onNavigate }: LandingPageProps) {
   };
 
   const handleSocialLogin = (connection: string) => {
+    localStorage.setItem('signup_account_type', accountType);
     loginWithRedirect({ authorizationParams: { connection, screen_hint: 'signup' } });
   };
 

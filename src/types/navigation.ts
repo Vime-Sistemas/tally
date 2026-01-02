@@ -15,6 +15,7 @@ export type Page =
   | 'login'
   | 'releases'
   | 'params-categories'
-  | 'params-tags';
+  | 'params-tags'
+  | 'planner-clients';
 
 export type AppContext = 'PERSONAL' | 'BUSINESS';

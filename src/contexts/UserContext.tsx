@@ -16,6 +16,7 @@ export interface User {
   occupation?: string;
   businessName?: string;
   businessCnpj?: string;
+  type?: 'PERSONAL' | 'PLANNER';
   menuPreference?: 'header' | 'sidebar';
   createdAt: string;
   updatedAt: string;
@@ -79,6 +80,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 occupation: parsed.occupation || undefined,
                 businessName: parsed.businessName || undefined,
                 businessCnpj: parsed.businessCnpj || undefined,
+                type: parsed.type || 'PERSONAL',
                 menuPreference: parsed.menuPreference || undefined,
                 createdAt: parsed.createdAt || new Date().toISOString(),
                 updatedAt: parsed.updatedAt || new Date().toISOString(),
@@ -92,6 +94,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                   name: possibleUser.name,
                   picture: possibleUser.picture,
                   coverImage: possibleUser.coverImage,
+                  type: possibleUser.type,
                   menuPreference: possibleUser.menuPreference,
                   createdAt: possibleUser.createdAt,
                   updatedAt: possibleUser.updatedAt,
@@ -127,6 +130,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           name: u.name,
           picture: u.picture,
           coverImage: u.coverImage,
+          type: u.type,
           menuPreference: u.menuPreference,
           createdAt: u.createdAt,
           updatedAt: u.updatedAt,

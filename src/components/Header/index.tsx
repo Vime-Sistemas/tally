@@ -22,7 +22,8 @@ import {
   Landmark,
   LayoutDashboard,
   ArrowRightLeft,
-  BanknoteX
+  BanknoteX,
+  Users
 } from "lucide-react";
 import {
   Select,
@@ -101,6 +102,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
 
   const userInitials = user?.name ? getInitials(user.name) : user?.email?.substring(0, 2).toUpperCase() || 'US';
   const displayName = user?.name || user?.email || 'Usuário';
+  const isPlanner = user?.type === 'PLANNER';
 
   return (
     <>
@@ -112,7 +114,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
             <a 
               className="flex items-center gap-2 group" 
               href="#" 
-              onClick={(e) => { e.preventDefault(); onNavigate('dashboard-summary'); }}
+              onClick={(e) => { e.preventDefault(); onNavigate(isPlanner ? 'planner-clients' : 'dashboard-summary'); }}
             >
               <div className="h-8 w-8 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                 <div className="font-bold text-blue-600 text-sm">C</div>
@@ -127,6 +129,20 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
           <NavigationMenu>
             <NavigationMenuList className="gap-1">
               
+              {isPlanner ? (
+                 <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <a
+                        className="group inline-flex h-9 w-max items-center justify-center rounded-lg bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 hover:text-zinc-900 focus:bg-zinc-50 focus:text-zinc-900 focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-zinc-50/50 data-[state=open]:bg-zinc-50/50 cursor-pointer text-zinc-600"
+                        onClick={(e) => { e.preventDefault(); onNavigate('planner-clients'); }}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Meus Clientes
+                      </a>
+                    </NavigationMenuLink>
+                 </NavigationMenuItem>
+              ) : (
+                <>
               {/* Visão Geral */}
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="bg-transparent text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 data-[state=open]:bg-zinc-50 rounded-lg h-9 px-4">
@@ -247,6 +263,8 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                    </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+              </>
+              )}
 
             </NavigationMenuList>
           </NavigationMenu>

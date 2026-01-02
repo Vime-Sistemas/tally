@@ -31,6 +31,8 @@ import { SessionExpiredDialog } from './components/SessionExpiredDialog'
 import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
 import { AppBreadcrumb } from './components/AppBreadCrumb/AppBreadcrumb'
+import { PlannerClients } from './pages/Planner/Clients'
+import { PlannerInvitesDialog } from './components/PlannerInvitesDialog'
 
 function AppContent() {
   const { isAuthenticated, isLoading, error, getAccessTokenSilently, user: auth0User } = useAuth0();
@@ -49,6 +51,7 @@ function AppContent() {
   const [currentContext, setCurrentContext] = useState<AppContext>('PERSONAL');
   const [isSyncing, setIsSyncing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isTokenReady, setIsTokenReady] = useState(false);
   const isMobile = useIsMobile();
   
 
@@ -63,11 +66,19 @@ function AppContent() {
             }
           });
           setAuthToken(token);
+          setIsTokenReady(true);
           
+          const signupAccountType = localStorage.getItem('signup_account_type');
+
           const response = await api.post('/auth/sync', {
             email: auth0User.email,
-            name: auth0User.name
+            name: auth0User.name,
+            type: signupAccountType || 'PERSONAL'
           });
+
+          if (signupAccountType) {
+            localStorage.removeItem('signup_account_type');
+          }
           
           // Preserve any locally-stored menuPreference (server may not persist this yet)
           let existingMenuPref: 'header' | 'sidebar' | undefined = undefined;
@@ -94,7 +105,25 @@ function AppContent() {
           console.error('Error syncing user:', err);
         } finally {
           setIsSyncing(false);
-          setCurrentPage('dashboard-summary');
+          if (auth0User && (auth0User as any)['https://tally.app/type'] === 'PLANNER') {
+             setCurrentPage('planner-clients');
+          } else {
+             // We can also check the local user state if available, but auth0User might not have the type yet if it's not in the token.
+             // However, we just synced and got the user from backend.
+             // Let's rely on the response from sync if possible, but here we are in finally block.
+             // Actually, we can check the user context or the response data if we lift the variable.
+             // But simpler: let's check the localStorage user which we just updated.
+             try {
+               const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+               if (localUser.type === 'PLANNER') {
+                 setCurrentPage('planner-clients');
+               } else {
+                 setCurrentPage('dashboard-summary');
+               }
+             } catch (e) {
+               setCurrentPage('dashboard-summary');
+             }
+          }
         }
       }
     };
@@ -232,6 +261,8 @@ function AppContent() {
         return <Categories />;
       case 'params-tags':
         return <Tags />;
+      case 'planner-clients':
+        return <PlannerClients />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }
@@ -323,6 +354,7 @@ function AppContent() {
       )}
       {/* main is already rendered above together with Header or Sidebar; no duplicate rendering */}
       <SessionExpiredDialog onRedirect={() => setCurrentPage('login')} />
+      {isTokenReady && <PlannerInvitesDialog />}
       <Toaster />
       <Analytics />
       <SpeedInsights />

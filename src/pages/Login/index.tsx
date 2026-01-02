@@ -108,6 +108,7 @@ export function Login({ onNavigate }: LoginProps) {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     saveLastAccount(data.email);
+    localStorage.setItem('signup_account_type', accountType);
     
     // Você pode passar o accountType como parâmetro extra se precisar direcionar no Auth0
     await loginWithRedirect({
@@ -122,6 +123,7 @@ export function Login({ onNavigate }: LoginProps) {
   const handleSocialLogin = (connection: string) => {
     saveLastData(connection, undefined);
     setLastSocial(connection);
+    localStorage.setItem('signup_account_type', accountType);
     loginWithRedirect({ 
       authorizationParams: {
         connection: connection,

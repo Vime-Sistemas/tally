@@ -1,6 +1,7 @@
-import { Home, PlusCircle, User, LayoutList, WalletCards } from "lucide-react";
+import { Home, PlusCircle, User, LayoutList, WalletCards, Users } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { Page } from "../../../types/navigation";
+import { useUser } from "../../../contexts/UserContext";
 
 interface MobileHeaderProps {
   onNavigate: (page: Page) => void;
@@ -8,6 +9,39 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
+  const { user } = useUser();
+  const isPlanner = user?.type === 'PLANNER';
+
+  if (isPlanner) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-200 pb-safe md:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="flex items-center justify-around h-16 px-2 pb-2 pt-1">
+          <button
+            onClick={() => onNavigate('planner-clients')}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full space-y-1",
+              currentPage === 'planner-clients' ? "text-emerald-600" : "text-gray-400"
+            )}
+          >
+            <Users className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Clientes</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('profile')}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full space-y-1",
+              currentPage === 'profile' ? "text-emerald-600" : "text-gray-400"
+            )}
+          >
+            <User className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Perfil</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-gray-200 pb-safe md:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
       <div className="flex items-center justify-around h-16 px-2 pb-2 pt-1">

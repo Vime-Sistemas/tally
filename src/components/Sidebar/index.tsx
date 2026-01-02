@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Boxes,
   CaseUpper,
-  ClipboardPen
+  ClipboardPen,
+  Users
 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -31,6 +32,7 @@ import {
 import type { Page } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useMemo } from "react";
 
 interface SidebarProps {
   onNavigate: (page: Page) => void;
@@ -39,78 +41,90 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-// Defined outside to prevent re-creation on render
-const menuItems = [
-  {
-    id: 'dashboard',
-    title: 'Dashboard',
-    icon: LayoutDashboard,
-    page: 'dashboard-summary' as Page,
-  },
-  {
-    id: 'transactions',
-    title: 'Transações',
-    icon: ArrowRightLeft,
-    page: 'transactions-new' as Page,
-    submenu: [
-      { title: 'Nova Transação', icon: PlusCircle, page: 'transactions-new' as Page },
-      { title: 'Histórico', icon: List, page: 'transactions-history' as Page },
-    ]
-  },
-  {
-    id: 'accounts',
-    title: 'Carteira',
-    icon: Wallet,
-    page: 'accounts-list' as Page,
-    submenu: [
-      { title: 'Nova Conta', icon: PlusCircle, page: 'accounts-new' as Page },
-      { title: 'Gerenciar', icon: List, page: 'accounts-list' as Page },
-    ]
-  },
-  {
-    id: 'budgets',
-    title: 'Orçamentos',
-    icon: PieChart,
-    page: 'budgets' as Page,
-  },
-  {
-    id: 'equity',
-    title: 'Patrimônio',
-    icon: Landmark,
-    page: 'equity-list' as Page,
-    submenu: [
-      { title: 'Novo Item', icon: PlusCircle, page: 'equity-new' as Page },
-      { title: 'Meus Bens', icon: List, page: 'equity-list' as Page },
-    ]
-  },
-  {
-    id: 'debts',
-    title: 'Dívidas',
-    icon: BanknoteX,
-    page: 'debts' as Page,
-  },
-  {
-    id: 'params',
-    title: 'Parâmetros',
-    icon: Boxes,
-    page: 'params' as Page,
-    submenu: [
-      { title: 'Categorias', icon: ClipboardPen, page: 'params-categories' as Page },
-      { title: 'Tags', icon: CaseUpper, page: 'params-tags' as Page },
-    ]
-  },
-  {
-    id: 'goals',
-    title: 'Metas',
-    icon: Target,
-    page: 'dashboard-goals' as Page,
-  },
-];
-
 export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { user, logout } = useUser();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  const menuItems = useMemo(() => {
+    if (user?.type === 'PLANNER') {
+      return [
+        {
+          id: 'clients',
+          title: 'Meus Clientes',
+          icon: Users,
+          page: 'planner-clients' as Page,
+        }
+      ];
+    }
+
+    return [
+      {
+        id: 'dashboard',
+        title: 'Dashboard',
+        icon: LayoutDashboard,
+        page: 'dashboard-summary' as Page,
+      },
+      {
+        id: 'transactions',
+        title: 'Transações',
+        icon: ArrowRightLeft,
+        page: 'transactions-new' as Page,
+        submenu: [
+          { title: 'Nova Transação', icon: PlusCircle, page: 'transactions-new' as Page },
+          { title: 'Histórico', icon: List, page: 'transactions-history' as Page },
+        ]
+      },
+      {
+        id: 'accounts',
+        title: 'Carteira',
+        icon: Wallet,
+        page: 'accounts-list' as Page,
+        submenu: [
+          { title: 'Nova Conta', icon: PlusCircle, page: 'accounts-new' as Page },
+          { title: 'Gerenciar', icon: List, page: 'accounts-list' as Page },
+        ]
+      },
+      {
+        id: 'budgets',
+        title: 'Orçamentos',
+        icon: PieChart,
+        page: 'budgets' as Page,
+      },
+      {
+        id: 'equity',
+        title: 'Patrimônio',
+        icon: Landmark,
+        page: 'equity-list' as Page,
+        submenu: [
+          { title: 'Novo Item', icon: PlusCircle, page: 'equity-new' as Page },
+          { title: 'Meus Bens', icon: List, page: 'equity-list' as Page },
+        ]
+      },
+      {
+        id: 'debts',
+        title: 'Dívidas',
+        icon: BanknoteX,
+        page: 'debts' as Page,
+      },
+      {
+        id: 'params',
+        title: 'Parâmetros',
+        icon: Boxes,
+        page: 'params' as Page,
+        submenu: [
+          { title: 'Categorias', icon: ClipboardPen, page: 'params-categories' as Page },
+          { title: 'Tags', icon: CaseUpper, page: 'params-tags' as Page },
+        ]
+      },
+      {
+        id: 'goals',
+        title: 'Metas',
+        icon: Target,
+        page: 'dashboard-goals' as Page,
+      },
+    ];
+  }, [user]);
 
   // Effect: Auto-expand the menu group if the current page is inside it
   useEffect(() => {
@@ -120,7 +134,7 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
     if (activeGroup && !expandedItems.includes(activeGroup.id)) {
       setExpandedItems(prev => [...prev, activeGroup.id]);
     }
-  }, [currentPage]); // Only runs when page changes
+  }, [currentPage, menuItems]); // Only runs when page changes
 
   const toggleExpanded = (id: string) => {
     // If collapsed, we generally don't want to expand the accordion as it breaks layout.
