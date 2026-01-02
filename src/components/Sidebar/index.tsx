@@ -50,6 +50,12 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
     if (user?.type === 'PLANNER') {
       return [
         {
+          id: 'dashboard',
+          title: 'Visão Geral',
+          icon: LayoutDashboard,
+          page: 'planner-dashboard' as Page,
+        },
+        {
           id: 'clients',
           title: 'Meus Clientes',
           icon: Users,

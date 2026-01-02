@@ -32,6 +32,7 @@ import { useIsMobile } from './hooks/use-mobile'
 import './App.css'
 import { AppBreadcrumb } from './components/AppBreadCrumb/AppBreadcrumb'
 import { PlannerClients } from './pages/Planner/Clients'
+import { PlannerDashboard } from './pages/Planner/Dashboard'
 import { PlannerInvitesDialog } from './components/PlannerInvitesDialog'
 
 function AppContent() {
@@ -268,6 +269,8 @@ function AppContent() {
         return <Tags />;
       case 'planner-clients':
         return <PlannerClients />;
+      case 'planner-dashboard':
+        return <PlannerDashboard />;
       default:
         return <Transactions onNavigate={setCurrentPage} />;
     }
