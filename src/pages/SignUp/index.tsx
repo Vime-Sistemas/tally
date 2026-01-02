@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,21 +6,27 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { 
   CreditCard, 
-  RefreshCw, 
   Target, 
   TrendingUp, 
-  PieChart, 
-  CheckCircle2, 
-  Facebook, 
-  Chrome, // Trocando Chromium por Chrome para o ícone padrão
+  LayoutDashboard,
+  Users,
+  FileText,
+  Chrome, 
+  Facebook,
+  ArrowRight,
+  Check,
   ShieldCheck,
-  ArrowRight
+  Briefcase,
+  User
 } from "lucide-react";
 import type { Page } from "@/types/navigation";
 
-// --- Zod Schema ---
+// --- Types & Schema ---
+type AccountType = 'PERSONAL' | 'PLANNER';
+
 const signUpSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
@@ -28,21 +34,28 @@ const signUpSchema = z.object({
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
+// --- Images (Unsplash IDs) ---
+// Adicionei parâmetros 'auto=format' e 'q=80' para otimizar o carregamento
+const IMG_PERSONAL = "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2000&auto=format&fit=crop";
+const IMG_PLANNER = "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=2000&auto=format&fit=crop";
+
 interface LandingPageProps {
   onNavigate: (page: Page) => void;
 }
 
 export function SignUp({ onNavigate }: LandingPageProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
+  const [animateHeader, setAnimateHeader] = useState(false);
   const { loginWithRedirect } = useAuth0();
 
-  // --- Form Setup ---
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: "", email: "" },
   });
 
-  // --- Handlers ---
+  useEffect(() => { setAnimateHeader(true) }, []);
+
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
     await loginWithRedirect({
@@ -50,226 +63,258 @@ export function SignUp({ onNavigate }: LandingPageProps) {
         screen_hint: 'signup',
         login_hint: data.email,
         connection: 'Username-Password-Authentication',
-        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR',
       }
     });
     setIsLoading(false);
   };
 
   const handleSocialLogin = (connection: string) => {
-    loginWithRedirect({ 
-      authorizationParams: {
-        connection: connection,
-        screen_hint: 'signup',
-        ui_locales: import.meta.env.VITE_AUTH0_LOCALE || 'pt-BR'
-      }
-    });
+    loginWithRedirect({ authorizationParams: { connection, screen_hint: 'signup' } });
   };
 
-  // --- Data: Features ---
-  const features = [
-    {
-      title: "Contas e Cartões",
-      description: "Controle de limites, faturas e avisos de saldo.",
-      icon: <CreditCard className="w-6 h-6 text-blue-400" />,
-      items: ["Múltiplas contas", "Gestão de Fatura", "Avisos inteligentes"]
+  // --- Dynamic Styling Configuration ---
+  const isPlanner = accountType === 'PLANNER';
+  
+  const theme = isPlanner ? {
+    primary: "bg-emerald-400 hover:bg-emerald-500",
+    text: "text-emerald-400",
+    lightBg: "bg-emerald-50",
+    border: "border-emerald-100",
+    ring: "focus-visible:ring-emerald-600",
+  } : {
+    primary: "bg-blue-400 hover:bg-blue-500",
+    text: "text-blue-400",
+    lightBg: "bg-blue-50",
+    border: "border-blue-100",
+    ring: "focus-visible:ring-blue-600",
+  };
+
+  const content = {
+    PERSONAL: {
+      pill: "Para Você e sua Família",
+      headlineStart: "O cérebro da sua",
+      headlineEnd: "independência financeira.",
+      description: "Chega de planilhas quebradas. Centralize contas, cartões e investimentos em uma plataforma inteligente que trabalha por você.",
+      features: [
+        { title: "Controle Total", desc: "Cartões e contas em um só lugar.", icon: CreditCard },
+        { title: "Metas Reais", desc: "Planejamento visual de sonhos.", icon: Target },
+        { title: "Investimentos", desc: "Acompanhamento de rentabilidade.", icon: TrendingUp },
+      ]
     },
-    {
-      title: "Transações",
-      description: "Recorrências, parcelamentos e categorização.",
-      icon: <RefreshCw className="w-6 h-6 text-blue-400" />,
-      items: ["Gastos recorrentes", "Parcelamentos", "Histórico completo"]
-    },
-    {
-      title: "Metas Financeiras",
-      description: "Defina objetivos e acompanhe o progresso real.",
-      icon: <Target className="w-6 h-6 text-blue-400" />,
-      items: ["Objetivos de viagem", "Reserva de emergência", "Visualização clara"]
-    },
-    {
-      title: "Investimentos",
-      description: "Monitore a evolução do seu patrimônio global.",
-      icon: <TrendingUp className="w-6 h-6 text-blue-400" />,
-      items: ["Cadastro de ativos", "Preço médio", "Curva de patrimônio"]
-    },
-    {
-      title: "Orçamento",
-      description: "Planeje seu mês e não gaste mais do que ganha.",
-      icon: <PieChart className="w-6 h-6 text-blue-400" />,
-      items: ["Previsto vs Realizado", "Visão mensal", "Alertas de desvio"]
+    PLANNER: {
+      pill: "Para Consultores & Planejadores",
+      headlineStart: "Potencialize sua",
+      headlineEnd: "consultoria financeira.",
+      description: "Centralize a gestão financeira dos seus clientes. Aumente sua produtividade, elimine o trabalho manual e entregue valor real com análises profissionais.",
+      features: [
+        { title: "Gestão de Clientes", desc: "Painel multiparceiros unificado.", icon: Users },
+        { title: "Visão Integrada", desc: "Todas as carteiras em um só lugar.", icon: LayoutDashboard },
+        { title: "Relatórios Auto", desc: "PDFs profissionais em 1 clique.", icon: FileText },
+      ]
     }
-  ];
+  };
+
+  const current = content[accountType];
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100">
+    // FIX 1: Removida a cor de fundo (bg-zinc-50) daqui para não cobrir a imagem
+    <div className="min-h-screen text-zinc-900 font-sans selection:bg-zinc-100 overflow-x-hidden relative flex flex-col">
       
+      {/* --- Background Images (FIXED POSITION) --- */}
+      {/* FIX 2: Usando 'fixed inset-0' e z-index negativo para garantir que fique no fundo mas visível */}
+      <div className="fixed inset-0 -z-50">
+        {/* Image for Personal */}
+        <div 
+          className={cn(
+            "absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out",
+            !isPlanner ? "opacity-100" : "opacity-0"
+          )}
+          style={{ backgroundImage: `url(${IMG_PERSONAL})` }}
+        />
+        {/* Image for Planner */}
+        <div 
+          className={cn(
+            "absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out",
+            isPlanner ? "opacity-100" : "opacity-0"
+          )}
+          style={{ backgroundImage: `url(${IMG_PLANNER})` }}
+        />
+        {/* Overlay branco suave para garantir leitura do texto */}
+        <div className="absolute inset-0 bg-white/90 backdrop-blur-[1px]" />
+      </div>
+
       {/* --- Navbar --- */}
-      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-zinc-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <nav className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center text-white font-bold">
-              C
+            <div className={"h-9 w-9"}>
+              <img src="icon.svg"></img>
             </div>
             <span className="text-xl font-bold tracking-tight text-zinc-900">CDF</span>
           </div>
-          <div>
-            <Button 
-              variant="ghost" 
-              onClick={() => onNavigate('login')}
-              className="text-zinc-600 hover:text-blue-400 hover:bg-blue-50 font-medium"
-            >
-              Já tenho conta
-            </Button>
+          <div className="flex items-center gap-4">
+             <span className="hidden sm:inline text-sm text-zinc-600 font-medium">Já tem conta?</span>
+             <Button variant="outline" onClick={() => onNavigate('login')} className="font-medium bg-white/50 hover:bg-white/80 border-zinc-200/50">
+               Entrar
+             </Button>
           </div>
         </div>
       </nav>
 
-      {/* --- Hero Section (Hybrid: Pitch + Form) --- */}
-      <section className="pt-28 pb-16 lg:pt-36 lg:pb-24 px-4 sm:px-6 relative overflow-hidden">
-        {/* Background blobs decorativos */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+      {/* --- Main Section --- */}
+      <main className="flex-1 pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full relative z-10">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-20 items-center">
           
-          {/* Left: Pitch */}
-          <div className="space-y-8 text-center lg:text-left z-10">
-            <div className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-600">
-              <span className="flex h-2 w-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
-              Novo: Integração completa de Orçamentos
+          {/* LEFT: Copy & Value Prop */}
+          <div className={`lg:col-span-7 space-y-8 transition-all duration-700 ${animateHeader ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            
+            {/* Pill Badge */}
+            <div className={cn("inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-300 bg-white/80 backdrop-blur-md shadow-sm", theme.text, theme.border)}>
+              <span className={cn("flex h-2 w-2 rounded-full mr-2 animate-pulse bg-current")} />
+              {current.pill}
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-zinc-900 leading-[1.15]">
-              O cérebro da sua <br />
-              <span className="text-blue-400">independência financeira.</span>
+            {/* Headline */}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-zinc-900 leading-[1.1] drop-shadow-sm">
+              {current.headlineStart} <br className="hidden lg:block"/>
+              <span className={cn("transition-colors duration-500 block mt-2", theme.text)}>
+                {current.headlineEnd}
+              </span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-              Deixe de anotar gastos em cadernos. Tenha contas, cartões, metas e investimentos centralizados em uma plataforma inteligente.
+            <p className="text-xl text-zinc-600 max-w-2xl leading-relaxed font-medium">
+              {current.description}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start text-sm text-zinc-500">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-blue-400" />
-                Dados criptografados
-              </div>
-              <div className="hidden sm:block w-1 h-1 bg-zinc-300 rounded-full" />
-              <div>Plataforma 100% Gratuita para começar</div>
-            </div>
-          </div>
-
-          {/* Right: Sign Up Card */}
-          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto bg-white rounded-2xl shadow-xl border border-zinc-100 p-6 sm:p-8 z-20 relative">
-            <div className="absolute -top-4 -right-4 bg-blue-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg transform rotate-12">
-              Comece Agora
-            </div>
-
-            <div className="mb-6 text-center lg:text-left">
-              <h2 className="text-2xl font-bold text-zinc-900">Crie sua conta</h2>
-              <p className="text-zinc-500 text-sm">Junte-se ao CDF e controle seu dinheiro.</p>
-            </div>
-
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <Button variant="outline" className="w-full" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
-                <Chrome className="mr-2 h-4 w-4 text-blue-400" /> Google
-              </Button>
-              <Button variant="outline" className="w-full" type="button" onClick={() => handleSocialLogin('facebook')}>
-                <Facebook className="mr-2 h-4 w-4 text-blue-400" /> Facebook
-              </Button>
-            </div>
-
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-400">Ou use seu e-mail</span></div>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input id="name" placeholder="Seu nome" {...form.register("name")} className="h-10 focus-visible:ring-blue-400" />
-                {form.formState.errors.name && <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="seu@email.com" {...form.register("email")} className="h-10 focus-visible:ring-blue-400" />
-                {form.formState.errors.email && <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>}
-              </div>
-
-              <Button type="submit" className="w-full h-11 bg-blue-400 hover:bg-blue-500 text-white font-semibold shadow-md hover:shadow-lg transition-all" disabled={isLoading}>
-                {isLoading ? "Criando..." : "Criar conta grátis"}
-                {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
-              </Button>
-            </form>
-            
-            <p className="mt-4 text-center text-xs text-zinc-400">
-              Ao criar conta, você concorda com nossos Termos de Uso.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* --- Features Grid Section --- */}
-      <section className="py-20 bg-zinc-50 border-t border-zinc-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 mb-4">
-              Funcionalidades que você desconhece (ainda)
-            </h2>
-            <p className="text-zinc-500 text-lg">
-              O CDF vai muito além do básico. Descubra ferramentas poderosas projetadas para quem quer enriquecer de verdade.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {features.map((feature, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 group">
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
+            {/* Feature Cards */}
+            <div className="grid sm:grid-cols-3 gap-4 pt-4">
+              {current.features.map((feature, idx) => (
+                <div key={idx} className="group flex flex-col gap-3 p-4 rounded-2xl bg-white/60 border border-white/50 shadow-sm hover:shadow-md transition-all backdrop-blur-md">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300", theme.lightBg, theme.text)}>
+                    <feature.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-zinc-900">{feature.title}</h4>
+                    <p className="text-sm text-zinc-600 leading-snug mt-1 font-medium">{feature.desc}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-2">{feature.title}</h3>
-                <p className="text-zinc-500 mb-4 text-sm leading-relaxed">
-                  {feature.description}
-                </p>
-                <ul className="space-y-2">
-                  {feature.items.map((item, i) => (
-                    <li key={i} className="flex items-center text-sm text-zinc-600 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 mr-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-zinc-600 font-medium pt-2">
+               <div className="flex items-center gap-2">
+                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                 Dados Criptografados
+               </div>
+               <div className="hidden sm:flex items-center gap-2">
+                 <Check className="w-4 h-4 text-emerald-600" />
+                 Setup Gratuito
+               </div>
+            </div>
+          </div>
+
+          {/* RIGHT: High-Converting Form */}
+          <div className="lg:col-span-5 w-full">
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-zinc-900/10 border border-white/60 p-8 overflow-hidden">
+              
+              {/* Toggle Switch */}
+              <div className="flex justify-center mb-8">
+                <div className="bg-zinc-100/80 p-1.5 rounded-full inline-flex w-full sm:w-auto relative border border-zinc-200/50">
+                  <div 
+                    className={cn(
+                      "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
+                      isPlanner ? "translate-x-[100%] left-1.5" : "left-1.5"
+                    )}
+                  />
+                  
+                  <button 
+                    type="button"
+                    onClick={() => setAccountType('PERSONAL')}
+                    className={cn(
+                      "relative z-10 flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-colors duration-300",
+                      !isPlanner ? "text-blue-500" : "text-zinc-500 hover:text-zinc-700"
+                    )}
+                  >
+                    <User className="w-4 h-4" /> Para mim
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setAccountType('PLANNER')}
+                    className={cn(
+                      "relative z-10 flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-colors duration-300",
+                      isPlanner ? "text-emerald-600" : "text-zinc-500 hover:text-zinc-700"
+                    )}
+                  >
+                    <Briefcase className="w-4 h-4" /> Sou Planejador
+                  </button>
+                </div>
               </div>
-            ))}
-            
-            {/* Last Card: Call to Action Style */}
-            <div className="bg-blue-400 p-6 rounded-2xl shadow-lg flex flex-col justify-center text-white relative overflow-hidden group">
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-              <h3 className="text-2xl font-bold mb-2 relative z-10">E muito mais...</h3>
-              <p className="text-blue-50 mb-6 relative z-10">
-                Relatórios mensais, categorização automática e suporte premium.
+
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-zinc-900">
+                  {isPlanner ? "Comece a escalar" : "Crie sua conta"}
+                </h3>
+                <p className="text-zinc-500 mt-2 text-sm font-medium">
+                  {isPlanner ? "Ferramenta profissional para consultores." : "Junte-se a 10.000+ membros inteligentes."}
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="h-11 w-full hover:bg-zinc-50 font-medium border-zinc-200/80 bg-white/50" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
+                    <Chrome className={cn("mr-2 h-4 w-4", theme.text)} /> Google
+                  </Button>
+                  <Button variant="outline" className="h-11 w-full hover:bg-zinc-50 font-medium border-zinc-200/80 bg-white/50" type="button" onClick={() => handleSocialLogin('facebook')}>
+                    <Facebook className={cn("mr-2 h-4 w-4", theme.text)} /> Facebook
+                  </Button>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200/80" /></div>
+                  <div className="relative flex justify-center text-xs uppercase font-medium tracking-wide"><span className="bg-white/80 px-3 text-zinc-400">ou e-mail</span></div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-xs font-semibold text-zinc-700 ml-1">NOME COMPLETO</Label>
+                    <Input id="name" placeholder="Como você quer ser chamado?" {...form.register("name")} className={cn("h-11 bg-white/50 border-zinc-200/80 transition-all", theme.ring)} />
+                    {form.formState.errors.name && <p className="text-xs text-red-500 mt-1 ml-1">{form.formState.errors.name.message}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-xs font-semibold text-zinc-700 ml-1">E-MAIL</Label>
+                    <Input id="email" type="email" placeholder="seu@email.com" {...form.register("email")} className={cn("h-11 bg-white/50 border-zinc-200/80 transition-all", theme.ring)} />
+                    {form.formState.errors.email && <p className="text-xs text-red-500 mt-1 ml-1">{form.formState.errors.email.message}</p>}
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className={cn("w-full h-12 text-white font-bold text-base shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 mt-2", theme.primary)} 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processando..." : (
+                    <span className="flex items-center">
+                      {isPlanner ? "Criar Conta Profissional" : "Criar Conta Grátis"} 
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+              
+              <p className="mt-6 text-center text-xs text-zinc-500 font-medium">
+                Ao clicar em criar, você concorda com nossos Termos de Uso.
               </p>
-              <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-blue-50 transition-colors relative z-10 shadow-sm"
-              >
-                Começar agora
-              </button>
             </div>
           </div>
         </div>
-      </section>
+      </main>
 
       {/* --- Footer --- */}
-      <footer className="py-8 bg-white border-t border-zinc-100 text-center">
-        <div className="flex items-center justify-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
-          <div className="w-6 h-6 bg-blue-400 rounded-md flex items-center justify-center text-white text-xs font-bold">C</div>
-          <span className="font-bold text-zinc-900">CDF</span>
-        </div>
-        <p className="text-zinc-400 text-sm">
-          © 2025 Cérebro das Finanças (CDF). Todos os direitos reservados.
+      <footer className="py-8 text-center border-t border-white/20 bg-white/40 backdrop-blur-md relative z-10">
+        <p className="text-zinc-500 text-sm font-medium">
+          © 2025 Cérebro das Finanças (CDF).
         </p>
       </footer>
     </div>
