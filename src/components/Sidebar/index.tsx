@@ -17,9 +17,11 @@ import {
   Boxes,
   CaseUpper,
   ClipboardPen,
-  Users
+  Users,
+  Building2
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,7 @@ interface SidebarProps {
 export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { user, logout } = useUser();
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [businessModeOpen, setBusinessModeOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const menuItems = useMemo(() => {
@@ -289,6 +292,49 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
 
       {/* --- Footer --- */}
       <div className="p-3 border-t border-zinc-100 space-y-1">
+        {/* Business Mode Switch */}
+        {!collapsed && (
+          <div className="px-1 py-2 mb-2">
+             <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-50 border border-zinc-100">
+                <div className="flex items-center gap-2">
+                   <Building2 className="h-4 w-4 text-zinc-500" />
+                   <span className="text-xs font-medium text-zinc-600">Modo Empresarial</span>
+                </div>
+                <Switch 
+                  checked={false} 
+                  onCheckedChange={() => setBusinessModeOpen(true)} 
+                  className="scale-75 data-[state=checked]:bg-blue-600"
+                />
+             </div>
+          </div>
+        )}
+
+        <AlertDialog open={businessModeOpen} onOpenChange={setBusinessModeOpen}>
+          <AlertDialogContent className="rounded-2xl border-zinc-100 shadow-2xl max-w-[400px]">
+            <AlertDialogHeader>
+              <div className="flex items-center gap-3 mb-2">
+                 <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                 </div>
+                 <AlertDialogTitle className="text-lg">Em breve!</AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className="text-zinc-500">
+                Estamos trabalhando duro para trazer o <strong>Modo Empresarial</strong> para você. 
+                <br/><br/>
+                Em breve você poderá gerenciar as finanças da sua empresa separadamente, com funcionalidades exclusivas como emissão de notas, gestão de fluxo de caixa e muito mais.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end mt-4">
+              <AlertDialogAction
+                onClick={() => setBusinessModeOpen(false)}
+                className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
+              >
+                Entendi
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Button
           variant="ghost"
           title="Configurações"
