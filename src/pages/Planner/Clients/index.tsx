@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle, Rocket } from "lucide-react";
+import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle, Rocket, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -48,9 +48,20 @@ interface Request {
   };
 }
 
+interface Invite {
+  id: string;
+  token: string;
+  email?: string;
+  usedAt?: string;
+  expiresAt: string;
+  createdAt: string;
+  link: string;
+}
+
 export function PlannerClients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [, setIsLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -64,12 +75,14 @@ export function PlannerClients() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [clientsRes, requestsRes] = await Promise.all([
+      const [clientsRes, requestsRes, invitesRes] = await Promise.all([
         api.get('/planner/clients'),
-        api.get('/planner/requests')
+        api.get('/planner/requests'),
+        api.get('/planner/invites')
       ]);
       setClients(clientsRes.data);
       setRequests(requestsRes.data);
+      setInvites(invitesRes.data);
     } catch (error) {
       console.error("Failed to fetch data", error);
       toast.error("Erro ao carregar dados.");
@@ -105,6 +118,7 @@ export function PlannerClients() {
       const response = await api.post('/planner/invites/generate', {});
       setInviteLink(response.data.link);
       toast.success("Link gerado com sucesso!");
+      fetchData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao gerar link.");
@@ -113,8 +127,8 @@ export function PlannerClients() {
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(inviteLink);
+  const copyToClipboard = (text: string = inviteLink) => {
+    navigator.clipboard.writeText(text);
     toast.success("Link copiado!");
   };
 
@@ -221,7 +235,7 @@ export function PlannerClients() {
                 ) : (
                   <div className="flex gap-2">
                     <Input value={inviteLink} readOnly className="bg-zinc-50 font-mono text-xs" />
-                    <Button variant="outline" onClick={copyToClipboard}>Copiar</Button>
+                    <Button variant="outline" onClick={() => copyToClipboard()}>Copiar</Button>
                   </div>
                 )}
                 <p className="text-[10px] text-zinc-400">
@@ -352,6 +366,71 @@ export function PlannerClients() {
                       </TableCell>
                     </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Invites List */}
+        {invites.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Links de Convite Gerados</CardTitle>
+              <CardDescription>Gerencie os links de acesso rápido criados.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Link</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invites.map((invite) => {
+                    const isExpired = new Date(invite.expiresAt) < new Date();
+                    const isUsed = !!invite.usedAt;
+                    
+                    return (
+                      <TableRow key={invite.id}>
+                        <TableCell className="font-mono text-xs text-zinc-500 max-w-[200px] truncate" title={invite.link}>
+                          {invite.link}
+                        </TableCell>
+                        <TableCell>
+                          {isUsed ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 flex w-fit items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Usado
+                            </Badge>
+                          ) : isExpired ? (
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex w-fit items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Expirado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 flex w-fit items-center gap-1">
+                              <Rocket className="w-3 h-3" /> Ativo
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-zinc-500 text-sm">
+                          {format(new Date(invite.createdAt), "d 'de' MMM, HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => copyToClipboard(invite.link)}
+                            disabled={isExpired || isUsed}
+                            title="Copiar Link"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

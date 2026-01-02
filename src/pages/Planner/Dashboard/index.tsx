@@ -250,7 +250,7 @@ export function PlannerDashboard() {
                     <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
                       <Rocket className="h-3 w-3 text-emerald-600" />
                     </div>
-                    <span className="text-sm font-medium">Link de Cadastro (Magic Link)</span>
+                    <span className="text-sm font-medium">Link de Cadastro</span>
                   </div>
                   
                   {!inviteLink ? (
