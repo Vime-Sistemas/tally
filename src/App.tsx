@@ -70,11 +70,16 @@ function AppContent() {
           
           const signupAccountType = localStorage.getItem('signup_account_type');
 
-          const response = await api.post('/auth/sync', {
+          const syncData: any = {
             email: auth0User.email,
-            name: auth0User.name,
-            type: signupAccountType || 'PERSONAL'
-          });
+            name: auth0User.name
+          };
+
+          if (signupAccountType) {
+            syncData.type = signupAccountType;
+          }
+
+          const response = await api.post('/auth/sync', syncData);
 
           if (signupAccountType) {
             localStorage.removeItem('signup_account_type');
