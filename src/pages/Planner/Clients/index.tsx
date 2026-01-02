@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ClientDashboard } from "./ClientDashboard";
+import { ClientTransactions } from "./ClientTransactions";
 
 interface Client {
   id: string;
@@ -56,6 +57,7 @@ export function PlannerClients() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [viewMode, setViewMode] = useState<'DASHBOARD' | 'TRANSACTIONS'>('DASHBOARD');
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -108,7 +110,21 @@ export function PlannerClients() {
   };
 
   if (selectedClient) {
-    return <ClientDashboard client={selectedClient} onBack={() => setSelectedClient(null)} />;
+    if (viewMode === 'TRANSACTIONS') {
+      return (
+        <ClientTransactions 
+          client={selectedClient} 
+          onBack={() => setViewMode('DASHBOARD')} 
+        />
+      );
+    }
+    return (
+      <ClientDashboard 
+        client={selectedClient} 
+        onBack={() => setSelectedClient(null)} 
+        onViewAllTransactions={() => setViewMode('TRANSACTIONS')}
+      />
+    );
   }
 
   return (
@@ -182,7 +198,10 @@ export function PlannerClients() {
                     <TableRow 
                       key={client.id} 
                       className="cursor-pointer hover:bg-zinc-50"
-                      onClick={() => setSelectedClient(client)}
+                      onClick={() => {
+                        setSelectedClient(client);
+                        setViewMode('DASHBOARD');
+                      }}
                     >
                       <TableCell className="flex items-center gap-3">
                         <Avatar>

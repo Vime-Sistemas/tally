@@ -99,8 +99,8 @@ export const updateUser = async (data: { name?: string; phone?: string; occupati
 
 // ACCOUNTS API
 
-export const getAccounts = async (): Promise<Account[]> => {
-  const response = await api.get('/accounts');
+export const getAccounts = async (userId?: string): Promise<Account[]> => {
+  const response = await api.get('/accounts', { params: { userId } });
   return response.data;
 };
 
@@ -120,8 +120,8 @@ export const deleteAccount = async (id: string): Promise<void> => {
 
 // CARDS API
 
-export const getCards = async (): Promise<CreditCard[]> => {
-  const response = await api.get('/cards');
+export const getCards = async (userId?: string): Promise<CreditCard[]> => {
+  const response = await api.get('/cards', { params: { userId } });
   return response.data;
 };
 
@@ -141,8 +141,8 @@ export const deleteCard = async (id: string): Promise<void> => {
 
 // TRANSACTIONS API
 
-export const getTransactions = async (): Promise<Transaction[]> => {
-  const response = await api.get('/transactions');
+export const getTransactions = async (userId?: string): Promise<Transaction[]> => {
+  const response = await api.get('/transactions', { params: { userId } });
   return response.data;
 };
 

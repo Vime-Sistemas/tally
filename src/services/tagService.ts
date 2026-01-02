@@ -10,8 +10,8 @@ export interface Tag {
 }
 
 export class TagService {
-  static async getTags(): Promise<Tag[]> {
-    const response = await api.get('/tags');
+  static async getTags(userId?: string): Promise<Tag[]> {
+    const response = await api.get('/tags', { params: { userId } });
     return response.data;
   }
 

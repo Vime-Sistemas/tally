@@ -12,8 +12,8 @@ export interface Category {
 }
 
 export class CategoryService {
-  static async getCategories(): Promise<Category[]> {
-    const response = await api.get('/categories');
+  static async getCategories(userId?: string): Promise<Category[]> {
+    const response = await api.get('/categories', { params: { userId } });
     return response.data;
   }
 

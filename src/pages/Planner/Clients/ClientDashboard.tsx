@@ -14,8 +14,7 @@ import {
   TrendingUp, 
   TrendingDown,
   Wallet, 
-  CreditCard, 
-  Calendar,
+  CreditCard,
   AlertCircle,
   ArrowRight,
   BarChart3
@@ -55,6 +54,7 @@ interface ClientDashboardProps {
     picture?: string;
   };
   onBack: () => void;
+  onViewAllTransactions: () => void;
 }
 
 const globalCategories = [
@@ -71,7 +71,13 @@ const globalCategories = [
   { id: 'other', name: 'OTHER', label: 'Outros', color: '#9ca3af' },
 ];
 
-export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
+// Helper to parse UTC date string as local date (ignoring time)
+const parseUTCDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+};
+
+export function ClientDashboard({ client, onBack, onViewAllTransactions }: ClientDashboardProps) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
@@ -147,7 +153,7 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
   
-  const recentTransactions = transactions.filter(t => new Date(t.date) >= thirtyDaysAgo);
+  const recentTransactions = transactions.filter(t => parseUTCDate(t.date) >= thirtyDaysAgo);
   const income = recentTransactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
   const expense = recentTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
   
@@ -165,7 +171,7 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
 
   const chartData = last6Months.map(date => {
     const monthTx = transactions.filter(t => {
-      const tDate = new Date(t.date);
+      const tDate = parseUTCDate(t.date);
       return tDate.getMonth() === date.getMonth() && tDate.getFullYear() === date.getFullYear();
     });
     
@@ -180,7 +186,7 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
   });
 
   const expensesByCategory = transactions
-    .filter(t => t.type === 'EXPENSE' && (t.category || t.categoryModel) && new Date(t.date) >= thirtyDaysAgo)
+    .filter(t => t.type === 'EXPENSE' && (t.category || t.categoryModel) && parseUTCDate(t.date) >= thirtyDaysAgo)
     .reduce((acc, t) => {
       const catDetails = getCategoryDetails(t);
       if (!catDetails) return acc;
@@ -221,16 +227,6 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
             </div>
           </div>
         </div>
-        
-        <div className="flex gap-2">
-           <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
-             <Calendar className="w-4 h-4 mr-2" />
-             Agendar Reunião
-           </Button>
-           <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200">
-             Gerar Relatório
-           </Button>
-        </div>
       </div>
 
       {/* KPI Grid */}
@@ -241,7 +237,7 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
              <Wallet className="w-24 h-24 text-emerald-600" />
           </div>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Patrimônio Líquido (Contas)</CardTitle>
+            <CardTitle className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Saldo Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-zinc-900">{formatCurrency(totalBalance)}</div>
@@ -464,7 +460,12 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
                 <CardTitle className="text-lg font-bold text-zinc-900">Extrato Recente</CardTitle>
                 <CardDescription>Últimas movimentações financeiras do cliente.</CardDescription>
               </div>
-              <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                onClick={onViewAllTransactions}
+              >
                 Ver completo <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </CardHeader>
@@ -482,7 +483,7 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
                   {transactions.slice(0, 8).map((t) => (
                     <TableRow key={t.id} className="group hover:bg-zinc-50 border-zinc-50">
                       <TableCell className="text-zinc-500 font-medium text-xs">
-                        {format(new Date(t.date), "dd MMM yyyy", { locale: ptBR })}
+                        {format(parseUTCDate(t.date), "dd MMM yyyy", { locale: ptBR })}
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-zinc-700">{t.description}</span>
