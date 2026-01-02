@@ -42,10 +42,20 @@ export function Transactions({ onNavigate }: TransactionsProps) {
     <button
       onClick={() => setActiveTab(id)}
       className={cn(
-        "relative flex-1 py-2 px-3 text-sm font-medium rounded-full transition-all duration-200 ease-out flex items-center justify-center gap-2",
-        activeTab === id
-          ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200"
-          : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
+        "relative flex items-center justify-center gap-2 text-sm font-medium transition-all duration-200 ease-out",
+        isMobile 
+          ? cn(
+              "flex-none px-5 py-2.5 rounded-full border",
+              activeTab === id
+                ? "bg-blue-400 text-white border-blue-400 shadow-sm"
+                : "bg-white text-zinc-600 border-zinc-200"
+            )
+          : cn(
+              "flex-1 py-2 px-3 rounded-full",
+              activeTab === id
+                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200"
+                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50"
+            )
       )}
     >
       <Icon className="w-4 h-4" />
@@ -83,7 +93,11 @@ export function Transactions({ onNavigate }: TransactionsProps) {
         )}
 
         {/* Abas (Segmented Control) */}
-        <div className="bg-zinc-100/80 p-1.5 rounded-full flex gap-1 shadow-inner">
+        <div className={cn(
+          isMobile 
+            ? "flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide" 
+            : "bg-zinc-100/80 p-1.5 rounded-full flex gap-1 shadow-inner"
+        )}>
           <TabButton id="TRANSACTION" label="Transação" icon={TrendingUp} shortcut="1" />
           <TabButton id="TRANSFER" label="Transferência" icon={ArrowRightLeft} shortcut="2" />
           <TabButton id="INVESTMENT" label="Aplicação" icon={PiggyBank} shortcut="3" />

@@ -5,10 +5,10 @@ import { z } from 'zod';
 import { Button } from '../../ui/button';
 import { Switch } from '../../ui/switch';
 import { MobileInput, MobileDateInput } from '../../ui/mobile-input';
-import { CurrencyInput } from '../../ui/currency-input';
 import { MobilePicker, MobilePickerTrigger, type PickerOption } from '../../ui/mobile-picker';
 import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../../services/api';
 import { equityService } from '../../../services/equities';
+import { CategoryService, type Category } from '../../../services/categoryService';
 import { TransactionType, type TransactionCategory } from '../../../types/transaction';
 import { toast } from 'sonner';
 import type { Account, CreditCard } from '../../../types/account';
@@ -16,6 +16,7 @@ import type { Equity } from '../../../types/equity';
 import { InsufficientBalanceDialog } from '../../InsufficientBalanceDialog';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { formatCurrencyValue } from '../../../utils/formatters';
 
 const transactionSchema = z.object({
   type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
@@ -68,6 +69,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
+  const [userCategories, setUserCategories] = useState<Category[]>([]);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
@@ -82,14 +84,16 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accData, cardData, eqData] = await Promise.all([
+        const [accData, cardData, eqData, catData] = await Promise.all([
           getAccounts(),
           getCards(),
-          equityService.getAll()
+          equityService.getAll(),
+          CategoryService.getCategories()
         ]);
         setAccounts(accData);
         setCards(cardData);
         setEquities(eqData);
+        setUserCategories(catData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados');
@@ -130,11 +134,26 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
 
   // Build category options
   const categoryOptions: PickerOption[] = useMemo(() => {
-    const labels = selectedType === TransactionType.INCOME 
+    const defaultLabels = selectedType === TransactionType.INCOME 
       ? incomeCategoriesLabels 
       : expenseCategoriesLabels;
-    return Object.entries(labels).map(([value, label]) => ({ value, label }));
-  }, [selectedType]);
+    
+    const defaultOptions = Object.entries(defaultLabels).map(([value, label]) => ({ 
+      value, 
+      label,
+      group: 'Padrão'
+    }));
+
+    const userOptions = userCategories
+      .filter(c => c.type === selectedType)
+      .map(c => ({
+        value: c.name,
+        label: c.name,
+        group: 'Minhas Categorias'
+      }));
+
+    return [...defaultOptions, ...userOptions];
+  }, [selectedType, userCategories]);
 
   // Build payment method options
   const paymentMethodOptions: PickerOption[] = useMemo(() => {
@@ -297,10 +316,17 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
     }
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: number) => void) => {
+    const val = e.target.value;
+    const numbersOnly = val.replace(/\D/g, '');
+    const numValue = parseInt(numbersOnly, 10) || 0;
+    onChange(numValue / 100);
+  };
+
   return (
-    <div className="pb-24 bg-white min-h-full -mx-4 -mt-4 px-4 pt-4">
+    <div className="pb-24 bg-zinc-50 min-h-full -mx-4 -mt-4 px-4 pt-4">
       {/* Type Selector - Segmented Control */}
-      <div className="bg-gray-200/80 p-1 rounded-xl flex mb-6">
+      <div className="bg-zinc-100 p-1 rounded-xl flex mb-6">
         <button
           type="button"
           onClick={() => {
@@ -311,8 +337,8 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           className={cn(
             "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             selectedType === TransactionType.EXPENSE
-              ? "bg-blue-400 text-white shadow-sm"
-              : "text-gray-500"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-500 hover:text-zinc-900"
           )}
         >
           Despesa
@@ -327,8 +353,8 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           className={cn(
             "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             selectedType === TransactionType.INCOME
-              ? "bg-blue-400 text-white shadow-sm"
-              : "text-gray-500"
+              ? "bg-white text-blue-500 shadow-sm"
+              : "text-zinc-500 hover:text-zinc-900"
           )}
         >
           Receita
@@ -337,25 +363,32 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Amount Section */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <Controller
-            name="amount"
-            control={control}
-            render={({ field }) => (
-              <CurrencyInput
-                label="Valor"
-                value={field.value}
-                onValueChange={field.onChange}
-                placeholder="0,00"
-                error={errors.amount?.message}
-                enterKeyHint="done"
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-zinc-100 flex flex-col items-center justify-center gap-4">
+          <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Valor</span>
+          <div className="flex items-baseline justify-center gap-1 w-full">
+             <span className="text-3xl font-medium text-zinc-300">R$</span>
+             <Controller
+                name="amount"
+                control={control}
+                render={({ field }) => (
+                  <input 
+                    type="text"
+                    inputMode="numeric"
+                    className={cn(
+                      "text-3xl font-bold bg-transparent border-none focus:ring-0 p-0 text-center w-full max-w-[300px] placeholder:text-zinc-200 outline-none",
+                      selectedType === TransactionType.INCOME ? "text-blue-500" : "text-zinc-900"
+                    )}
+                    placeholder="0,00"
+                    value={field.value ? formatCurrencyValue(field.value) : ''}
+                    onChange={(e) => handleAmountChange(e, field.onChange)}
+                  />
+                )}
               />
-            )}
-          />
+          </div>
         </div>
 
         {/* Details Section */}
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 divide-y divide-zinc-50">
           {/* Description */}
           <div className="p-4">
             <MobileInput
@@ -421,11 +454,11 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
         </div>
 
         {/* Recurring Section */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
           <div className="flex items-center justify-between p-4">
             <div className="space-y-0.5">
-              <span className="text-base font-medium text-gray-900">Recorrente?</span>
-              <p className="text-xs text-gray-500">
+              <span className="text-base font-medium text-zinc-900">Recorrente?</span>
+              <p className="text-xs text-zinc-500">
                 Habilite para transações recorrentes
               </p>
             </div>
@@ -437,7 +470,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
           </div>
 
           {isRecurring && (
-            <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="px-4 pb-4 border-t border-zinc-50 pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
               <MobilePickerTrigger
                 label="Frequência"
                 value={watchedFrequency}
@@ -465,11 +498,11 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
 
         {/* Installments Section (only for expenses) */}
         {selectedType === TransactionType.EXPENSE && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
             <div className="flex items-center justify-between p-4">
               <div className="space-y-0.5">
-                <span className="text-base font-medium text-gray-900">Parcelado?</span>
-                <p className="text-xs text-gray-500">
+                <span className="text-base font-medium text-zinc-900">Parcelado?</span>
+                <p className="text-xs text-zinc-500">
                   Habilite para compras parceladas
                 </p>
               </div>
@@ -481,7 +514,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
             </div>
 
             {isInstallment && (
-              <div className="px-4 pb-4 border-t border-gray-100 pt-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="px-4 pb-4 border-t border-zinc-50 pt-4 animate-in slide-in-from-top-2 duration-200">
                 <MobilePickerTrigger
                   label="Número de Parcelas"
                   value={watchedInstallments?.toString()}
@@ -498,7 +531,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
         {/* Submit Button */}
         <Button 
           type="submit" 
-          className="w-full h-14 text-base font-semibold rounded-2xl bg-blue-400 hover:bg-gray-800" 
+          className="w-full h-14 text-base font-semibold rounded-2xl bg-blue-400 hover:bg-blue-500 text-white shadow-lg shadow-zinc-900/10" 
           disabled={isSubmitting}
         >
           {isSubmitting ? (
