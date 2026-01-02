@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "../../../components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Card, CardContent} from "@/components/ui/card";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, CartesianGrid } from "recharts";
 import { 
-  ArrowUpCircle, 
-  ArrowDownCircle, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
   Wallet, 
-  AlertTriangle, 
-  CreditCard as CreditCardIcon
+  CreditCard as CreditCardIcon,
+  Calendar,
+  TrendingUp
 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { accountService } from "../../../services/accounts";
-import { transactionService } from "../../../services/transactions";
-import { getCards } from "../../../services/api";
-import { type Account, type CreditCard } from "../../../types/account";
-import { TransactionCategory, type Transaction } from "../../../types/transaction";
+import { accountService } from "@/services/accounts";
+import { transactionService } from "@/services/transactions";
+import { getCards } from "@/services/api";
+import { type Account, type CreditCard } from "@/types/account";
+import { TransactionCategory, type Transaction } from "@/types/transaction";
 import { format, subMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth0 } from "@auth0/auth0-react";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency } from "@/utils/formatters";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 // Helper to parse UTC date string as local date (ignoring time)
 const parseUTCDate = (dateString: string) => {
@@ -27,15 +30,11 @@ const parseUTCDate = (dateString: string) => {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
-const chartConfig = {
-  income: {
-    label: "Receitas",
-    color: "#009FE3", // brand blue
-  },
-  expense: {
-    label: "Despesas",
-    color: "#ef4444", // red-500
-  },
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
 };
 
 export function MobileSummary() {
@@ -68,8 +67,8 @@ export function MobileSummary() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center h-screen bg-zinc-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -84,7 +83,8 @@ export function MobileSummary() {
 
   const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
   const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE' && t.category !== TransactionCategory.INVESTMENT).reduce((sum, t) => sum + t.amount, 0);
-
+  
+  const savingsRate = currentIncome > 0 ? ((currentIncome - currentExpense) / currentIncome) * 100 : 0;
 
   // 2. Cash Flow Chart (Last 6 months)
   const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
@@ -107,7 +107,7 @@ export function MobileSummary() {
       return t.type === 'EXPENSE' && diffDays >= 0 && diffDays <= 7;
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 3);
+    .slice(0, 5);
 
   // 8. Credit Card Usage
   const cardUsageData = cards.map(card => ({
@@ -122,163 +122,234 @@ export function MobileSummary() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
-  const displayName = auth0User?.name || 'Usuário';
+  const displayName = auth0User?.name?.split(' ')[0] || 'Usuário';
 
   return (
-    <div className="w-full p-4 space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight">Olá, {displayName}</h2>
-        <p className="text-sm text-muted-foreground">Aqui está o resumo das suas finanças.</p>
-      </div>
-
-      {/* Main Balance Card */}
-      <Card className="bg-blue-400 text-white border-none shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-white">Saldo Total</span>
-            <Wallet className="h-4 w-4 text-white" />
+    <div className="min-h-screen bg-zinc-50 pb-24 font-sans">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-zinc-100 px-5 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9 border border-zinc-200">
+            <AvatarImage src={auth0User?.picture} />
+            <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
+              {displayName[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-xs text-zinc-500 font-medium">{getGreeting()},</p>
+            <h1 className="text-sm font-bold text-zinc-900">{displayName}</h1>
           </div>
-          <div className="text-3xl font-bold mb-2">
-            {formatCurrency(totalBalance)}
-          </div>
-          <div className="flex gap-4 text-xs text-white">
-            <span className="text-sm font-medium text-white">Movimentações</span>
-            <div className="flex items-center gap-1">
-              <ArrowUpCircle className="h-3 w-3 text-white" />
-              <span>{formatCurrency(currentIncome)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <ArrowDownCircle className="h-3 w-3 text-white" />
-              <span>{formatCurrency(currentExpense)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alerts Section */}
-      {upcomingBills.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Atenção</h3>
-          {upcomingBills.map(bill => (
-            <Alert key={bill.id} className="bg-blue-50 border-blue-100">
-              <AlertTriangle className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800 text-sm">Conta a vencer</AlertTitle>
-              <AlertDescription className="text-blue-700 text-xs">
-                {bill.description} - {formatCurrency(bill.amount)} <br/>
-                Vence em {format(parseUTCDate(bill.date), "dd/MM")}
-              </AlertDescription>
-            </Alert>
-          ))}
         </div>
-      )}
+      </header>
 
-      {/* Simplified Cash Flow Chart */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Fluxo de Caixa</h3>
-        <Card className="shadow-sm overflow-hidden">
-          <CardContent className="p-0 pt-4">
-            <ChartContainer config={chartConfig} className="h-[200px] w-full">
-              <AreaChart data={cashFlowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="fillExpense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-expense)" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                <Area
-                  dataKey="expense"
-                  type="natural"
-                  fill="url(#fillExpense)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-expense)"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="income"
-                  type="natural"
-                  fill="url(#fillIncome)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-income)"
-                  stackId="b"
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="p-5 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Main Balance Card - Apple Wallet Style */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-xl shadow-blue-200 transition-transform active:scale-[0.98]">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 rounded-full bg-black/10 blur-2xl"></div>
+          
+          <div className="relative z-10 flex flex-col justify-between h-full gap-6">
+            <div className="flex items-center justify-between">
+              <span className="text-blue-100 text-sm font-medium tracking-wide">Saldo Total</span>
+              <Wallet className="h-5 w-5 text-blue-100" />
+            </div>
+            
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</h2>
+              <p className="text-blue-100 text-xs mt-1 font-medium">Disponível em contas</p>
+            </div>
 
-      {/* Credit Cards */}
-      {cardUsageData.length > 0 && (
+            <div className="flex items-center gap-2 bg-white/10 w-fit px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10">
+              <TrendingUp className="h-3 w-3 text-emerald-300" />
+              <span className="text-xs font-medium text-white">
+                {savingsRate > 0 ? `+${savingsRate.toFixed(0)}% economia` : '0% economia'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Summary - Bento Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="border-zinc-100 shadow-sm bg-white rounded-2xl overflow-hidden">
+            <CardContent className="p-4 flex flex-col gap-3">
+              <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                <ArrowUpRight className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500 font-medium">Entradas</p>
+                <p className="text-lg font-bold text-zinc-900">{formatCurrency(currentIncome)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-zinc-100 shadow-sm bg-white rounded-2xl overflow-hidden">
+            <CardContent className="p-4 flex flex-col gap-3">
+              <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center">
+                <ArrowDownLeft className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500 font-medium">Saídas</p>
+                <p className="text-lg font-bold text-zinc-900">{formatCurrency(currentExpense)}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Cash Flow Chart */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Cartões</h3>
-          <div className="space-y-3">
-            {cardUsageData.map((card) => (
-              <Card key={card.name} className="shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <CreditCardIcon className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium text-sm">{card.name}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {Math.round((card.used / card.limit) * 100)}% usado
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
-                    <div 
-                      className="h-full bg-blue-300 transition-all duration-500"
-                      style={{ width: `${Math.min((card.used / card.limit) * 100, 100)}%` }}
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold text-zinc-900">Fluxo Financeiro</h3>
+            <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 hover:bg-zinc-200 font-normal text-[10px]">6 meses</Badge>
+          </div>
+          <Card className="border-zinc-100 shadow-sm bg-white rounded-2xl overflow-hidden">
+            <CardContent className="p-0 pt-6 pb-2">
+              <div className="h-[180px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cashFlowData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f4f4f5" />
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fill: '#a1a1aa' }} 
+                      dy={10}
                     />
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>R$ {card.used.toFixed(2)}</span>
-                    <span>Disp: R$ {card.available.toFixed(2)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                      cursor={{ stroke: '#e4e4e7', strokeWidth: 1 }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="income" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2} 
+                      fillOpacity={1} 
+                      fill="url(#colorIncome)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="expense" 
+                      stroke="#ef4444" 
+                      strokeWidth={2} 
+                      fillOpacity={0} 
+                      fill="transparent" 
+                      strokeDasharray="4 4"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
 
-      {/* Recent Transactions List */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Últimas Transações</h3>
-        <Card className="shadow-sm overflow-hidden">
-          <CardContent className="p-0">
-            <div className="divide-y divide-gray-100">
-              {recentTransactions.map(t => (
-                <div key={t.id} className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${t.type === 'INCOME' ? 'bg-[#009FE3]/10 text-[#009FE3]' : 'bg-red-50 text-red-600'}`}>
-                      {t.type === 'INCOME' ? <ArrowUpCircle className="h-4 w-4" /> : <ArrowDownCircle className="h-4 w-4" />}
+        {/* Upcoming Bills */}
+        {upcomingBills.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-semibold text-zinc-900">Próximos Vencimentos</h3>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+              {upcomingBills.map(bill => (
+                <div key={bill.id} className="min-w-[200px] bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center">
+                      <Calendar className="h-4 w-4 text-orange-600" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium line-clamp-1">{t.description}</p>
-                      <p className="text-xs text-muted-foreground">{format(parseUTCDate(t.date), "dd 'de' MMM", { locale: ptBR })}</p>
-                    </div>
+                    <Badge variant="outline" className="text-[10px] border-orange-100 text-orange-700 bg-orange-50">
+                      {format(parseUTCDate(bill.date), "dd MMM", { locale: ptBR })}
+                    </Badge>
                   </div>
-                  <div className={`text-sm font-medium whitespace-nowrap ${t.type === 'INCOME' ? 'text-[#009FE3]' : 'text-red-600'}`}>
-                    {t.type === 'INCOME' ? '+' : '-'} {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 truncate">{bill.description}</p>
+                    <p className="text-lg font-bold text-zinc-900">{formatCurrency(bill.amount)}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+
+        {/* Credit Cards */}
+        {cardUsageData.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-semibold text-zinc-900">Cartões de Crédito</h3>
+            </div>
+            <div className="space-y-3">
+              {cardUsageData.map((card) => {
+                const percentage = Math.min((card.used / card.limit) * 100, 100);
+                return (
+                  <div key={card.name} className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                          <CreditCardIcon className="h-4 w-4 text-zinc-600" />
+                        </div>
+                        <span className="font-medium text-sm text-zinc-900">{card.name}</span>
+                      </div>
+                      <span className="text-xs font-medium text-zinc-500">
+                        {Math.round(percentage)}%
+                      </span>
+                    </div>
+                    <Progress value={percentage} className="h-2 bg-zinc-100" indicatorClassName="bg-zinc-900" />
+                    <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                      <span>{formatCurrency(card.used)}</span>
+                      <span>Disp: {formatCurrency(card.available)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Transactions */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold text-zinc-900">Últimas Movimentações</h3>
+            <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-auto py-1 px-2">
+              Ver tudo
+            </Button>
+          </div>
+          <Card className="border-zinc-100 shadow-sm bg-white rounded-2xl overflow-hidden">
+            <CardContent className="p-0">
+              <div className="divide-y divide-zinc-50">
+                {recentTransactions.map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-4 hover:bg-zinc-50/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        t.type === 'INCOME' ? 'bg-blue-50' : 'bg-zinc-100'
+                      }`}>
+                        {t.type === 'INCOME' ? (
+                          <ArrowUpRight className="h-5 w-5 text-blue-600" />
+                        ) : (
+                          <ArrowDownLeft className="h-5 w-5 text-zinc-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 line-clamp-1">{t.description}</p>
+                        <p className="text-xs text-zinc-500 capitalize">
+                          {format(parseUTCDate(t.date), "dd 'de' MMM", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`text-sm font-semibold whitespace-nowrap ${
+                      t.type === 'INCOME' ? 'text-blue-600' : 'text-zinc-900'
+                    }`}>
+                      {t.type === 'INCOME' ? '+' : '-'} {formatCurrency(t.amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
