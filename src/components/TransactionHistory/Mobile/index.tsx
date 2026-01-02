@@ -19,6 +19,8 @@ import {
   X,
   CreditCard as CreditCardIcon,
   Tag as TagIcon,
+  Repeat,
+  Calendar as CalendarIcon,
   Shirt,
   PiggyBank,
   Coins,
@@ -26,15 +28,17 @@ import {
   Wallet,
   Building2,
   Globe,
-  Repeat,
   Landmark,
   Receipt,
   PawPrint,
   Gift,
   Plane,
-  Shield
+  Shield,
+  Percent,
+  Key,
+  MapPin,
+  Users
 } from "lucide-react";
-import { Percent, Key, MapPin, Users } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { getTransactions, getAccounts, getCards } from "../../../services/api";
 import { transactionService } from "../../../services/transactions";
@@ -74,6 +78,7 @@ import type { DateRange } from "react-day-picker";
 import { MobileTransactionDialog } from "../../TransactionDialog/Mobile";
 import { TransactionForm } from "../../TransactionForm";
 import { formatCurrency } from "../../../utils/formatters";
+import { Badge } from "../../ui/badge";
 
 // Local interface for display categories (includes label property)
 interface DisplayCategory {
@@ -87,19 +92,19 @@ interface DisplayCategory {
 
 export const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'FOOD': return <Coffee className="h-5 w-5" />;
-    case 'TRANSPORT': return <Car className="h-5 w-5" />;
-    case 'HOUSING': return <Home className="h-5 w-5" />;
-    case 'SHOPPING': return <ShoppingBag className="h-5 w-5" />;
-    case 'UTILITIES': return <Zap className="h-5 w-5" />;
-    case 'HEALTHCARE': return <Heart className="h-5 w-5" />;
-    case 'ENTERTAINMENT': return <Gamepad2 className="h-5 w-5" />;
-    case 'EDUCATION': return <GraduationCap className="h-5 w-5" />;
-    case 'SALARY': return <DollarSign className="h-5 w-5" />;
-    case 'FREELANCE': return <Briefcase className="h-5 w-5" />;
-    case 'INVESTMENT': return <TrendingUp className="h-5 w-5" />;
-    case 'TRANSFER': return <ArrowRightLeft className="h-5 w-5" />;
-    default: return <DollarSign className="h-5 w-5" />;
+    case 'FOOD': return <Coffee className="h-4 w-4" />;
+    case 'TRANSPORT': return <Car className="h-4 w-4" />;
+    case 'HOUSING': return <Home className="h-4 w-4" />;
+    case 'SHOPPING': return <ShoppingBag className="h-4 w-4" />;
+    case 'UTILITIES': return <Zap className="h-4 w-4" />;
+    case 'HEALTHCARE': return <Heart className="h-4 w-4" />;
+    case 'ENTERTAINMENT': return <Gamepad2 className="h-4 w-4" />;
+    case 'EDUCATION': return <GraduationCap className="h-4 w-4" />;
+    case 'SALARY': return <DollarSign className="h-4 w-4" />;
+    case 'FREELANCE': return <Briefcase className="h-4 w-4" />;
+    case 'INVESTMENT': return <TrendingUp className="h-4 w-4" />;
+    case 'TRANSFER': return <ArrowRightLeft className="h-4 w-4" />;
+    default: return <DollarSign className="h-4 w-4" />;
   }
 };
 
@@ -138,22 +143,9 @@ const globalExpenseCategories: DisplayCategory[] = [
 
 const globalCategories = [...globalIncomeCategories, ...globalExpenseCategories];
 
-export const getCategoryColor = (category: string) => {
-  switch (category) {
-    case 'FOOD': return 'bg-blue-400 text-white';
-    case 'TRANSPORT': return 'bg-blue-400 text-white';
-    case 'HOUSING': return 'bg-blue-400 text-white';
-    case 'SHOPPING': return 'bg-blue-400 text-white';
-    case 'UTILITIES': return 'bg-blue-400 text-white';
-    case 'HEALTHCARE': return 'bg-blue-400 text-white';
-    case 'ENTERTAINMENT': return 'bg-blue-400 text-white';
-    case 'EDUCATION': return 'bg-blue-400 text-white';
-    case 'SALARY': return 'bg-blue-400 text-white';
-    case 'FREELANCE': return 'bg-blue-400 text-white';
-    case 'INVESTMENT': return 'bg-blue-400 text-white';
-    case 'TRANSFER': return 'bg-blue-400 text-white';
-    default: return 'bg-blue-400 text-white';
-  }
+export const getCategoryColor = () => {
+  // Using a more subtle palette for backgrounds
+  return 'bg-zinc-100 text-zinc-600';
 };
 
 export const getCategoryLabel = (category: string) => {
@@ -374,16 +366,16 @@ export function MobileTransactionHistory() {
   };
 
   return (
-    <div className="pb-24 bg-white min-h-screen">
+    <div className="pb-24 bg-white min-h-screen font-sans">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white backdrop-blur-md">
-        <div className="px-4 py-3 space-y-3">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
+        <div className="px-5 py-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">Extrato</h1>
+            <h1 className="text-xl font-bold text-zinc-900">Extrato</h1>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
-                  <Filter className="h-5 w-5 text-blue-600" />
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-zinc-100 text-zinc-500">
+                  <Filter className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
             <SheetContent side="bottom" className="h-[95vh] rounded-t-[32px] p-0 bg-[#F2F2F7]">
@@ -393,7 +385,7 @@ export function MobileTransactionHistory() {
                     <SheetTitle className="text-xl font-bold">Filtros</SheetTitle>
                     <Button 
                       variant="ghost" 
-                      className="text-blue-500 font-medium hover:bg-transparent hover:text-blue-600 p-0 h-auto"
+                      className="text-blue-600 font-medium hover:bg-transparent hover:text-blue-700 p-0 h-auto"
                       onClick={() => {
                         setTypeFilter("ALL");
                         setCategoryFilter("ALL");
@@ -416,7 +408,7 @@ export function MobileTransactionHistory() {
                         onClick={() => setTypeFilter("ALL")}
                         className={cn(
                           "flex-1 py-2 text-sm font-medium rounded-lg transition-all",
-                          typeFilter === "ALL" ? "bg-blue-400 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
+                          typeFilter === "ALL" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:bg-gray-50"
                         )}
                       >
                         Todos
@@ -454,11 +446,11 @@ export function MobileTransactionHistory() {
                         locale={ptBR}
                         className="w-full flex justify-center p-3"
                         classNames={{
-                          head_cell: "text-blue-400 font-normal text-[0.8rem]",
+                          head_cell: "text-blue-600 font-normal text-[0.8rem]",
                           cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-blue-400 rounded-full",
-                          day_selected: "bg-blue-400 text-white hover:bg-blue-400 hover:text-white focus:bg-blue-400 focus:text-white",
-                          day_today: "bg-gray-100 text-blue-400",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-blue-600 hover:text-white rounded-full transition-colors",
+                          day_selected: "bg-blue-600 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-600 focus:text-white",
+                          day_today: "bg-zinc-100 text-blue-600 font-bold",
                         }}
                       />
                     </div>
@@ -532,35 +524,35 @@ export function MobileTransactionHistory() {
           </Sheet>
         </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Buscar transações..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-gray-50 border-gray-200 rounded-xl h-10"
+              className="pl-9 bg-zinc-50 border-zinc-200 rounded-xl h-10 focus-visible:ring-blue-400"
             />
           </div>
 
         {/* Active Filters Chips */}
         {(typeFilter !== "ALL" || categoryFilter !== "ALL" || tagFilter !== "ALL" || accountFilter !== "ALL") && (
-          <div className="flex gap-2 overflow-x-auto pt-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pt-2 scrollbar-hide px-1">
             {typeFilter !== "ALL" && (
-              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+              <Badge variant="secondary" className="bg-zinc-900 text-white hover:bg-zinc-800 gap-1 py-1.5 px-3 rounded-full font-normal">
                 {typeFilter === TransactionType.INCOME ? "Entradas" : "Saídas"}
-                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setTypeFilter("ALL")} />
-              </div>
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setTypeFilter("ALL")} />
+              </Badge>
             )}
             {categoryFilter !== "ALL" && (
-              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+              <Badge variant="secondary" className="bg-zinc-900 text-white hover:bg-zinc-800 gap-1 py-1.5 px-3 rounded-full font-normal">
                 {getCategoryLabel(categoryFilter)}
-                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setCategoryFilter("ALL")} />
-              </div>
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setCategoryFilter("ALL")} />
+              </Badge>
             )}
             {tagFilter !== "ALL" && (
-              <div className="flex items-center gap-1 px-3 py-1.5 bg-black text-white rounded-full text-xs whitespace-nowrap">
+              <Badge variant="secondary" className="bg-zinc-900 text-white hover:bg-zinc-800 gap-1 py-1.5 px-3 rounded-full font-normal">
                 {tags.find(t => t.id === tagFilter)?.name}
-                <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setTagFilter("ALL")} />
-              </div>
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setTagFilter("ALL")} />
+              </Badge>
             )}
           </div>
         )}
@@ -568,62 +560,72 @@ export function MobileTransactionHistory() {
       </div>
 
       {/* Transactions List */}
-      <div className="px-4">
+      <div className="px-5">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Carregando...</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+          </div>
         ) : Object.keys(groupedTransactions).length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <p>Nenhuma transação encontrada</p>
+          <div className="text-center py-16 text-zinc-500">
+            <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-6 h-6 text-zinc-300" />
+            </div>
+            <p className="font-medium text-zinc-900">Nenhuma transação encontrada</p>
+            <p className="text-sm mt-1">Tente ajustar os filtros ou busque por outro termo.</p>
           </div>
         ) : (
-          <div className="space-y-6 mt-4">
+          <div className="space-y-8 mt-6">
             {Object.entries(groupedTransactions).map(([date, transactions]) => (
               <div key={date}>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  {date}
-                </h3>
-                <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <CalendarIcon className="h-4 w-4 text-zinc-400" />
+                  <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide">
+                    {date}
+                  </h3>
+                </div>
+                <div className="space-y-3">
                   {transactions.map((transaction) => (
                     <div 
                       key={transaction.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl active:scale-[0.98] transition-transform cursor-pointer"
+                      className="group flex items-center gap-4 p-4 bg-white border border-zinc-100 rounded-2xl shadow-sm active:scale-[0.98] transition-all hover:border-zinc-200 cursor-pointer"
                       onClick={() => handleTransactionClick(transaction)}
                     >
-                      <div className={cn("p-2.5 rounded-xl", getCategoryColor(transaction.category))}>
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                        transaction.type === TransactionType.INCOME ? "bg-blue-50 text-blue-400" : "bg-zinc-100 text-zinc-500"
+                      )}>
                         {renderCategoryIconForTransaction(transaction)}
                       </div>
+                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-semibold text-zinc-900 truncate text-sm">{transaction.description}</p>
                           {transaction.isPaid && (
-                            <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap">
-                              ✓ Pago
-                            </span>
-                          )}
-                          {transaction.recurringTransactionId && (
-                            <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap">
-                              Recorrente
-                            </span>
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" title="Pago" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-500">{getCategoryLabel(transaction.category)}</p>
+                        <div className="flex items-center gap-2 text-xs text-zinc-500">
+                          <span className="truncate">{getCategoryLabel(transaction.category)}</span>
+                          {transaction.installments && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-zinc-300" />
+                              <span>{transaction.currentInstallment}/{transaction.installments}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
+
                       <div className="text-right shrink-0">
                         <p className={cn(
-                          "font-semibold",
-                          transaction.type === TransactionType.INCOME ? "text-[#009FE3]" : "text-red-600"
+                          "font-bold text-sm",
+                          transaction.type === TransactionType.INCOME ? "text-blue-400" : "text-zinc-900"
                         )}>
-                          {transaction.type === TransactionType.INCOME ? "+" : "-"}{formatCurrency(transaction.amount)}
+                          {transaction.type === TransactionType.INCOME ? "+" : "-"} {formatCurrency(transaction.amount)}
                         </p>
-                        {transaction.installments && (
-                          <p className="text-xs text-gray-400">
-                            {transaction.currentInstallment}/{transaction.installments}x
-                          </p>
-                        )}
-                        {transaction.recurringTransactionId && !transaction.installments && (
-                          <p className="text-xs text-purple-500">
-                            Recorrente
-                          </p>
+                        {transaction.recurringTransactionId && (
+                          <div className="flex items-center justify-end gap-1 mt-0.5 text-xs text-blue-400 font-medium">
+                            <Repeat className="h-3 w-3" />
+                          </div>
                         )}
                       </div>
                     </div>
@@ -641,6 +643,7 @@ export function MobileTransactionHistory() {
         onOpenChange={setDetailsOpen}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        userCategories={userCategories}
       />
 
       {/* Edit Sheet */}

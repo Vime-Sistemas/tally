@@ -373,7 +373,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                         onClick={() => { field.onChange(TransactionType.EXPENSE); handleTypeChange(TransactionType.EXPENSE); }}
                         className={cn(
                           "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-                          field.value === TransactionType.EXPENSE ? "bg-white text-red-500 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                          field.value === TransactionType.EXPENSE ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                         )}
                       >
                         Despesa
@@ -383,7 +383,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                         onClick={() => { field.onChange(TransactionType.INCOME); handleTypeChange(TransactionType.INCOME); }}
                         className={cn(
                           "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
-                          field.value === TransactionType.INCOME ? "bg-white text-blue-500 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                          field.value === TransactionType.INCOME ? "bg-white text-blue-400 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                         )}
                       >
                         Receita
@@ -733,7 +733,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                    onClick={() => { setIsRecurring(!isRecurring); setIsInstallment(false); }}
                    className={cn(
                      "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all whitespace-nowrap",
-                     isRecurring ? "bg-white border-blue-200 text-blue-600 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
+                     isRecurring ? "bg-white border-blue-200 text-blue-400 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
                    )}
                  >
                    <RefreshCw className="w-4 h-4" />
@@ -747,7 +747,7 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
                     onClick={() => { setIsInstallment(!isInstallment); setIsRecurring(false); }}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all whitespace-nowrap",
-                      isInstallment ? "bg-white border-blue-200 text-blue-600 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
+                      isInstallment ? "bg-white border-blue-200 text-blue-400 shadow-sm" : "border-transparent text-zinc-500 hover:bg-zinc-100"
                     )}
                    >
                      <Layers className="w-4 h-4" />

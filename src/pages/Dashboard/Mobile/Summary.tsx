@@ -7,7 +7,8 @@ import {
   Wallet, 
   CreditCard as CreditCardIcon,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from "lucide-react";
 import { accountService } from "@/services/accounts";
 import { transactionService } from "@/services/transactions";
@@ -17,7 +18,7 @@ import { TransactionCategory, type Transaction } from "@/types/transaction";
 import { format, subMonths, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useUser } from "@/contexts/UserContext";
 import { formatCurrency } from "@/utils/formatters";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ const getGreeting = () => {
 };
 
 export function MobileSummary() {
-  const { user: auth0User } = useAuth0();
+  const { user } = useUser();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -122,15 +123,15 @@ export function MobileSummary() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
-  const displayName = auth0User?.name?.split(' ')[0] || 'Usuário';
+  const displayName = user?.name?.split(' ')[0] || 'Usuário';
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24 font-sans">
+    <div className="min-h-screen bg-white pb-24 font-sans">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-zinc-100 px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9 border border-zinc-200">
-            <AvatarImage src={auth0User?.picture} />
+            <AvatarImage src={user?.picture} />
             <AvatarFallback className="bg-blue-50 text-blue-600 font-medium">
               {displayName[0]}
             </AvatarFallback>
@@ -140,24 +141,27 @@ export function MobileSummary() {
             <h1 className="text-sm font-bold text-zinc-900">{displayName}</h1>
           </div>
         </div>
+        <Button variant="ghost" size="icon" className="rounded-full text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100">
+          <Bell className="h-5 w-5" />
+        </Button>
       </header>
 
       <div className="p-5 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Main Balance Card - Apple Wallet Style */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-xl shadow-blue-200 transition-transform active:scale-[0.98]">
+        <div className="relative overflow-hidden rounded-3xl bg-blue-400 p-6 text-white shadow-xl shadow-blue-200 transition-transform active:scale-[0.98]">
           <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
           <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 rounded-full bg-black/10 blur-2xl"></div>
           
           <div className="relative z-10 flex flex-col justify-between h-full gap-6">
             <div className="flex items-center justify-between">
-              <span className="text-blue-100 text-sm font-medium tracking-wide">Saldo Total</span>
-              <Wallet className="h-5 w-5 text-blue-100" />
+              <span className="text-white text-sm font-medium tracking-wide">Saldo Total</span>
+              <Wallet className="h-5 w-5 text-white" />
             </div>
             
             <div>
               <h2 className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</h2>
-              <p className="text-blue-100 text-xs mt-1 font-medium">Disponível em contas</p>
+              <p className="text-white text-xs mt-1 font-medium">Disponível em contas</p>
             </div>
 
             <div className="flex items-center gap-2 bg-white/10 w-fit px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10">
@@ -313,9 +317,6 @@ export function MobileSummary() {
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-semibold text-zinc-900">Últimas Movimentações</h3>
-            <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-auto py-1 px-2">
-              Ver tudo
-            </Button>
           </div>
           <Card className="border-zinc-100 shadow-sm bg-white rounded-2xl overflow-hidden">
             <CardContent className="p-0">
