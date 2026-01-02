@@ -369,7 +369,7 @@ export function MobileTransactionHistory() {
     <div className="pb-24 bg-white min-h-screen font-sans">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-2 py-4 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-zinc-900">Extrato</h1>
             <Sheet>
@@ -560,7 +560,7 @@ export function MobileTransactionHistory() {
       </div>
 
       {/* Transactions List */}
-      <div className="px-5">
+      <div className="px-2">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
