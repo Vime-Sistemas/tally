@@ -21,7 +21,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle, Rocket, Copy } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle, Rocket, Copy, Info } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -384,7 +390,21 @@ export function PlannerClients() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Link</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        Status
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-3 w-3 text-zinc-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>O status visual: Ativo (Azul), Usado (Verde) ou Expirado (Vermelho).</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
