@@ -63,7 +63,7 @@ export function MobileTransactionDialog({
           <div className="flex flex-col items-center text-center py-6">
             <div className={cn(
               "h-14 w-14 rounded-2xl flex items-center justify-center mb-4",
-              getCategoryColor(transaction.category)
+              getCategoryColor()
             )}>
               <div className="scale-125">
                 {renderCategoryIcon()}
