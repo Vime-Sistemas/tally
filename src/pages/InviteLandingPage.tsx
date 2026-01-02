@@ -101,7 +101,7 @@ export function InviteLandingPage() {
               {invite?.planner.businessName || invite?.planner.name}
             </CardTitle>
             <CardDescription>
-              convidou você para gerenciar suas finanças no Tally.
+              convidou você para gerenciar suas finanças no CDF.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
