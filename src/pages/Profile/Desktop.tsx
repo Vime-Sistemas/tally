@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
-  Building2, User, Mail, Phone, Briefcase, Camera, ShieldAlert, CreditCard,
-  MapPin, Globe, Menu, Sidebar, Store, Settings, LogOut
+  Building2, User, Mail, Camera, ShieldAlert,
+  MapPin, Globe, Store, Settings
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +45,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
   const { user, setUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,6 +120,12 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         menuPreference: data.menuPreference ?? response.data?.menuPreference,
       };
       setUser(merged);
+      
+      // Update global business state if changed
+      if (data.hasBusiness !== undefined) {
+        setHasBusiness(data.hasBusiness);
+      }
+
       toast.success("Perfil atualizado com sucesso!");
       form.reset(data); 
     } catch (error) {
@@ -172,7 +179,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Tabs defaultValue="general" className="flex flex-col lg:flex-row gap-10" orientation="vertical">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col lg:flex-row gap-10" orientation="vertical">
             
             {/* Sidebar Navigation */}
             <aside className="lg:w-64 flex-shrink-0 space-y-8">
@@ -369,7 +376,6 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                         checked={form.watch("hasBusiness")} 
                         onCheckedChange={(v) => {
                           form.setValue("hasBusiness", v, { shouldDirty: true });
-                          setHasBusiness(v);
                         }} 
                       />
                     </div>
