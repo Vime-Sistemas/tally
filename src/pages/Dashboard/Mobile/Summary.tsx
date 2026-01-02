@@ -7,8 +7,7 @@ import {
   Wallet, 
   CreditCard as CreditCardIcon,
   Calendar,
-  TrendingUp,
-  Bell
+  TrendingUp
 } from "lucide-react";
 import { accountService } from "@/services/accounts";
 import { transactionService } from "@/services/transactions";
@@ -21,7 +20,6 @@ import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import { formatCurrency } from "@/utils/formatters";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
@@ -141,9 +139,6 @@ export function MobileSummary() {
             <h1 className="text-sm font-bold text-zinc-900">{displayName}</h1>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100">
-          <Bell className="h-5 w-5" />
-        </Button>
       </header>
 
       <div className="p-5 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

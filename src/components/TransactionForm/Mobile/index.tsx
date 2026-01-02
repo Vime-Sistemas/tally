@@ -324,7 +324,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   };
 
   return (
-    <div className="pb-24 bg-zinc-50 min-h-full -mx-4 -mt-4 px-4 pt-4">
+    <div className="pb-24 bg-white min-h-full -mx-4 -mt-4 px-4 pt-4">
       {/* Type Selector - Segmented Control */}
       <div className="bg-zinc-100 p-1 rounded-xl flex mb-6">
         <button
