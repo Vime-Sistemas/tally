@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
-  Building2, User, Mail, Camera, ShieldAlert, Globe, Store, Settings
+  Building2, User, Mail, Phone, Briefcase, Camera, ShieldAlert, CreditCard,
+  MapPin, Globe, Menu, Sidebar, Store, Settings, LogOut
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +36,7 @@ const profileSchema = z.object({
   businessName: z.string().optional(),
   businessCnpj: z.string().optional(),
   businessWebsite: z.string().optional(),
+  hasBusiness: z.boolean().optional(),
   menuPreference: z.enum(['header', 'sidebar']).optional(),
 });
 
@@ -53,12 +55,13 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
       email: user?.email || "",
       phone: user?.phone || "",
       occupation: user?.occupation || "",
-      location: "", 
+      location: user?.location || "", 
       picture: user?.picture || "",
       coverImage: user?.coverImage || "",
       businessName: user?.businessName || "",
       businessCnpj: user?.businessCnpj || "",
-      businessWebsite: "",
+      businessWebsite: user?.businessWebsite || "",
+      hasBusiness: user?.hasBusiness || false,
       menuPreference: user?.menuPreference || "header",
     },
   });
@@ -70,14 +73,18 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         email: user.email,
         phone: user.phone || "", 
         occupation: user.occupation || "",
+        location: user.location || "",
         picture: user.picture || "",
         coverImage: user.coverImage || "",
         businessName: user.businessName || "",
         businessCnpj: user.businessCnpj || "",
+        businessWebsite: user.businessWebsite || "",
+        hasBusiness: user.hasBusiness || false,
         menuPreference: user.menuPreference || "header",
       });
+      setHasBusiness(user.hasBusiness || false);
     }
-  }, [user, form]);
+  }, [user, form, setHasBusiness]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, field: "picture" | "coverImage") => {
     const file = event.target.files?.[0];
@@ -102,6 +109,9 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         coverImage: data.coverImage,
         businessName: data.businessName,
         businessCnpj: data.businessCnpj,
+        businessWebsite: data.businessWebsite,
+        location: data.location,
+        hasBusiness: data.hasBusiness,
         menuPreference: data.menuPreference,
       });
       const merged = {
@@ -269,6 +279,14 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                     </div>
 
                     <div className="grid gap-2">
+                      <Label htmlFor="location">Localização</Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                        <Input id="location" className="pl-9 bg-white" placeholder="Cidade, Estado" {...form.register("location")} />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2">
                       <Label>Foto de Capa</Label>
                       <div 
                         className="h-32 w-full rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center cursor-pointer hover:bg-zinc-100 transition-colors overflow-hidden relative group"
@@ -347,7 +365,13 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                         <Label className="text-base">Modo Empresarial</Label>
                         <p className="text-sm text-zinc-500">Habilita funcionalidades para gestão PJ.</p>
                       </div>
-                      <Switch checked={hasBusiness} onCheckedChange={(v) => setHasBusiness(!!v)} />
+                      <Switch 
+                        checked={form.watch("hasBusiness")} 
+                        onCheckedChange={(v) => {
+                          form.setValue("hasBusiness", v, { shouldDirty: true });
+                          setHasBusiness(v);
+                        }} 
+                      />
                     </div>
                     <Separator />
 

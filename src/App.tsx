@@ -103,6 +103,10 @@ function AppContent() {
             menuPreference: response.data?.menuPreference || existingMenuPref,
           };
           setUser(mergedUser);
+          
+          if (mergedUser.hasBusiness) {
+            setHasBusiness(true);
+          }
 
           // Load cost centers
           const costCenters = await costCenterService.getCostCenters();

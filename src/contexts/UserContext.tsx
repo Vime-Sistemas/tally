@@ -16,6 +16,9 @@ export interface User {
   occupation?: string;
   businessName?: string;
   businessCnpj?: string;
+  businessWebsite?: string;
+  location?: string;
+  hasBusiness?: boolean;
   type?: 'PERSONAL' | 'PLANNER';
   menuPreference?: 'header' | 'sidebar';
   createdAt: string;
