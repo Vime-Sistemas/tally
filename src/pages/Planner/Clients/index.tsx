@@ -14,7 +14,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -22,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Trash2, Mail, Clock, CheckCircle2, XCircle, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -58,6 +57,9 @@ export function PlannerClients() {
   const [isInviting, setIsInviting] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [viewMode, setViewMode] = useState<'DASHBOARD' | 'TRANSACTIONS'>('DASHBOARD');
+
+  const [inviteLink, setInviteLink] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -95,6 +97,25 @@ export function PlannerClients() {
     } finally {
       setIsInviting(false);
     }
+  };
+
+  const handleGenerateLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      const response = await api.post('/planner/invites/generate', {});
+      setInviteLink(response.data.link);
+      toast.success("Link gerado com sucesso!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao gerar link.");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(inviteLink);
+    toast.success("Link copiado!");
   };
 
   const handleRemoveClient = async (clientId: string) => {
@@ -145,26 +166,69 @@ export function PlannerClients() {
             <DialogHeader>
               <DialogTitle>Convidar Cliente</DialogTitle>
               <DialogDescription>
-                Digite o e-mail do usuário que você deseja gerenciar. Ele receberá uma notificação para aceitar o vínculo.
+                Escolha como deseja convidar seu cliente.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
+            
+            <div className="space-y-6 py-4">
+              {/* Option 1: Email */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Mail className="h-3 w-3 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium">Enviar por Email</span>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="cliente@email.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                  <Button onClick={handleInvite} disabled={isInviting || !inviteEmail} className="bg-blue-600 hover:bg-blue-700">
+                    {isInviting ? "..." : "Enviar"}
+                  </Button>
+                </div>
+              </div>
+
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
-                <Input 
-                  placeholder="email@exemplo.com" 
-                  className="pl-9" 
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-zinc-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-zinc-500">Ou</span>
+                </div>
+              </div>
+
+              {/* Option 2: Link */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                    <Rocket className="h-3 w-3 text-emerald-600" />
+                  </div>
+                  <span className="text-sm font-medium">Link de Cadastro</span>
+                </div>
+                
+                {!inviteLink ? (
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-dashed border-zinc-300 text-zinc-500 hover:text-zinc-900 hover:border-zinc-400"
+                    onClick={handleGenerateLink}
+                    disabled={isGeneratingLink}
+                  >
+                    {isGeneratingLink ? "Gerando..." : "Gerar Link Único"}
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input value={inviteLink} readOnly className="bg-zinc-50 font-mono text-xs" />
+                    <Button variant="outline" onClick={copyToClipboard}>Copiar</Button>
+                  </div>
+                )}
+                <p className="text-[10px] text-zinc-400">
+                  O cliente será automaticamente vinculado à sua conta ao se cadastrar por este link.
+                </p>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsInviteOpen(false)}>Cancelar</Button>
-              <Button onClick={handleInvite} disabled={isInviting} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                {isInviting ? "Enviando..." : "Enviar Convite"}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
