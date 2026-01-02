@@ -76,12 +76,12 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
   useEffect(() => {
     if (user) {
       form.reset({
-        name: user.name,
-        email: user.email,
+        name: user.name || "",
+        email: user.email || "",
         phone: user.phone || "", 
         occupation: user.occupation || "",
         location: user.location || "",
-        cep: "",
+        cep: user.cep || "",
         picture: user.picture || "",
         coverImage: user.coverImage || "",
         businessName: user.businessName || "",

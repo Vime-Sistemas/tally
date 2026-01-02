@@ -18,6 +18,7 @@ export interface User {
   businessCnpj?: string;
   businessWebsite?: string;
   location?: string;
+  cep?: string;
   hasBusiness?: boolean;
   type?: 'PERSONAL' | 'PLANNER';
   menuPreference?: 'header' | 'sidebar';
