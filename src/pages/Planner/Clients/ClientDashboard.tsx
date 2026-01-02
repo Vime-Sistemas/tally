@@ -71,53 +71,27 @@ const globalCategories = [
   { id: 'other', name: 'OTHER', label: 'Outros', color: '#9ca3af' },
 ];
 
-const getCategoryDetails = (transaction: any) => {
-  // 1. Try custom category (categoryModel)
-  if (transaction.categoryModel) {
-    return {
-      name: transaction.categoryModel.name,
-      color: transaction.categoryModel.color || '#9ca3af'
-    };
-  }
-  
-  // 2. Try global category code
-  if (transaction.category) {
-    const global = globalCategories.find(c => c.name === transaction.category);
-    if (global) {
-      return {
-        name: global.label,
-        color: global.color
-      };
-    }
-    // Fallback for unknown code
-    return {
-      name: transaction.category,
-      color: '#9ca3af'
-    };
-  }
-  
-  // 3. No category
-  return null;
-};
-
 export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [txRes, accRes, cardRes] = await Promise.all([
+        const [txRes, accRes, cardRes, catRes] = await Promise.all([
           api.get(`/transactions?userId=${client.id}`),
           api.get(`/accounts?userId=${client.id}`),
-          api.get(`/cards?userId=${client.id}`)
+          api.get(`/cards?userId=${client.id}`),
+          api.get(`/categories?userId=${client.id}`)
         ]);
         setTransactions(txRes.data);
         setAccounts(accRes.data);
         setCards(cardRes.data);
+        setCategories(catRes.data);
       } catch (error) {
         console.error("Failed to fetch client data", error);
       } finally {
@@ -126,6 +100,45 @@ export function ClientDashboard({ client, onBack }: ClientDashboardProps) {
     };
     fetchData();
   }, [client.id]);
+
+  const getCategoryDetails = (transaction: any) => {
+    // 1. Try custom category (categoryModel)
+    if (transaction.categoryModel) {
+      return {
+        name: transaction.categoryModel.name,
+        color: transaction.categoryModel.color || '#9ca3af'
+      };
+    }
+    
+    // 2. Try global category code
+    if (transaction.category) {
+      const global = globalCategories.find(c => c.name === transaction.category);
+      if (global) {
+        return {
+          name: global.label,
+          color: global.color
+        };
+      }
+
+      // 3. Try to find in user categories list by ID (if transaction.category is an ID)
+      const userCat = categories.find(c => c.id === transaction.category);
+      if (userCat) {
+        return {
+          name: userCat.name,
+          color: userCat.color || '#9ca3af'
+        };
+      }
+
+      // Fallback for unknown code/ID
+      return {
+        name: transaction.category,
+        color: '#9ca3af'
+      };
+    }
+    
+    // 4. No category
+    return null;
+  };
 
   // Calculations
   const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
