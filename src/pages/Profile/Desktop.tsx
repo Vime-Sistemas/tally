@@ -19,6 +19,8 @@ import { useUser } from "../../contexts/UserContext";
 import api from "../../services/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { maskPhone, maskCNPJ, maskCEP, unmask } from "../../utils/masks";
+import axios from "axios";
 
 interface ProfileProps {
   hasBusiness: boolean;
@@ -31,6 +33,7 @@ const profileSchema = z.object({
   phone: z.string().optional(),
   occupation: z.string().optional(),
   location: z.string().optional(),
+  cep: z.string().optional(),
   picture: z.string().optional(),
   coverImage: z.string().optional(),
   businessName: z.string().optional(),
@@ -45,6 +48,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
   const { user, setUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +62,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
       phone: user?.phone || "",
       occupation: user?.occupation || "",
       location: user?.location || "", 
+      cep: "",
       picture: user?.picture || "",
       coverImage: user?.coverImage || "",
       businessName: user?.businessName || "",
@@ -75,6 +81,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         phone: user.phone || "", 
         occupation: user.occupation || "",
         location: user.location || "",
+        cep: "",
         picture: user.picture || "",
         coverImage: user.coverImage || "",
         businessName: user.businessName || "",
@@ -86,6 +93,56 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
       setHasBusiness(user.hasBusiness || false);
     }
   }, [user, form, setHasBusiness]);
+
+  const handleCepLookup = async (cep: string) => {
+    const cleanCep = unmask(cep);
+    if (cleanCep.length !== 8) return;
+
+    setIsFetchingCep(true);
+    try {
+      const response = await axios.get(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      if (response.data.erro) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      const { localidade, uf } = response.data;
+      form.setValue("location", `${localidade} - ${uf}`, { shouldDirty: true });
+      toast.success("Endereço encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP.");
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
+
+  const handleCnpjLookup = async () => {
+    const cnpj = form.getValues("businessCnpj");
+    const cleanCnpj = unmask(cnpj || "");
+    if (cleanCnpj.length !== 14) {
+      toast.error("CNPJ inválido. Digite os 14 números.");
+      return;
+    }
+
+    setIsFetchingCnpj(true);
+    try {
+      // Using BrasilAPI as a proxy/source
+      const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+      const { razao_social, nome_fantasia } = response.data;
+      
+      form.setValue("businessName", nome_fantasia || razao_social, { shouldDirty: true });
+      
+      // If we want to fill other fields like phone or address in business tab, we could.
+      // For now, just business name as requested "preenchimento automático da aba do modo empresarial"
+      
+      toast.success("Dados da empresa encontrados!");
+    } catch (error) {
+      console.error("Erro ao buscar CNPJ:", error);
+      toast.error("Erro ao buscar dados do CNPJ.");
+    } finally {
+      setIsFetchingCnpj(false);
+    }
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, field: "picture" | "coverImage") => {
     const file = event.target.files?.[0];
@@ -114,6 +171,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
         location: data.location,
         hasBusiness: data.hasBusiness,
         menuPreference: data.menuPreference,
+        cep: data.cep,
       });
       const merged = {
         ...(response.data || {}),
@@ -276,7 +334,16 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="phone">Telefone</Label>
-                        <Input id="phone" className="bg-white" placeholder="+55 (00) 00000-0000" {...form.register("phone")} />
+                        <Input 
+                          id="phone" 
+                          className="bg-white" 
+                          placeholder="(00) 00000-0000" 
+                          {...form.register("phone")} 
+                          onChange={(e) => {
+                            const masked = maskPhone(e.target.value);
+                            form.setValue("phone", masked, { shouldDirty: true });
+                          }}
+                        />
                       </div>
                     </div>
 
@@ -285,11 +352,33 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                       <Input id="occupation" className="bg-white" placeholder="Ex: Designer, Desenvolvedor..." {...form.register("occupation")} />
                     </div>
 
-                    <div className="grid gap-2">
-                      <Label htmlFor="location">Localização</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-                        <Input id="location" className="pl-9 bg-white" placeholder="Cidade, Estado" {...form.register("location")} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid gap-2">
+                        <Label htmlFor="cep">CEP</Label>
+                        <div className="relative">
+                           <Input 
+                             id="cep" 
+                             className="bg-white" 
+                             placeholder="00000-000" 
+                             {...form.register("cep")}
+                             onChange={(e) => {
+                               const masked = maskCEP(e.target.value);
+                               form.setValue("cep", masked);
+                               if (unmask(masked).length === 8) {
+                                 handleCepLookup(masked);
+                               }
+                             }}
+                             disabled={isFetchingCep}
+                           />
+                           {isFetchingCep && <div className="absolute right-3 top-3 text-xs text-zinc-400 animate-pulse">...</div>}
+                        </div>
+                      </div>
+                      <div className="grid gap-2 md:col-span-2">
+                        <Label htmlFor="location">Localização</Label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                          <Input id="location" className="pl-9 bg-white" placeholder="Cidade - Estado" {...form.register("location")} />
+                        </div>
                       </div>
                     </div>
 
@@ -342,7 +431,27 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="grid gap-2">
                         <Label htmlFor="businessCnpj">CNPJ</Label>
-                        <Input id="businessCnpj" className="bg-white" placeholder="00.000.000/0001-00" {...form.register("businessCnpj")} />
+                        <div className="flex gap-2">
+                          <Input 
+                            id="businessCnpj" 
+                            className="bg-white" 
+                            placeholder="00.000.000/0001-00" 
+                            {...form.register("businessCnpj")} 
+                            onChange={(e) => {
+                              const masked = maskCNPJ(e.target.value);
+                              form.setValue("businessCnpj", masked, { shouldDirty: true });
+                            }}
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={handleCnpjLookup}
+                            disabled={isFetchingCnpj}
+                            className="px-3"
+                          >
+                            {isFetchingCnpj ? "..." : "Buscar"}
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="businessWebsite">Website</Label>
