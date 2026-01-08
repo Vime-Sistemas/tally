@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getBudgets, deleteBudget, getBudgetComparison, createBudget } from '../../services/api';
 import { BudgetForm } from '../../components/BudgetForm';
+import { CategoryService, type Category } from '../../services/categoryService';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
@@ -81,6 +82,7 @@ export function BudgetsPage() {
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
   const [comparisons, setComparisons] = useState<Record<string, BudgetComparison>>({});
+  const [userCategories, setUserCategories] = useState<Category[]>([]);
   
   // Filtros com valores padrão
   const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
@@ -95,6 +97,19 @@ export function BudgetsPage() {
   useEffect(() => {
     loadBudgets();
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await CategoryService.getCategories();
+        setUserCategories(data);
+      } catch (error) {
+        console.error('Erro ao carregar categorias personalizadas:', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   // Navigate months across year boundaries
   const handlePrevMonth = () => {
@@ -207,7 +222,16 @@ export function BudgetsPage() {
     }
   };
 
-  const getCategoryLabel = (category: string, type: BudgetType) => {
+  const getCategoryLabel = (category: string | null | undefined, type: BudgetType) => {
+    if (!category) {
+      if (type === BudgetType.INCOME) return 'Receitas';
+      if (type === BudgetType.INVESTMENT) return 'Investimentos';
+      return 'Despesas';
+    }
+
+    const userCategory = userCategories.find(cat => cat.id === category);
+    if (userCategory) return userCategory.name;
+
     if (type === BudgetType.EXPENSE) return expenseCategoriesLabels[category] || category;
     if (type === BudgetType.INCOME) return incomeCategoriesLabels[category] || category;
     if (type === BudgetType.INVESTMENT) return investmentCategoriesLabels[category] || category;
@@ -339,7 +363,12 @@ export function BudgetsPage() {
                     <SelectContent>
                       <SelectItem value="ALL">Todas Categorias</SelectItem>
                       {getUniqueCategories().map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        <SelectItem key={cat} value={cat}>
+                          {getCategoryLabel(
+                            cat,
+                            (budgets.find((budget) => budget.category === cat)?.type as BudgetType) || BudgetType.EXPENSE
+                          )}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -384,7 +413,7 @@ export function BudgetsPage() {
                                   <div className="flex items-center gap-3">
                                      <h3 className="font-bold text-zinc-900">{budget.name}</h3>
                                      <Badge variant="secondary" className="bg-zinc-100 text-zinc-500 font-normal text-[10px]">
-                                        {getCategoryLabel(budget.category || '', budget.type as BudgetType)}
+                                         {getCategoryLabel(budget.category, budget.type as BudgetType)}
                                      </Badge>
                                   </div>
                                   <div className="md:hidden">
