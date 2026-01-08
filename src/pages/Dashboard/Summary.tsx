@@ -101,6 +101,18 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   
   const [loading, setLoading] = useState(true);
 
+  const forecastWeeks = useMemo<WeeklyForecastPoint[]>(
+    () => buildWeeklySeries(upcomingData?.transactions ?? [], 8),
+    [upcomingData]
+  );
+
+  const forecastSummary = useMemo<ForecastSummary>(
+    () => makeForecastSummary(upcomingData?.transactions ?? [], upcomingData?.summary?.overdue?.net ?? 0),
+    [upcomingData]
+  );
+
+  const forecastAccent: 'blue' | 'emerald' = user?.type === 'PLANNER' ? 'emerald' : 'blue';
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -277,18 +289,6 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
-
-  const forecastWeeks = useMemo<WeeklyForecastPoint[]>(
-    () => buildWeeklySeries(upcomingData?.transactions ?? [], 8),
-    [upcomingData]
-  );
-
-  const forecastSummary = useMemo<ForecastSummary>(
-    () => makeForecastSummary(upcomingData?.transactions ?? [], upcomingData?.summary?.overdue?.net ?? 0),
-    [upcomingData]
-  );
-
-  const forecastAccent: 'blue' | 'emerald' = user?.type === 'PLANNER' ? 'emerald' : 'blue';
 
   // --- Onboarding Logic ---
   const onboardingSteps = [
