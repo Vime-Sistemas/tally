@@ -23,7 +23,8 @@ import {
   LayoutDashboard,
   ArrowRightLeft,
   BanknoteX,
-  Users
+  Users,
+  CalendarClock
 } from "lucide-react";
 import {
   Select,
@@ -130,7 +131,8 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
             <NavigationMenuList className="gap-1">
               
               {isPlanner ? (
-                 <NavigationMenuItem>
+                <>
+                  <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <a
                         className="group inline-flex h-9 w-max items-center justify-center rounded-lg bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 hover:text-zinc-900 focus:bg-zinc-50 focus:text-zinc-900 focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-zinc-50/50 data-[state=open]:bg-zinc-50/50 cursor-pointer text-zinc-600"
@@ -140,7 +142,19 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                         Meus Clientes
                       </a>
                     </NavigationMenuLink>
-                 </NavigationMenuItem>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <a
+                        className="group inline-flex h-9 w-max items-center justify-center rounded-lg bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 hover:text-zinc-900 focus:bg-zinc-50 focus:text-zinc-900 focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-zinc-50/50 data-[state=open]:bg-zinc-50/50 cursor-pointer text-zinc-600"
+                        onClick={(e) => { e.preventDefault(); onNavigate('cashflow-future'); }}
+                      >
+                        <CalendarClock className="mr-2 h-4 w-4" />
+                        Fluxo Futuro
+                      </a>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </>
               ) : (
                 <>
               {/* Visão Geral */}
@@ -166,6 +180,14 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
                       onClick={(e) => { e.preventDefault(); onNavigate('dashboard-goals'); }}
                     >
                       Acompanhe o progresso dos seus sonhos.
+                    </ListItem>
+                    <ListItem 
+                      href="#" 
+                      title="Fluxo Futuro" 
+                      icon={CalendarClock}
+                      onClick={(e) => { e.preventDefault(); onNavigate('cashflow-future'); }}
+                    >
+                      Timeline semanal com ações rápidas.
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>

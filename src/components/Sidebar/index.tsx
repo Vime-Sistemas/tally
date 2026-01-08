@@ -18,7 +18,8 @@ import {
   CaseUpper,
   ClipboardPen,
   Users,
-  Building2
+  Building2,
+  CalendarClock
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -59,6 +60,12 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
           page: 'planner-dashboard' as Page,
         },
         {
+          id: 'cashflow',
+          title: 'Fluxo Futuro',
+          icon: CalendarClock,
+          page: 'cashflow-future' as Page,
+        },
+        {
           id: 'clients',
           title: 'Meus Clientes',
           icon: Users,
@@ -73,6 +80,12 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
         title: 'Dashboard',
         icon: LayoutDashboard,
         page: 'dashboard-summary' as Page,
+      },
+      {
+        id: 'cashflow',
+        title: 'Fluxo Futuro',
+        icon: CalendarClock,
+        page: 'cashflow-future' as Page,
       },
       {
         id: 'transactions',

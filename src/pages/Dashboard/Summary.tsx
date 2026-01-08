@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, XAxis } from "recharts";
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
@@ -16,27 +16,24 @@ import { CategoryService, type Category } from "../../services/categoryService";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
 import { useUser } from "../../contexts/UserContext";
-import { getCards, getBudgets, getBudgetComparison } from "../../services/api"; // Certifique-se que getBudgets/Comparison estão exportados aqui
+import { getCards, getBudgets, getBudgetComparison, getUpcomingTransactions } from "../../services/api";
 import { type Account, type CreditCard } from "../../types/account";
 import { type Transaction } from "../../types/transaction";
 import type { Equity } from "../../types/equity";
 import type { Budget, BudgetComparison } from "../../types/budget";
 import type { Page } from "../../types/navigation";
-import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore, addWeeks, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "../../lib/utils";
+import { ForecastCard } from "../../components/CashflowFuture/ForecastCard";
+import { buildWeeklySeries, makeForecastSummary } from "../../utils/cashflow";
+import type { ForecastSummary, UpcomingTransactionsResponse, WeeklyForecastPoint } from "../../types/cashflow";
 
 // --- Helpers ---
 const parseUTCDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-};
-
-// --- Configs & Palettes ---
-const chartConfig = {
-  income: { label: "Entradas", color: "#60a5fa" },
-  expense: { label: "Saídas", color: "#18181b" },
 };
 
 const equityConfig: Record<string, { label: string; color: string }> = {
@@ -95,11 +92,12 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const [equities, setEquities] = useState<Equity[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const { costCenters } = useUser();
+  const { costCenters, user } = useUser();
   
   // Novos estados para Orçamentos
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [budgetComparisons, setBudgetComparisons] = useState<Record<string, BudgetComparison>>({});
+  const [upcomingData, setUpcomingData] = useState<UpcomingTransactionsResponse | null>(null);
   
   const [loading, setLoading] = useState(true);
 
@@ -109,18 +107,27 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
         
-        const [accData, txData, eqData, cardsData, budgetsData] = await Promise.all([
+        const horizonStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const horizonEnd = endOfWeek(addWeeks(horizonStart, 8), { weekStartsOn: 1 });
+
+        const [accData, txData, eqData, cardsData, budgetsData, upcomingRes] = await Promise.all([
           accountService.getAll(),
           transactionService.getAll(),
           equityService.getAll(),
           getCards(),
-          getBudgets(currentYear, currentMonth) // Assumindo que aceita ano/mês
+          getBudgets(currentYear, currentMonth),
+          getUpcomingTransactions({
+            from: horizonStart.toISOString(),
+            to: horizonEnd.toISOString(),
+            status: 'all',
+          })
         ]);
         
         setAccounts(accData);
         setTransactions(txData);
         setEquities(eqData);
         setCards(cardsData);
+        setUpcomingData(upcomingRes);
         setBudgets(budgetsData);
         const cats = await CategoryService.getCategories();
         setCategories(cats);
@@ -250,18 +257,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   const costCenterConfig = expensesByCostCenterData.reduce((acc, item) => { acc[item.name] = { label: item.label, color: item.fill }; return acc; }, {} as Record<string, { label: string; color: string }>);
 
 
-  // 4. Charts Data (Cash Flow & Equity)
-  const cashFlowData = Array.from({ length: 6 }).map((_, i) => {
-    const date = subMonths(currentDate, i);
-    const monthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), date));
-    return {
-      month: format(date, 'MMM', { locale: ptBR }),
-      income: monthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0),
-      expense: monthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0),
-      date
-    };
-  }).reverse();
-
+  // 4. Charts Data (Equity)
   const equityEvolutionData = Array.from({ length: 6 }).map((_, i) => {
     const date = subMonths(currentDate, i);
     const monthEnd = endOfMonth(date);
@@ -281,6 +277,18 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
+
+  const forecastWeeks = useMemo<WeeklyForecastPoint[]>(
+    () => buildWeeklySeries(upcomingData?.transactions ?? [], 8),
+    [upcomingData]
+  );
+
+  const forecastSummary = useMemo<ForecastSummary>(
+    () => makeForecastSummary(upcomingData?.transactions ?? [], upcomingData?.summary?.overdue?.net ?? 0),
+    [upcomingData]
+  );
+
+  const forecastAccent: 'blue' | 'emerald' = user?.type === 'PLANNER' ? 'emerald' : 'blue';
 
   // --- Onboarding Logic ---
   const onboardingSteps = [
@@ -390,36 +398,16 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
         </div>
       </div>
 
-      {/* --- ROW 1: Charts (Fluxo de Caixa & Categorias) --- */}
+      {/* --- ROW 1: Fluxo Futuro & Categorias --- */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        
-        {/* Fluxo de Caixa */}
-        <Card className="col-span-4 rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-zinc-900">Fluxo de Caixa</CardTitle>
-          </CardHeader>
-          <CardContent className="pl-0">
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <AreaChart data={cashFlowData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.5}/>
-                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="fillExpense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#e4e4e7" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#e4e4e7" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f4f4f5" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{fill: '#a1a1aa', fontSize: 12}} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                <Area dataKey="expense" type="monotone" fill="url(#fillExpense)" stroke="#a1a1aa" strokeWidth={2} stackId="a" />
-                <Area dataKey="income" type="monotone" fill="url(#fillIncome)" stroke="#60a5fa" strokeWidth={2} stackId="b" />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <div className="col-span-4">
+          <ForecastCard
+            data={forecastWeeks}
+            summary={forecastSummary}
+            accent={forecastAccent}
+            loading={!upcomingData}
+          />
+        </div>
 
         {/* Despesas por Categoria (NOVO) + Centro de Custo */}
         <div className="col-span-3 space-y-4">

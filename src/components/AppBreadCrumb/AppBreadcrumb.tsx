@@ -37,6 +37,9 @@ const BREADCRUMB_MAP: Partial<Record<Page, BreadcrumbPath[]>> = {
     { label: 'Carteira', page: 'accounts-list' },
     { label: 'Nova Conta' }
   ],
+  'cashflow-future': [
+    { label: 'Fluxo Futuro' }
+  ],
   'equity-list': [
     { label: 'Patrimônio', page: 'equity-list' }
   ],

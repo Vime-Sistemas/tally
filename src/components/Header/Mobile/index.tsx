@@ -1,4 +1,4 @@
-import { Home, PlusCircle, User, LayoutList, WalletCards, Users } from "lucide-react";
+import { Home, PlusCircle, User, LayoutList, WalletCards, Users, CalendarClock } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { Page } from "../../../types/navigation";
 import { useUser } from "../../../contexts/UserContext";
@@ -28,6 +28,17 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
           </button>
 
           <button
+            onClick={() => onNavigate('cashflow-future')}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full space-y-1",
+              currentPage === 'cashflow-future' ? "text-emerald-600" : "text-gray-400"
+            )}
+          >
+            <CalendarClock className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Fluxo</span>
+          </button>
+
+          <button
             onClick={() => onNavigate('profile')}
             className={cn(
               "flex flex-col items-center justify-center w-full h-full space-y-1",
@@ -54,6 +65,17 @@ export function MobileHeader({ onNavigate, currentPage }: MobileHeaderProps) {
         >
           <Home className="w-6 h-6" />
           <span className="text-[10px] font-medium">Início</span>
+        </button>
+
+        <button
+          onClick={() => onNavigate('cashflow-future')}
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full space-y-1",
+            currentPage === 'cashflow-future' ? "text-blue-600" : "text-gray-400"
+          )}
+        >
+          <CalendarClock className="w-6 h-6" />
+          <span className="text-[10px] font-medium">Fluxo</span>
         </button>
 
         <button

@@ -35,6 +35,7 @@ import { PlannerClients } from './pages/Planner/Clients'
 import { PlannerDashboard } from './pages/Planner/Dashboard'
 import { InviteLandingPage } from './pages/InviteLandingPage'
 import { PlannerInvitesDialog } from './components/PlannerInvitesDialog'
+import { CashflowFuturePage } from './pages/CashflowFuture'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 function AppContent() {
@@ -253,6 +254,8 @@ function AppContent() {
             </div>
           </div>
         );
+      case 'cashflow-future':
+        return <CashflowFuturePage />;
       case 'equity-new':
         return <EquityNew onNavigate={setCurrentPage} />;
       case 'equity-list':

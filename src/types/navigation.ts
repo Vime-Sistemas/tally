@@ -5,6 +5,7 @@ export type Page =
   | 'transactions-history' 
   | 'accounts-new' 
   | 'accounts-list' 
+  | 'cashflow-future'
   | 'budgets'
   | 'debts'
   | 'reports' 

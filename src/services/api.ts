@@ -5,6 +5,12 @@ import type { Transaction } from '../types/transaction';
 import type { CreateTransactionDTO } from '../types/transaction';
 import type { Goal, CreateGoalDTO, UpdateGoalDTO } from '../types/goal';
 import type { Budget, CreateBudgetDTO, BudgetComparison } from '../types/budget';
+import type {
+  CashflowForecastParams,
+  CashflowForecastResponse,
+  UpcomingTransactionsParams,
+  UpcomingTransactionsResponse,
+} from '../types/cashflow';
 
 export interface Debt {
   id: string;
@@ -248,6 +254,22 @@ export const deleteBudget = async (id: string): Promise<void> => {
 
 export const getBudgetComparison = async (id: string): Promise<BudgetComparison> => {
   const response = await api.get(`/budgets/${id}/comparison`);
+  return response.data;
+};
+
+// CASHFLOW API
+
+export const getCashflowForecast = async (
+  params?: CashflowForecastParams
+): Promise<CashflowForecastResponse> => {
+  const response = await api.get('/cashflow/forecast', { params });
+  return response.data;
+};
+
+export const getUpcomingTransactions = async (
+  params?: UpcomingTransactionsParams
+): Promise<UpcomingTransactionsResponse> => {
+  const response = await api.get('/transactions/upcoming', { params });
   return response.data;
 };
 
