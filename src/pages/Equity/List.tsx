@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +30,10 @@ import { EquityCardMenu } from "../../components/EquityCardMenu";
 import { EditEquityDialog } from "../../components/EditEquityDialog";
 import { cn } from "../../lib/utils";
 import { equityService } from "../../services/equities";
-import { transactionService } from "../../services/transactions";
+import { investmentService } from "../../services/investments";
 import type { Page } from "../../types/navigation";
 import { type Equity, type EquityType, EQUITY_TYPES } from "../../types/equity";
-import type { Transaction } from "../../types/transaction";
+import type { InvestmentWorkspaceSnapshot } from "../../types/investments";
 import { useUser } from "../../contexts/UserContext";
 import { formatCurrency } from "../../utils/formatters";
 import { toast } from "sonner";
@@ -47,12 +47,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  format,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-} from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   ArrowUpCircle,
@@ -96,32 +91,28 @@ export function EquityList({ onNavigate }: EquityListProps) {
   const accent: "blue" | "emerald" = user?.type === "PLANNER" ? "emerald" : "blue";
   const palette = accentTokens[accent];
 
-  const [equities, setEquities] = useState<Equity[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [snapshot, setSnapshot] = useState<InvestmentWorkspaceSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingEquity, setEditingEquity] = useState<Equity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Equity | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    loadEquities();
-  }, []);
-
-  const loadEquities = async () => {
+  const loadWorkspace = useCallback(async () => {
     try {
-      const [equityData, transactionData] = await Promise.all([
-        equityService.getAll(),
-        transactionService.getAll(),
-      ]);
-      setEquities(equityData);
-      setTransactions(transactionData);
+      setLoading(true);
+      const data = await investmentService.getWorkspaceSnapshot();
+      setSnapshot(data);
     } catch (error) {
-      console.error("Failed to load equities:", error);
-      toast.error("Erro ao carregar patrimônio");
+      console.error("Failed to load investments workspace:", error);
+      toast.error("Erro ao carregar dados de investimento");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadWorkspace();
+  }, [loadWorkspace]);
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -129,7 +120,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
       setIsDeleting(true);
       await equityService.delete(deleteConfirm.id);
       toast.success("Item removido com sucesso!");
-      setEquities((prev) => prev.filter((item) => item.id !== deleteConfirm.id));
+      await loadWorkspace();
       setDeleteConfirm(null);
     } catch (error) {
       toast.error("Erro ao remover item");
@@ -137,68 +128,29 @@ export function EquityList({ onNavigate }: EquityListProps) {
       setIsDeleting(false);
     }
   };
+  const equities = snapshot?.equities ?? [];
+  const holdings = snapshot?.holdings ?? [];
+  const flows = snapshot?.flows ?? [];
+  const allocationSlices = snapshot?.allocation ?? [];
+  const totals = snapshot?.totals;
+  const recentMovements = snapshot?.recentMovements ?? [];
+  const equityMap = useMemo(() => new Map(equities.map((item) => [item.id, item])), [equities]);
 
-  const totalValue = useMemo(() => equities.reduce((sum, item) => sum + item.value, 0), [equities]);
-  const investedCapital = useMemo(
-    () => equities.reduce((sum, item) => sum + (item.cost || 0), 0),
-    [equities]
-  );
-  const netGain = totalValue - investedCapital;
-  const netGainPct = investedCapital > 0 ? (netGain / investedCapital) * 100 : 0;
-  const avgTicket = equities.length > 0 ? totalValue / equities.length : 0;
+  const totalValue = totals?.currentValue ?? 0;
+  const netGain = totals?.netGain ?? 0;
+  const netGainPct = totals?.netGainPct ?? 0;
+  const avgTicket = totals?.averageTicket ?? 0;
+  const avgContribution = totals?.averageContribution ?? 0;
 
-  const investmentTransactions = useMemo(
+  const allocationChartData = useMemo(
     () =>
-      transactions.filter(
-        (tx) => tx.category === "INVESTMENT" || Boolean(tx.equityId)
-      ),
-    [transactions]
-  );
-
-  const monthlyFlows = useMemo(() => {
-    const base = startOfMonth(new Date());
-    return Array.from({ length: 6 }).map((_, index) => {
-      const monthDate = subMonths(base, 5 - index);
-      const rangeStart = startOfMonth(monthDate);
-      const rangeEnd = endOfMonth(monthDate);
-      const monthTxs = investmentTransactions.filter((tx) => {
-        const txDate = new Date(tx.date);
-        return txDate >= rangeStart && txDate <= rangeEnd;
-      });
-      const contributions = monthTxs
-        .filter((tx) => tx.type === "EXPENSE")
-        .reduce((sum, tx) => sum + tx.amount, 0);
-      const withdrawals = monthTxs
-        .filter((tx) => tx.type === "INCOME")
-        .reduce((sum, tx) => sum + tx.amount, 0);
-      return {
-        month: format(monthDate, "MMM", { locale: ptBR }).toUpperCase(),
-        contributions,
-        withdrawals,
-        net: contributions - withdrawals,
-      };
-    });
-  }, [investmentTransactions]);
-
-  const avgContribution = monthlyFlows.length
-    ? monthlyFlows.reduce((sum, item) => sum + item.contributions, 0) /
-      monthlyFlows.length
-    : 0;
-
-  const allocationChartData = useMemo(() => {
-    const groupMap: Record<string, number> = {};
-    equities.forEach((eq) => {
-      const group = getEquityGroup(eq.type);
-      groupMap[group] = (groupMap[group] || 0) + eq.value;
-    });
-    return Object.entries(groupMap)
-      .map(([label, value], index) => ({
-        name: label,
-        value,
+      allocationSlices.map((slice, index) => ({
+        name: slice.label,
+        value: slice.value,
         fill: palette.pie[index % palette.pie.length],
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [equities, palette.pie]);
+      })),
+    [allocationSlices, palette.pie]
+  );
 
   const allocationConfig = useMemo(
     () =>
@@ -209,19 +161,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
     [allocationChartData]
   );
 
-  const holdings = useMemo(
-    () => equities.slice().sort((a, b) => b.value - a.value),
-    [equities]
-  );
-
-  const recentMovements = useMemo(
-    () =>
-      investmentTransactions
-        .slice()
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5),
-    [investmentTransactions]
-  );
+  const monthlyFlows = flows;
 
   if (loading) {
     return (
@@ -243,7 +183,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
           <div className="space-y-1">
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-400">Workspace</p>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Investimentos & Patrimônio</h1>
-            <p className="text-zinc-500">Consolide aportes, resgates e performance sem sair do Tally.</p>
+            <p className="text-zinc-500">Consolide aportes, resgates e performance sem sair do CDF.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Badge className={cn("px-3 py-1.5 rounded-full", palette.badge)}>
@@ -404,32 +344,42 @@ export function EquityList({ onNavigate }: EquityListProps) {
                 <TableBody>
                   {holdings.length > 0 ? (
                     holdings.map((item) => {
-                      const gain = item.value - (item.cost || 0);
-                      const gainPct = item.cost ? (gain / item.cost) * 100 : 0;
+                      const equityRecord = equityMap.get(item.id);
+                      const acquisitionDate = item.acquisitionDate
+                        ? format(new Date(item.acquisitionDate), "dd MMM yyyy", { locale: ptBR })
+                        : "";
                       return (
                         <TableRow key={item.id} className="text-sm">
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-semibold text-zinc-900">{item.name}</span>
-                              <span className="text-xs text-zinc-400">{format(new Date(item.acquisitionDate), "dd MMM yyyy", { locale: ptBR })}</span>
+                              {acquisitionDate && (
+                                <span className="text-xs text-zinc-400">{acquisitionDate}</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs bg-zinc-50 text-zinc-500">
-                              {getEquityGroup(item.type)}
+                              {getEquityGroup(item.type as EquityType)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-semibold text-zinc-900">{formatCurrency(item.value)}</TableCell>
-                          <TableCell>{formatCurrency(item.cost || 0)}</TableCell>
+                          <TableCell className="font-semibold text-zinc-900">{formatCurrency(item.currentValue)}</TableCell>
+                          <TableCell>{formatCurrency(item.invested)}</TableCell>
                           <TableCell>
-                            <span className={cn("font-semibold", gain >= 0 ? "text-zinc-900" : "text-zinc-400")}>{formatCurrency(gain)}</span>
-                            <span className="text-xs text-zinc-400 ml-2">{gainPct.toFixed(1)}%</span>
+                            <span className={cn("font-semibold", item.netGain >= 0 ? "text-zinc-900" : "text-zinc-400")}>
+                              {formatCurrency(item.netGain)}
+                            </span>
+                            <span className="text-xs text-zinc-400 ml-2">{item.netGainPct.toFixed(1)}%</span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <EquityCardMenu
-                              onEdit={() => setEditingEquity(item)}
-                              onDelete={() => setDeleteConfirm(item)}
-                            />
+                            {equityRecord ? (
+                              <EquityCardMenu
+                                onEdit={() => setEditingEquity(equityRecord)}
+                                onDelete={() => setDeleteConfirm(equityRecord)}
+                              />
+                            ) : (
+                              <span className="text-xs text-zinc-400">Sem ações</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -493,7 +443,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
           equity={editingEquity}
           onOpenChange={(open) => !open && setEditingEquity(null)}
           onSuccess={() => {
-            loadEquities();
+            loadWorkspace();
             setEditingEquity(null);
           }}
         />
