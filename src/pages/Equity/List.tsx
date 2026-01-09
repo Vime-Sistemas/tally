@@ -238,7 +238,6 @@ export function EquityList({ onNavigate }: EquityListProps) {
           <div className="space-y-1">
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-400">Workspace</p>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Investimentos & Patrimônio</h1>
-            <p className="text-zinc-500">Consolide aportes, resgates e performance sem sair do Tally.</p>
             {allocationHighlights.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-3">
                 {allocationHighlights.map((slice) => {
