@@ -40,10 +40,13 @@ import { toast } from "sonner";
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Pie,
   PieChart,
-  Cell,
+  ReferenceLine,
   XAxis,
   YAxis,
 } from "recharts";
@@ -137,10 +140,56 @@ export function EquityList({ onNavigate }: EquityListProps) {
   const equityMap = useMemo(() => new Map(equities.map((item) => [item.id, item])), [equities]);
 
   const totalValue = totals?.currentValue ?? 0;
+  const investedCapital = totals?.investedCapital ?? 0;
   const netGain = totals?.netGain ?? 0;
   const netGainPct = totals?.netGainPct ?? 0;
   const avgTicket = totals?.averageTicket ?? 0;
-  const avgContribution = totals?.averageContribution ?? 0;
+  const coverageMultiple = investedCapital ? totalValue / investedCapital : 0;
+
+  const monthlyFlows = flows;
+  const allocationHighlights = allocationSlices.slice(0, 3);
+  const lastFlow = monthlyFlows[monthlyFlows.length - 1];
+  const previousFlow = monthlyFlows[monthlyFlows.length - 2];
+  const netDelta = lastFlow && previousFlow ? lastFlow.net - previousFlow.net : 0;
+  const netDeltaPct =
+    lastFlow && previousFlow && previousFlow.net !== 0
+      ? ((lastFlow.net - previousFlow.net) / Math.abs(previousFlow.net)) * 100
+      : 0;
+  const contributionDeltaPct =
+    lastFlow && previousFlow && previousFlow.contributions !== 0
+      ? ((lastFlow.contributions - previousFlow.contributions) / previousFlow.contributions) * 100
+      : 0;
+
+  const stackedFlowData = useMemo(
+    () =>
+      monthlyFlows.map((flow) => ({
+        month: flow.month,
+        aportes: flow.contributions,
+        resgates: -flow.withdrawals,
+      })),
+    [monthlyFlows]
+  );
+
+  const netTrendData = useMemo(
+    () =>
+      monthlyFlows.map((flow) => ({
+        month: flow.month,
+        net: flow.net,
+      })),
+    [monthlyFlows]
+  );
+
+  const formatAxisValue = (value: number) =>
+    Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`;
+
+  const formatSignedCurrency = (value: number) => {
+    if (!value) return formatCurrency(0);
+    const prefix = value > 0 ? "+" : "-";
+    return `${prefix}${formatCurrency(Math.abs(value))}`;
+  };
+
+  const formatSignedPercent = (value: number) =>
+    value === 0 ? "0%" : `${value > 0 ? "+" : "-"}${Math.abs(value).toFixed(1)}%`;
 
   const allocationChartData = useMemo(
     () =>
@@ -161,7 +210,19 @@ export function EquityList({ onNavigate }: EquityListProps) {
     [allocationChartData]
   );
 
-  const monthlyFlows = flows;
+  const flowConfig = {
+    contributions: { label: "Aportes", color: palette.stroke },
+    withdrawals: { label: "Resgates", color: "#d4d4d8" },
+  } as const;
+
+  const stackedFlowConfig = {
+    aportes: { label: "Aportes", color: palette.stroke },
+    resgates: { label: "Resgates", color: "#a1a1aa" },
+  } as const;
+
+  const netTrendConfig = {
+    net: { label: "Resultado", color: palette.stroke },
+  } as const;
 
   if (loading) {
     return (
@@ -170,12 +231,6 @@ export function EquityList({ onNavigate }: EquityListProps) {
       </div>
     );
   }
-
-  const flowConfig = {
-    contributions: { label: "Aportes", color: palette.stroke },
-    withdrawals: { label: "Resgates", color: "#d4d4d8" },
-  } as const;
-
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -183,7 +238,22 @@ export function EquityList({ onNavigate }: EquityListProps) {
           <div className="space-y-1">
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-400">Workspace</p>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Investimentos & Patrimônio</h1>
-            <p className="text-zinc-500">Consolide aportes, resgates e performance sem sair do CDF.</p>
+            <p className="text-zinc-500">Consolide aportes, resgates e performance sem sair do Tally.</p>
+            {allocationHighlights.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-3">
+                {allocationHighlights.map((slice) => {
+                  const slicePct = totalValue ? (slice.value / totalValue) * 100 : 0;
+                  return (
+                    <Badge
+                      key={slice.label}
+                      className="rounded-full border border-zinc-100 bg-white text-xs font-semibold text-zinc-500"
+                    >
+                      {slice.label} · {slicePct.toFixed(1)}%
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Badge className={cn("px-3 py-1.5 rounded-full", palette.badge)}>
@@ -201,49 +271,151 @@ export function EquityList({ onNavigate }: EquityListProps) {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-3xl border-zinc-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm text-zinc-500">Valor Atual</CardTitle>
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-2">
+                <CardTitle className="text-sm text-zinc-500">Valor Atual</CardTitle>
+                <Badge className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", netGain >= 0 ? palette.badge : "bg-zinc-100 text-zinc-500")}>
+                  {formatSignedCurrency(netGain)} vs investido
+                </Badge>
+              </div>
               <Landmark className="h-4 w-4 text-zinc-400" />
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-zinc-900">{formatCurrency(totalValue)}</p>
-              <p className="text-sm text-zinc-400 mt-1">Baseado em avaliações mais recentes</p>
+              <p className="text-sm text-zinc-400 mt-1">Carteira viva com {equities.length || 0} posições</p>
             </CardContent>
           </Card>
 
           <Card className="rounded-3xl border-zinc-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm text-zinc-500">Lucro Líquido</CardTitle>
-              <TrendingUp className="h-4 w-4 text-zinc-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-zinc-900">{formatCurrency(netGain)}</p>
-                <span className={cn("text-sm font-medium", netGain >= 0 ? palette.chip : "text-zinc-400")}>{netGainPct.toFixed(1)}%</span>
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-2">
+                <CardTitle className="text-sm text-zinc-500">Capital Investido</CardTitle>
+                <Badge className="px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-50 text-zinc-500">
+                  Ticket médio {formatCurrency(avgTicket)}
+                </Badge>
               </div>
-              <p className="text-sm text-zinc-400 mt-1">Comparado ao capital investido</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-3xl border-zinc-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm text-zinc-500">Ticket Médio</CardTitle>
               <Layers className="h-4 w-4 text-zinc-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-zinc-900">{formatCurrency(avgTicket)}</p>
-              <p className="text-sm text-zinc-400 mt-1">Distribuição entre {equities.length || 0} posições</p>
+              <p className="text-3xl font-bold text-zinc-900">{formatCurrency(investedCapital)}</p>
+              <p className="text-sm text-zinc-400 mt-1">Cobertura de {coverageMultiple.toFixed(1)}x vs valor atual</p>
             </CardContent>
           </Card>
 
           <Card className="rounded-3xl border-zinc-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm text-zinc-500">Aporte Médio (6M)</CardTitle>
-              <Wallet className="h-4 w-4 text-zinc-400" />
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-2">
+                <CardTitle className="text-sm text-zinc-500">Lucro Líquido</CardTitle>
+                <Badge className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", netGainPct >= 0 ? palette.chip : "bg-zinc-100 text-zinc-500")}>
+                  {formatSignedPercent(netGainPct)}
+                </Badge>
+              </div>
+              <TrendingUp className="h-4 w-4 text-zinc-400" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-zinc-900">{formatCurrency(avgContribution)}</p>
-              <p className="text-sm text-zinc-400 mt-1">Somente aportes categorizados como investimento</p>
+              <p className="text-3xl font-bold text-zinc-900">{formatCurrency(netGain)}</p>
+              <p className="text-sm text-zinc-400 mt-1">Comparado ao capital aportado</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-zinc-100 shadow-sm">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-2">
+                <CardTitle className="text-sm text-zinc-500">Pulso do mês</CardTitle>
+                <Badge className="px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-50 text-zinc-500">
+                  {lastFlow ? `Mês ${lastFlow.month}` : "Sem histórico"}
+                </Badge>
+              </div>
+              <Wallet className="h-4 w-4 text-zinc-400" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">Aportes</p>
+                  <p className="text-lg font-semibold text-zinc-900">{formatCurrency(lastFlow?.contributions || 0)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">Resgates</p>
+                  <p className="text-lg font-semibold text-zinc-900">{formatCurrency(lastFlow?.withdrawals || 0)}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-zinc-100 pt-2">
+                <p className="text-sm text-zinc-500">Variação mensal</p>
+                <Badge className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", contributionDeltaPct >= 0 ? palette.badge : "bg-zinc-100 text-zinc-500")}>
+                  {formatSignedPercent(contributionDeltaPct)} vs mês anterior
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-7">
+          <Card className="col-span-3 rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-500">Resultado líquido</p>
+                <CardTitle className="text-lg text-zinc-900">Tendência</CardTitle>
+              </div>
+              <Badge className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", netDelta >= 0 ? palette.badge : "bg-zinc-100 text-zinc-500")}>
+                {formatSignedCurrency(netDelta)} vs mês anterior
+              </Badge>
+            </CardHeader>
+            <CardContent className="pl-0">
+              <div className="flex items-baseline gap-2 px-6 pb-4">
+                <p className="text-3xl font-bold text-zinc-900">{formatCurrency(lastFlow?.net || 0)}</p>
+                <Badge className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", netDeltaPct >= 0 ? palette.chip : "bg-zinc-100 text-zinc-500")}>
+                  {formatSignedPercent(netDeltaPct)}
+                </Badge>
+              </div>
+              <ChartContainer config={netTrendConfig} className="h-[200px]">
+                <AreaChart data={netTrendData} margin={{ left: 12, right: 12, top: 10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`netTrendFill-${accent}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={palette.stroke} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={palette.stroke} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => formatAxisValue(Number(value))}
+                    tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  />
+                  <ReferenceLine y={0} stroke="#e4e4e7" strokeDasharray="4 2" />
+                  <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                  <Area type="monotone" dataKey="net" stroke={palette.stroke} strokeWidth={2} fill={`url(#netTrendFill-${accent})`} />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-4 rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <p className="text-sm text-zinc-500">Fluxo empilhado</p>
+                <CardTitle className="text-lg text-zinc-900">Aportes vs Resgates</CardTitle>
+              </div>
+              <Badge className="px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-50 text-zinc-500">Histórico 6M</Badge>
+            </CardHeader>
+            <CardContent className="pl-0">
+              <ChartContainer config={stackedFlowConfig} className="h-[220px]">
+                <BarChart data={stackedFlowData} margin={{ left: 12, right: 12, top: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => formatAxisValue(Number(value))}
+                    tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  />
+                  <ReferenceLine y={0} stroke="#e4e4e7" />
+                  <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                  <Bar dataKey="aportes" stackId="flows" fill={palette.stroke} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="resgates" stackId="flows" fill="#a1a1aa" radius={[0, 0, 6, 6]} />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>
@@ -268,7 +440,12 @@ export function EquityList({ onNavigate }: EquityListProps) {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`} tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => formatAxisValue(Number(value))}
+                    tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  />
                   <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                   <Area type="monotone" dataKey="contributions" stroke={palette.stroke} strokeWidth={2} fill={`url(#investmentFill-${accent})`} />
                   <Area type="monotone" dataKey="withdrawals" stroke="#d4d4d8" strokeWidth={2} fill="rgba(212,212,216,0.2)" />
@@ -337,6 +514,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
                     <TableHead>Classe</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Investido</TableHead>
+                    <TableHead>Peso</TableHead>
                     <TableHead>Resultado</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -348,11 +526,22 @@ export function EquityList({ onNavigate }: EquityListProps) {
                       const acquisitionDate = item.acquisitionDate
                         ? format(new Date(item.acquisitionDate), "dd MMM yyyy", { locale: ptBR })
                         : "";
+                      const weight = totalValue ? (item.currentValue / totalValue) * 100 : 0;
                       return (
                         <TableRow key={item.id} className="text-sm">
                           <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-zinc-900">{item.name}</span>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-zinc-900">{item.name}</span>
+                                <Badge
+                                  className={cn(
+                                    "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                    item.netGain >= 0 ? palette.chip : "bg-zinc-100 text-zinc-500"
+                                  )}
+                                >
+                                  {item.netGain >= 0 ? "Em alta" : "Em ajuste"}
+                                </Badge>
+                              </div>
                               {acquisitionDate && (
                                 <span className="text-xs text-zinc-400">{acquisitionDate}</span>
                               )}
@@ -365,6 +554,11 @@ export function EquityList({ onNavigate }: EquityListProps) {
                           </TableCell>
                           <TableCell className="font-semibold text-zinc-900">{formatCurrency(item.currentValue)}</TableCell>
                           <TableCell>{formatCurrency(item.invested)}</TableCell>
+                          <TableCell>
+                            <Badge className="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-zinc-50 text-zinc-500">
+                              {weight.toFixed(1)}%
+                            </Badge>
+                          </TableCell>
                           <TableCell>
                             <span className={cn("font-semibold", item.netGain >= 0 ? "text-zinc-900" : "text-zinc-400")}>
                               {formatCurrency(item.netGain)}
@@ -386,7 +580,7 @@ export function EquityList({ onNavigate }: EquityListProps) {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-zinc-400">
+                      <TableCell colSpan={7} className="text-center py-8 text-zinc-400">
                         Nenhum ativo cadastrado
                       </TableCell>
                     </TableRow>
@@ -408,22 +602,23 @@ export function EquityList({ onNavigate }: EquityListProps) {
               {recentMovements.length > 0 ? (
                 recentMovements.map((movement) => {
                   const isContribution = movement.type === "EXPENSE";
+                  const linkedEquity = movement.equityId ? equityMap.get(movement.equityId) : null;
                   return (
                     <div key={movement.id} className="flex items-center justify-between rounded-2xl border border-zinc-100 p-4">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-900">
-                          {movement.description || "Movimentação"}
-                        </p>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-zinc-900">
+                            {movement.description || "Movimentação"}
+                          </p>
+                          <Badge className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", isContribution ? palette.badge : "bg-zinc-100 text-zinc-500")}>
+                            {isContribution ? "Aporte" : "Resgate"}
+                          </Badge>
+                        </div>
                         <p className="text-xs text-zinc-400">
                           {format(new Date(movement.date), "dd MMMM", { locale: ptBR })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className={cn("text-sm font-semibold", isContribution ? palette.chip : "text-zinc-400")}> 
-                          {isContribution ? "aplicação" : "resgate"}
-                        </p>
-                        <p className="text-base font-bold text-zinc-900">
-                          {isContribution ? "+" : "-"} {formatCurrency(movement.amount)}
+                          {linkedEquity && (
+                            <span className="text-zinc-300"> · {linkedEquity.name}</span>
+                          )}
                         </p>
                       </div>
                     </div>
