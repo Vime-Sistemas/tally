@@ -28,6 +28,7 @@ export interface CashflowForecastEntry {
   effectiveNet: number;
   categories: CashflowForecastCategory[];
   topExpenses: CashflowForecastCategory[];
+  filledByAverage?: boolean;
 }
 
 export interface CashflowForecastCategory {

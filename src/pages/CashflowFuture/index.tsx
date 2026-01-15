@@ -183,6 +183,7 @@ export function CashflowFuturePage() {
       income: m.effectiveIncome,
       expense: m.effectiveExpense,
       net: m.effectiveNet,
+      filledByAverage: Boolean(m.filledByAverage),
     }));
   }, [forecastMonths]);
 
@@ -190,6 +191,7 @@ export function CashflowFuturePage() {
     return forecastMonths.map((m) => ({
       label: m.label,
       top: m.topExpenses,
+      filledByAverage: Boolean(m.filledByAverage),
     }));
   }, [forecastMonths]);
 
@@ -359,6 +361,7 @@ export function CashflowFuturePage() {
             <Badge variant="outline" className="rounded-full border-zinc-100 text-zinc-500">
               {includePending ? 'Pagos + pendentes' : 'Apenas pagos'}
             </Badge>
+            <Badge variant="secondary" className="rounded-full bg-zinc-100 text-zinc-600">Estimado = média 6 meses</Badge>
             <div className="flex gap-2 ml-auto">
               <Button
                 size="sm"
@@ -397,7 +400,15 @@ export function CashflowFuturePage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-zinc-200" />
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#71717a' }} interval={forecastOverallSeries.length > 6 ? 1 : 0} />
                     <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: '#71717a' }} width={80} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => [formatCurrency(Number(value)), name]} />} />
+                    <ChartTooltip
+                      content={<ChartTooltipContent
+                        formatter={(value, name) => [formatCurrency(Number(value)), name]}
+                        labelFormatter={(label, payload) => {
+                          const filled = payload?.[0]?.payload?.filledByAverage
+                          return filled ? `${label} (estimado)` : label
+                        }}
+                      />}
+                    />
                     <ChartLegend content={<ChartLegendContent />} />
                     <Area type="monotone" dataKey="income" stroke="var(--color-income)" fill="var(--color-income)" fillOpacity={0.08} strokeWidth={2} />
                     <Area type="monotone" dataKey="expense" stroke="var(--color-expense)" fill="var(--color-expense)" fillOpacity={0.08} strokeWidth={2} />
@@ -413,7 +424,7 @@ export function CashflowFuturePage() {
                     <Card key={m.label} className="border-zinc-100 p-3">
                       <div className="flex justify-between text-sm font-semibold text-zinc-800 mb-2">
                         <span>{m.label}</span>
-                        <span className="text-xs text-zinc-500">Top 5</span>
+                        <span className="text-xs text-zinc-500">{m.filledByAverage ? 'Estimado (média 6m)' : 'Top 5'}</span>
                       </div>
                       <div className="space-y-2">
                         {m.top.length === 0 && (
