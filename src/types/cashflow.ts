@@ -83,6 +83,8 @@ export interface UpcomingTransaction extends UpcomingTransactionRelation {
   isPaid: boolean;
   paidDate?: string | null;
   daysUntil: number;
+  currentInstallment?: number | null;
+  totalInstallments?: number | null;
 }
 
 export interface UpcomingSummaryBucket {
