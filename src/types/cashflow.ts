@@ -4,6 +4,8 @@ import type { TransactionType } from './transaction';
 export interface CashflowForecastParams {
   userId?: string;
   months?: number;
+  includePending?: boolean;
+  topCategories?: number;
 }
 
 export interface CashflowForecastTotals {
@@ -20,6 +22,22 @@ export interface CashflowForecastEntry {
   expense: CashflowForecastTotals;
   net: number;
   pendingNet: number;
+  appliedPending: boolean;
+  effectiveIncome: number;
+  effectiveExpense: number;
+  effectiveNet: number;
+  categories: CashflowForecastCategory[];
+  topExpenses: CashflowForecastCategory[];
+}
+
+export interface CashflowForecastCategory {
+  categoryId: string | null;
+  name: string;
+  type: 'INCOME' | 'EXPENSE';
+  paid: number;
+  pending: number;
+  total: number;
+  effectiveTotal: number;
 }
 
 export interface CashflowForecastResponse {

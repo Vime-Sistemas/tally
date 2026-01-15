@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from '../../components/ui/skeleton';
 import { ForecastCard } from '../../components/CashflowFuture/ForecastCard';
 import { TimelineWeekCard } from '../../components/CashflowFuture/TimelineWeekCard';
-import { getUpcomingTransactions, getAccounts, getCards, updateTransaction } from '../../services/api';
+import { getUpcomingTransactions, getAccounts, getCards, updateTransaction, getCashflowForecast } from '../../services/api';
 import type {
   ForecastSummary,
   TimelineGroup,
@@ -17,6 +17,7 @@ import type {
   UpcomingTransactionsResponse,
   UpcomingTransactionStatus,
   WeeklyForecastPoint,
+  CashflowForecastEntry,
 } from '../../types/cashflow';
 import type { Account, CreditCard } from '../../types/account';
 import { CategoryService, type Category } from '../../services/categoryService';
@@ -24,6 +25,9 @@ import { toast } from 'sonner';
 import { useUser } from '../../contexts/UserContext';
 import api from '../../services/api';
 import { CalendarClock, Filter, RefreshCcw, Sparkles } from 'lucide-react';
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from '../../components/ui/chart';
+import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from 'recharts';
+import { formatCurrency } from '../../utils/formatters';
 import { cn } from '../../lib/utils';
 import { buildTimelineGroups, buildWeeklySeries, makeForecastSummary } from '../../utils/cashflow';
 
@@ -36,6 +40,8 @@ type Accent = 'blue' | 'emerald';
 type TimelineStatus = 'all' | 'pending' | 'paid' | 'overdue';
 
 const WEEKS_AHEAD = 8;
+const MONTHS_AHEAD = 12;
+const TOP_EXPENSES = 5;
 
 export function CashflowFuturePage() {
   const { user } = useUser();
@@ -54,6 +60,11 @@ export function CashflowFuturePage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<UpcomingTransaction | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [forecastMonths, setForecastMonths] = useState<CashflowForecastEntry[]>([]);
+  const [forecastLoading, setForecastLoading] = useState(true);
+  const [includePending, setIncludePending] = useState(true);
+  const [categoryView, setCategoryView] = useState<'overall' | 'top5'>('overall');
 
   useEffect(() => {
     const bootstrapFilters = async () => {
@@ -115,6 +126,28 @@ export function CashflowFuturePage() {
     loadTimeline();
   }, [loadTimeline]);
 
+  const loadForecast = useCallback(async () => {
+    try {
+      setForecastLoading(true);
+      const res = await getCashflowForecast({
+        months: MONTHS_AHEAD,
+        includePending,
+        topCategories: TOP_EXPENSES,
+        userId: clientFilter !== 'SELF' ? clientFilter : undefined,
+      });
+      setForecastMonths(res.months || []);
+    } catch (error) {
+      console.error('Erro ao carregar projeção mensal', error);
+      toast.error('Falha ao carregar projeção mensal.');
+    } finally {
+      setForecastLoading(false);
+    }
+  }, [clientFilter, includePending]);
+
+  useEffect(() => {
+    loadForecast();
+  }, [loadForecast]);
+
   const filteredTransactions = useMemo(() => {
     if (!upcoming) return [] as UpcomingTransaction[];
 
@@ -143,6 +176,22 @@ export function CashflowFuturePage() {
     () => buildWeeklySeries(filteredTransactions, WEEKS_AHEAD),
     [filteredTransactions]
   );
+
+  const forecastOverallSeries = useMemo(() => {
+    return forecastMonths.map((m) => ({
+      label: m.label,
+      income: m.effectiveIncome,
+      expense: m.effectiveExpense,
+      net: m.effectiveNet,
+    }));
+  }, [forecastMonths]);
+
+  const forecastTopExpenseSeries = useMemo(() => {
+    return forecastMonths.map((m) => ({
+      label: m.label,
+      top: m.topExpenses,
+    }));
+  }, [forecastMonths]);
 
   const timelineGroups = useMemo<TimelineGroup[]>(
     () => buildTimelineGroups(filteredTransactions, WEEKS_AHEAD),
@@ -268,6 +317,17 @@ export function CashflowFuturePage() {
               </SelectContent>
             </Select>
 
+            <Button
+              variant="outline"
+              className="h-12 rounded-2xl border-zinc-200 bg-white flex items-center justify-between"
+              onClick={() => setIncludePending((prev) => !prev)}
+            >
+              <div className="flex items-center gap-2 text-sm text-zinc-600">
+                <Sparkles className="h-4 w-4" />
+                {includePending ? 'Incluindo pendentes' : 'Somente pagos'}
+              </div>
+            </Button>
+
             {user?.type === 'PLANNER' && (
               <Select value={clientFilter} onValueChange={setClientFilter}>
                 <SelectTrigger className="h-12 rounded-2xl border-zinc-200 bg-white">
@@ -291,6 +351,88 @@ export function CashflowFuturePage() {
         ) : (
           <ForecastCard data={weeklyData} summary={summary} accent={accent} />
         )}
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 text-zinc-500">
+            <Sparkles className="h-5 w-5" />
+            <h2 className="text-lg font-semibold text-zinc-900">Saldo esperado (12 meses)</h2>
+            <Badge variant="outline" className="rounded-full border-zinc-100 text-zinc-500">
+              {includePending ? 'Pagos + pendentes' : 'Apenas pagos'}
+            </Badge>
+            <div className="flex gap-2 ml-auto">
+              <Button
+                size="sm"
+                variant={categoryView === 'overall' ? 'default' : 'outline'}
+                className="rounded-full"
+                onClick={() => setCategoryView('overall')}
+              >
+                Geral
+              </Button>
+              <Button
+                size="sm"
+                variant={categoryView === 'top5' ? 'default' : 'outline'}
+                className="rounded-full"
+                onClick={() => setCategoryView('top5')}
+              >
+                Top 5 categorias
+              </Button>
+            </div>
+          </div>
+
+          <Card className="rounded-3xl border-zinc-100 p-4">
+            {forecastLoading ? (
+              <Skeleton className="h-64 w-full rounded-2xl" />
+            ) : categoryView === 'overall' ? (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-500">Entradas, saídas e saldo projetados mês a mês.</p>
+                <ChartContainer
+                  config={{
+                    income: { label: 'Entradas', color: 'var(--blue-400, #60a5fa)' },
+                    expense: { label: 'Saídas', color: 'var(--zinc-400, #a1a1aa)' },
+                    net: { label: 'Saldo', color: 'var(--emerald-500, #10b981)' },
+                  }}
+                  className="h-72"
+                >
+                  <AreaChart data={forecastOverallSeries} margin={{ left: 8, right: 8, top: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-zinc-200" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#71717a' }} interval={forecastOverallSeries.length > 6 ? 1 : 0} />
+                    <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11, fill: '#71717a' }} width={80} />
+                    <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => [formatCurrency(Number(value)), name]} />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Area type="monotone" dataKey="income" stroke="var(--color-income)" fill="var(--color-income)" fillOpacity={0.08} strokeWidth={2} />
+                    <Area type="monotone" dataKey="expense" stroke="var(--color-expense)" fill="var(--color-expense)" fillOpacity={0.08} strokeWidth={2} />
+                    <Line type="monotone" dataKey="net" stroke="var(--color-net)" strokeWidth={2.4} dot={false} />
+                  </AreaChart>
+                </ChartContainer>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-zinc-500">Maiores categorias de despesa previstas por mês.</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {forecastTopExpenseSeries.map((m) => (
+                    <Card key={m.label} className="border-zinc-100 p-3">
+                      <div className="flex justify-between text-sm font-semibold text-zinc-800 mb-2">
+                        <span>{m.label}</span>
+                        <span className="text-xs text-zinc-500">Top 5</span>
+                      </div>
+                      <div className="space-y-2">
+                        {m.top.length === 0 && (
+                          <p className="text-xs text-zinc-500">Sem dados.</p>
+                        )}
+                        {m.top.map((cat) => (
+                          <div key={`${m.label}-${cat.categoryId || cat.name}`} className="flex items-center justify-between text-sm">
+                            <span className="text-zinc-700">{cat.name}</span>
+                            <span className="font-mono text-zinc-900">{formatCurrency(cat.effectiveTotal)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </section>
 
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-zinc-500">
