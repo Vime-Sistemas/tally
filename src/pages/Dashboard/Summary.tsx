@@ -1,166 +1,120 @@
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "../../components/ui/chart";
-import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, XAxis } from "recharts";
+import { 
+  Area, 
+  AreaChart, 
+  CartesianGrid, 
+  Cell, 
+  Pie, 
+  PieChart, 
+  ResponsiveContainer, 
+  Tooltip, 
+  XAxis, 
+  YAxis 
+} from "recharts";
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
   Wallet, 
-  CheckCircle2,
   Landmark,
-  Target,
-  PieChart as PieChartIcon
+  MoreHorizontal,
+  TrendingUp,
+  CalendarClock,
+  PieChart as PieChartIcon,
 } from "lucide-react";
+import { format, subMonths, endOfMonth, isSameMonth, isBefore, addWeeks } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Progress } from "../../components/ui/progress";
+import { Badge } from "../../components/ui/badge";
+import { ScrollArea } from "../../components/ui/scroll-area";
+
 import { accountService } from "../../services/accounts";
 import { CategoryService, type Category } from "../../services/categoryService";
 import { transactionService } from "../../services/transactions";
 import { equityService } from "../../services/equities";
+import { getCards, getBudgets, getBudgetComparison } from "../../services/api";
 import { useUser } from "../../contexts/UserContext";
-import { getCards, getBudgets, getBudgetComparison, getUpcomingTransactions } from "../../services/api";
-import { type Account, type CreditCard } from "../../types/account";
+import { cn } from "../../lib/utils";
+import { formatCurrency } from "../../utils/formatters";
+
+// Types
+import { type Account, type CreditCard as CreditCardType } from "../../types/account";
 import { type Transaction } from "../../types/transaction";
 import type { Equity } from "../../types/equity";
 import type { Budget, BudgetComparison } from "../../types/budget";
 import type { Page } from "../../types/navigation";
-import { format, subMonths, startOfMonth, endOfMonth, isSameMonth, isBefore, addWeeks, startOfWeek, endOfWeek } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
-import { cn } from "../../lib/utils";
-import { ForecastCard } from "../../components/CashflowFuture/ForecastCard";
-import { buildWeeklySeries, makeForecastSummary } from "../../utils/cashflow";
-import type { ForecastSummary, UpcomingTransactionsResponse, WeeklyForecastPoint } from "../../types/cashflow";
 
-// --- Helpers ---
+// --- Helpers & Constants ---
+const BLUE_PALETTE = [
+  "#3b82f6", // Blue 500
+  "#60a5fa", // Blue 400
+  "#93c5fd", // Blue 300
+  "#2563eb", // Blue 600
+  "#bfdbfe", // Blue 200
+  "#1d4ed8", // Blue 700
+  "#dbeafe", // Blue 100
+  "#1e40af", // Blue 800
+];
+
 const parseUTCDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
-const equityConfig: Record<string, { label: string; color: string }> = {
-  value: { label: "Patrimônio", color: "#60a5fa" },
-  'Imóveis': { label: "Imóveis", color: "#60a5fa" },
-  'Veículos': { label: "Veículos", color: "#93c5fd" },
-  'Investimentos': { label: "Investimentos", color: "#3b82f6" },
-  'Liquidez': { label: "Liquidez", color: "#2563eb" },
-  'Bens Pessoais': { label: "Bens Pessoais", color: "#bfdbfe" },
-  'Participações': { label: "Participações", color: "#1d4ed8" },
-  'Outros': { label: "Outros", color: "#dbeafe" },
-};
-
-// Labels para tradução das categorias (mapa base) — labels adicionais serão geradas dinamicamente
-const CATEGORY_LABELS: Record<string, string> = {
-  'HOUSING': 'Moradia',
-  'TRANSPORT': 'Transporte',
-  'FOOD': 'Alimentação',
-  'UTILITIES': 'Utilidades',
-  'HEALTHCARE': 'Saúde',
-  'ENTERTAINMENT': 'Lazer',
-  'EDUCATION': 'Educação',
-  'SHOPPING': 'Compras',
-  'CLOTHING': 'Roupas',
-  'DEBT_PAYMENT': 'Dívidas',
-  'FINANCIAL': 'Serviços Financeiros',
-  'TRAVEL': 'Viagem',
-  'OTHER_EXPENSE': 'Outros',
-  'INVESTMENT': 'Investimentos',
-  'SALARY': 'Salário',
-  'OTHER_INCOME': 'Outras Receitas',
-  'GROCERIES': 'Mercearia',
-  'RENT': 'Aluguel',
-  'MORTGAGE': 'Hipoteca',
-  'INSURANCE': 'Seguros',
-  'SUBSCRIPTIONS': 'Assinaturas',
-  'TAXES': 'Impostos',
-  'SAVINGS': 'Poupança'
-};
-
-// Gera um rótulo humano para categorias não mapeadas explicitamente
-const humanizeCategory = (key: string) => {
-  if (!key) return '—';
-  if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
-  return key
-    .split(/[_\s-]+/)
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
-    .join(' ');
-};
-
-const BLUE_GRADIENT = ["#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe", "#eff6ff", "#2563eb", "#1d4ed8"];
-
 export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
+  // State
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
-  const [cards, setCards] = useState<CreditCard[]>([]);
+  const [, setCards] = useState<CreditCardType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const { costCenters, user } = useUser();
-  
-  // Novos estados para Orçamentos
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [budgetComparisons, setBudgetComparisons] = useState<Record<string, BudgetComparison>>({});
-  const [upcomingData, setUpcomingData] = useState<UpcomingTransactionsResponse | null>(null);
-  
   const [loading, setLoading] = useState(true);
+  
+  const { costCenters } = useUser();
 
-  const forecastWeeks = useMemo<WeeklyForecastPoint[]>(
-    () => buildWeeklySeries(upcomingData?.transactions ?? [], 8),
-    [upcomingData]
-  );
-
-  const forecastSummary = useMemo<ForecastSummary>(
-    () => makeForecastSummary(upcomingData?.transactions ?? [], upcomingData?.summary?.overdue?.net ?? 0),
-    [upcomingData]
-  );
-
-  const forecastAccent: 'blue' | 'emerald' = user?.type === 'PLANNER' ? 'emerald' : 'blue';
-
+  // Load Data
   useEffect(() => {
     const fetchData = async () => {
       try {
         const currentMonth = new Date().getMonth() + 1;
         const currentYear = new Date().getFullYear();
         
-        const horizonStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-        const horizonEnd = endOfWeek(addWeeks(horizonStart, 8), { weekStartsOn: 1 });
-
-        const [accData, txData, eqData, cardsData, budgetsData, upcomingRes] = await Promise.all([
+        const [accData, txData, eqData, cardsData, budgetsData, cats] = await Promise.all([
           accountService.getAll(),
           transactionService.getAll(),
           equityService.getAll(),
           getCards(),
           getBudgets(currentYear, currentMonth),
-          getUpcomingTransactions({
-            from: horizonStart.toISOString(),
-            to: horizonEnd.toISOString(),
-            status: 'all',
-          })
+          CategoryService.getCategories()
         ]);
         
         setAccounts(accData);
         setTransactions(txData);
         setEquities(eqData);
         setCards(cardsData);
-        setUpcomingData(upcomingRes);
         setBudgets(budgetsData);
-        const cats = await CategoryService.getCategories();
         setCategories(cats);
         
-        // Carregar comparações de cada orçamento
+        // Load Budget Comparisons
         const comparisons: Record<string, BudgetComparison> = {};
         await Promise.all(
           budgetsData.map(async (b: Budget) => {
             try {
-              const comp = await getBudgetComparison(b.id);
-              comparisons[b.id] = comp;
-            } catch (e) {
-              console.error(`Erro ao carregar comparação do orçamento ${b.name}`, e);
-            }
+              comparisons[b.id] = await getBudgetComparison(b.id);
+            } catch (e) { console.error(e); }
           })
         );
         setBudgetComparisons(comparisons);
 
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
-        toast.error("Erro ao carregar dados do dashboard");
+        toast.error("Erro ao atualizar dashboard");
       } finally {
         setLoading(false);
       }
@@ -168,407 +122,388 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
     fetchData();
   }, []);
 
-  if (loading) {
-    return <div className="h-screen flex items-center justify-center text-blue-400 animate-pulse">Carregando...</div>;
-  }
-
   // --- Calculations ---
   const currentDate = new Date();
-  const prevMonthStart = startOfMonth(subMonths(currentDate, 1));
-
-  // 1. Totals
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
   
-  // 2. Transactions Analysis
+  // 1. Financial Snapshot
+  const totalAccountBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalEquityValue = equities.reduce((sum, eq) => sum + eq.value, 0);
+  const netWorth = totalAccountBalance + totalEquityValue; // Simplificado
+
+  // 2. Monthly Flow
   const currentMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), currentDate));
-  const prevMonthTxs = transactions.filter(t => isSameMonth(parseUTCDate(t.date), prevMonthStart));
+  const income = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const expense = currentMonthTxs.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
 
-  const currentIncome = currentMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  // Incluir investimentos nas despesas para refletir o histórico completo
-  const currentExpense = currentMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+  // 3. Charts Data
+  // A. Evolution (Net Worth over 6 months)
+  const evolutionData = useMemo(() => {
+    return Array.from({ length: 6 }).map((_, i) => {
+      const date = subMonths(currentDate, i);
+      const monthEnd = endOfMonth(date);
+      // Mock logic: In a real app, you'd need historical snapshots. 
+      // Here we approximate based on acquisition dates for equities + static balance assumption or similar.
+      // For better UX, we'll just show the Equity growth as the "Curve"
+      const equityVal = equities
+        .filter(e => isBefore(parseUTCDate(e.acquisitionDate), monthEnd))
+        .reduce((sum, e) => sum + e.value, 0);
+      
+      return { 
+        name: format(date, 'MMM', { locale: ptBR }), 
+        value: equityVal + totalAccountBalance // Adding current balance as baseline for visual scale
+      };
+    }).reverse();
+  }, [equities, totalAccountBalance]);
 
-  const prevIncome = prevMonthTxs.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-  const prevExpense = prevMonthTxs.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+  // B. Spending Breakdown (Category & Cost Center)
+  const getPieData = (type: 'CATEGORY' | 'COST_CENTER') => {
+    const map: Record<string, number> = {};
+    
+    currentMonthTxs
+      .filter(t => t.type === 'EXPENSE')
+      .forEach(t => {
+        let label = 'Outros';
+        if (type === 'CATEGORY') {
+           const catName = categories.find(c => c.id === t.category || c.name === t.category)?.name || t.category;
+           label = catName || 'Sem Categoria';
+        } else {
+           const ccName = costCenters.find(c => c.id === t.costCenterId)?.name;
+           label = ccName || 'Sem Centro de Custo';
+        }
+        map[label] = (map[label] || 0) + t.amount;
+      });
 
-  const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
-  const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
+    return Object.entries(map)
+      .map(([name, value], i) => ({ 
+        name, 
+        value, 
+        fill: BLUE_PALETTE[i % BLUE_PALETTE.length] 
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6); // Top 6 only to avoid pollution
+  };
 
-  // 3. Category Expenses (Pie Chart Data)
-  const expensesByCategoryMap = currentMonthTxs
-    .filter(t => t.type === 'EXPENSE')
-    .reduce((acc, t) => {
-      const raw = t.category || 'OTHER_EXPENSE';
-      let label: string;
-      if (!raw || raw === 'OTHER_EXPENSE') {
-        label = humanizeCategory('OTHER_EXPENSE');
-      } else if (CATEGORY_LABELS[raw]) {
-        label = humanizeCategory(raw);
-      } else {
-        const found = categories.find(c => c.id === raw || c.name === raw);
-        label = found ? (found.name || raw) : raw;
-      }
-      acc[label] = (acc[label] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
+  const categoryData = useMemo(() => getPieData('CATEGORY'), [currentMonthTxs, categories]);
+  const costCenterData = useMemo(() => getPieData('COST_CENTER'), [currentMonthTxs, costCenters]);
 
-  // build data, then group small slices into "Outros" to avoid clutter
-  const rawExpenses = Object.entries(expensesByCategoryMap)
-    .map(([key, value], idx) => ({
-      name: key,
-      label: key,
-      value,
-      fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length]
-    }))
-    .sort((a, b) => b.value - a.value);
+  // 4. Upcoming Bills (Next 7 days)
+  const upcomingBills = useMemo(() => {
+    const nextWeek = addWeeks(currentDate, 1);
+    return transactions
+      .filter(t => {
+        const d = parseUTCDate(t.date);
+        return t.type === 'EXPENSE' && !t.isPaid && d >= currentDate && d <= nextWeek;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 4);
+  }, [transactions]);
 
-  const MAX_SLICES = 8;
-  let expensesByCategoryData = [] as typeof rawExpenses;
-  if (rawExpenses.length <= MAX_SLICES) {
-    expensesByCategoryData = rawExpenses;
-  } else {
-    const top = rawExpenses.slice(0, MAX_SLICES);
-    const others = rawExpenses.slice(MAX_SLICES);
-    const otherSum = others.reduce((s, it) => s + it.value, 0);
-    expensesByCategoryData = [
-      ...top,
-      { name: 'OTHER_EXPENSE', label: 'Outros', value: otherSum, fill: '#e6e7ea' }
-    ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-32 bg-zinc-100 rounded mb-4" />
+          <div className="h-4 w-48 bg-zinc-50 rounded" />
+        </div>
+      </div>
+    );
   }
-
-  // Config dinâmica para o gráfico de categorias
-  const categoryConfig = expensesByCategoryData.reduce((acc, item) => {
-    acc[item.name] = { label: item.label, color: item.fill };
-    return acc;
-  }, {} as Record<string, { label: string; color: string }>);
-
-  // 3.b Cost Center Expenses (Pie Chart Data)
-  const expensesByCostCenterMap = currentMonthTxs
-    .filter(t => t.type === 'EXPENSE')
-    .reduce((acc, t) => {
-      const rawId = t.costCenterId || 'NO_COST_CENTER';
-      const found = costCenters.find(c => c.id === rawId);
-      const label = found ? found.name : (rawId === 'NO_COST_CENTER' ? 'Sem Centro de Custo' : rawId);
-      acc[label] = (acc[label] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-  const rawCostCenters = Object.entries(expensesByCostCenterMap)
-    .map(([key, value], idx) => ({ name: key, label: key, value, fill: BLUE_GRADIENT[idx % BLUE_GRADIENT.length] }))
-    .sort((a, b) => b.value - a.value);
-
-  let expensesByCostCenterData = [] as typeof rawCostCenters;
-  if (rawCostCenters.length <= MAX_SLICES) {
-    expensesByCostCenterData = rawCostCenters;
-  } else {
-    const top = rawCostCenters.slice(0, MAX_SLICES);
-    const others = rawCostCenters.slice(MAX_SLICES);
-    const otherSum = others.reduce((s, it) => s + it.value, 0);
-    expensesByCostCenterData = [...top, { name: 'OTHER_COST_CENTER', label: 'Outros', value: otherSum, fill: '#f3f4f6' }];
-  }
-
-  const costCenterConfig = expensesByCostCenterData.reduce((acc, item) => { acc[item.name] = { label: item.label, color: item.fill }; return acc; }, {} as Record<string, { label: string; color: string }>);
-
-
-  // 4. Charts Data (Equity)
-  const equityEvolutionData = Array.from({ length: 6 }).map((_, i) => {
-    const date = subMonths(currentDate, i);
-    const monthEnd = endOfMonth(date);
-    const value = equities
-      .filter(e => isBefore(parseUTCDate(e.acquisitionDate), monthEnd))
-      .reduce((sum, e) => sum + e.value, 0);
-    return { month: format(date, 'MMM', { locale: ptBR }), value, date };
-  }).reverse();
-
-  // 5. Utilities
-  const upcomingBills = transactions
-    .filter(t => {
-      const date = parseUTCDate(t.date);
-      const diffTime = date.getTime() - currentDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      return t.type === 'EXPENSE' && diffDays >= 0 && diffDays <= 7;
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 3);
-
-  // --- Onboarding Logic ---
-  const onboardingSteps = [
-    { id: 1, title: "Contas & Cartões", desc: "Conecte suas fontes.", done: accounts.length > 0 || cards.length > 0, action: () => onNavigate?.('accounts-new'), icon: Wallet },
-    { id: 2, title: "Transações", desc: "Registre gastos.", done: transactions.length > 0, action: () => onNavigate?.('transactions-new'), icon: ArrowUpCircle },
-    { id: 3, title: "Orçamentos", desc: "Defina limites.", done: budgets.length > 0, action: () => onNavigate?.('budgets'), icon: Target },
-    { id: 4, title: "Patrimônio", desc: "Cadastre bens.", done: equities.length > 0, icon: Landmark }
-  ];
-  const completedSteps = onboardingSteps.filter(s => s.done).length;
-  const progressPercent = (completedSteps / onboardingSteps.length) * 100;
 
   return (
-    <div className="w-full p-4 md:p-8 space-y-8 max-w-7xl mx-auto bg-white min-h-screen text-zinc-900 font-sans selection:bg-blue-100">
-      
-      {/* Header */}
-      <div className="flex flex-col space-y-1">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-900">Visão Geral</h2>
-        <p className="text-zinc-500">Seu painel de controle financeiro.</p>
-      </div>
-
-      
-
-      {/* --- ONBOARDING SECTION --- */}
-      {completedSteps < onboardingSteps.length && (
-        <section className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold tracking-tight">Configuração Inicial</h3>
-            <span className="text-2xl font-bold text-blue-400">{Math.round(progressPercent)}%</span>
+    <div className="w-full min-h-screen bg-zinc-50/50 pb-20 font-sans text-zinc-900 selection:bg-blue-100">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-8 space-y-8">
+        
+        {/* --- Header --- */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Visão Geral</h1>
+            <p className="text-zinc-500 mt-1">Bem-vindo ao seu painel de controle financeiro.</p>
           </div>
-          <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-400 transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }} />
+          <div className="flex gap-2">
+             <Button variant="outline" className="bg-white" onClick={() => onNavigate?.('transactions-new')}>
+               + Transação
+             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-            {onboardingSteps.map((step) => (
-              <div 
-                key={step.id}
-                className={cn("relative group p-5 rounded-2xl border transition-all duration-300", step.done ? "bg-zinc-50 border-zinc-100 opacity-60" : "bg-white border-zinc-200 shadow-sm hover:border-blue-300 hover:shadow-md cursor-pointer")}
-                onClick={() => !step.done && step.action?.()}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className={cn("p-2 rounded-xl", step.done ? "bg-zinc-200 text-zinc-500" : "bg-blue-50 text-blue-400")}>
-                    <step.icon className="w-5 h-5" />
-                  </div>
-                  {step.done ? <CheckCircle2 className="w-5 h-5 text-blue-400" /> : <div className="w-5 h-5 rounded-full border-2 border-zinc-200 group-hover:border-blue-300" />}
-                </div>
-                <h4 className="font-semibold mb-1 text-zinc-900">{step.title}</h4>
-                <p className="text-sm text-zinc-500">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        </header>
 
-      {/* --- KPI Cards & Upcoming Bills --- */}
-      <div className="space-y-6">
-        {upcomingBills.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
-            {upcomingBills.map(bill => (
-              <div key={bill.id} className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-100 bg-white shadow-sm hover:shadow-md transition-all">
-                <div className="p-2 bg-blue-50 text-blue-400 rounded-xl"><ArrowDownCircle className="w-5 h-5" /></div>
-                <div>
-                  <p className="text-sm font-medium text-zinc-900">{bill.description}</p>
-                  <p className="text-xs text-zinc-500">Vence em {format(parseUTCDate(bill.date), "dd/MM")}</p>
-                </div>
-                <div className="ml-auto font-semibold text-zinc-900">R$ {bill.amount.toFixed(0)}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-3xl border-zinc-100 shadow-sm hover:shadow-lg transition-shadow duration-500">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500">Saldo Total</CardTitle>
-              <Wallet className="h-4 w-4 text-zinc-300" />
+        {/* --- KPI Grid --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Net Worth Card (Featured) */}
+          <Card className="border-blue-100 bg-gradient-to-br from-white to-blue-50/50 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+               <Landmark className="w-24 h-24 text-blue-600" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Patrimônio Líquido</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold tracking-tighter text-zinc-900">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalBalance)}
+              <div className="text-4xl font-bold text-zinc-900 tracking-tight">
+                {formatCurrency(netWorth)}
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-3xl border-zinc-100 shadow-sm hover:shadow-lg transition-shadow duration-500">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500">Receitas (Mês)</CardTitle>
-              <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+
+          {/* Monthly Income */}
+          <Card className="border-zinc-200 shadow-sm bg-white">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Receitas (Mês)</CardTitle>
+              <ArrowUpCircle className="w-5 h-5 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold tracking-tighter text-blue-400">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentIncome)}
+              <div className="text-2xl font-bold text-emerald-600">
+                {formatCurrency(income)}
               </div>
-              <p className="text-xs text-zinc-400 mt-1">{incomeChange > 0 ? '+' : ''}{incomeChange.toFixed(1)}% vs mês anterior</p>
+              <p className="text-xs text-zinc-400 mt-1">Entradas confirmadas</p>
             </CardContent>
           </Card>
-          <Card className="rounded-3xl border-zinc-100 shadow-sm hover:shadow-lg transition-shadow duration-500">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500">Despesas (Mês)</CardTitle>
-              <ArrowDownCircle className="h-4 w-4 text-zinc-300" />
+
+          {/* Monthly Expense */}
+          <Card className="border-zinc-200 shadow-sm bg-white">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Despesas (Mês)</CardTitle>
+              <ArrowDownCircle className="w-5 h-5 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold tracking-tighter text-zinc-900">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentExpense)}
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(expense)}
               </div>
-              <p className="text-xs text-zinc-400 mt-1">{expenseChange > 0 ? '+' : ''}{expenseChange.toFixed(1)}% vs mês anterior</p>
+              <p className="text-xs text-zinc-400 mt-1">Gastos realizados</p>
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      {/* --- ROW 1: Fluxo Futuro & Categorias --- */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4">
-          <ForecastCard
-            data={forecastWeeks}
-            summary={forecastSummary}
-            accent={forecastAccent}
-            loading={!upcomingData}
-          />
-        </div>
-
-        {/* Despesas por Categoria (NOVO) + Centro de Custo */}
-        <div className="col-span-3 space-y-4">
-          <Card className="rounded-3xl border-zinc-100 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
-                <PieChartIcon className="w-5 h-5 text-blue-400" />
-                Despesas por Categoria
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {expensesByCategoryData.length > 0 ? (
-                <ChartContainer config={categoryConfig} className="aspect-square h-[250px] mx-auto">
-                  <PieChart>
-                    <Pie
-                      data={expensesByCategoryData}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      cornerRadius={4}
-                    >
-                      {expensesByCategoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} strokeWidth={0} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
-                  </PieChart>
-                </ChartContainer>
-              ) : (
-                <div className="h-[250px] flex items-center justify-center text-zinc-400 text-sm">
-                  Sem despesas este mês
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+        {/* --- Main Dashboard Grid --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-        </div>
-      </div>
+          {/* Left Column (Charts) - Takes 2 cols */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Evolution Chart */}
+            <Card className="border-zinc-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Evolução Patrimonial</CardTitle>
+                <CardDescription>Crescimento do seu patrimônio nos últimos 6 meses.</CardDescription>
+              </CardHeader>
+              <CardContent className="pl-0">
+                <div className="h-[280px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={evolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#a1a1aa', fontSize: 12 }} 
+                        tickMargin={10} 
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#a1a1aa', fontSize: 12 }} 
+                        tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        formatter={(value: number) => formatCurrency(value)}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#3b82f6" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorVal)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* --- ROW 2: Orçamentos (NOVO) --- */}
-      {budgets.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold tracking-tight text-zinc-900 flex items-center gap-2">
-            <Target className="w-6 h-6 text-blue-400" />
-            Orçamentos do Mês
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {budgets.map((budget) => {
-              const comp = budgetComparisons[budget.id];
-              // Evitar divisão por zero e garantir porcentagem visual
-              const spent = comp?.spent || 0;
-              const total = budget.amount;
-              const percent = total > 0 ? (spent / total) * 100 : 0;
-              
-              return (
-                <Card key={budget.id} className="rounded-3xl border-zinc-100 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="font-semibold text-zinc-900">{budget.name}</h4>
-                        <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
-                          {budget.category ? (CATEGORY_LABELS[budget.category] || budget.category) : '—'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-medium bg-blue-50 text-blue-500 px-2 py-1 rounded-full">
-                          {percent.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
+            {/* Breakdown Tabs (Category vs Cost Center) */}
+            <Card className="border-zinc-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold">Gastos do Mês</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="category" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="category">Por Categoria</TabsTrigger>
+                    <TabsTrigger value="center">Por Centro de Custo</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Common Chart Rendering Logic */}
+                  {['category', 'center'].map((tab) => {
+                    const data = tab === 'category' ? categoryData : costCenterData;
+                    return (
+                      <TabsContent key={tab} value={tab} className="mt-0">
+                        {data.length > 0 ? (
+                          <div className="flex flex-col md:flex-row items-center gap-8">
+                            <div className="h-[220px] w-[220px] shrink-0 relative">
+                               <ResponsiveContainer width="100%" height="100%">
+                                 <PieChart>
+                                   <Pie
+                                     data={data}
+                                     innerRadius={60}
+                                     outerRadius={80}
+                                     paddingAngle={2}
+                                     dataKey="value"
+                                     cornerRadius={4}
+                                     stroke="none"
+                                   >
+                                     {data.map((entry, index) => (
+                                       <Cell key={`cell-${index}`} fill={entry.fill} />
+                                     ))}
+                                   </Pie>
+                                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                 </PieChart>
+                               </ResponsiveContainer>
+                               {/* Center Text */}
+                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <PieChartIcon className="w-8 h-8 text-zinc-300" />
+                               </div>
+                            </div>
+                            
+                            {/* Custom Legend List */}
+                            <div className="flex-1 w-full space-y-3">
+                               {data.map((item) => (
+                                 <div key={item.name} className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-3">
+                                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                                       <span className="text-zinc-600 font-medium truncate max-w-[120px]">{item.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                       <span className="text-zinc-900 font-semibold">{formatCurrency(item.value)}</span>
+                                       <span className="text-zinc-400 text-xs w-8 text-right">
+                                          {((item.value / expense) * 100).toFixed(0)}%
+                                       </span>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-[200px] flex items-center justify-center text-zinc-400 text-sm border-2 border-dashed border-zinc-100 rounded-xl">
+                            Sem dados para exibir.
+                          </div>
+                        )}
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">Gasto: <span className="text-zinc-900 font-medium">R$ {spent.toFixed(0)}</span></span>
-                        <span className="text-zinc-400">de R$ {total.toFixed(0)}</span>
+          {/* Right Column (Side Lists) - Takes 1 col */}
+          <div className="space-y-8">
+            
+            {/* Accounts List (Compact) */}
+            <Card className="border-zinc-200 shadow-sm">
+              <CardHeader className="pb-3 border-b border-zinc-50">
+                <CardTitle className="text-base font-semibold">Minhas Contas</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[240px]">
+                  <div className="divide-y divide-zinc-50">
+                    {accounts.map(acc => (
+                      <div key={acc.id} className="flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-zinc-100 rounded-lg text-zinc-500">
+                            <Wallet className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-zinc-900">{acc.name}</p>
+                            <p className="text-xs text-zinc-500 capitalize">{acc.type.toLowerCase()}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold">{formatCurrency(acc.balance)}</span>
                       </div>
-                      
-                      <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
-                        <div 
-                          className={cn("h-full rounded-full transition-all duration-500", percent > 100 ? "bg-zinc-800" : "bg-blue-400")}
-                          style={{ width: `${Math.min(percent, 100)}%` }}
-                        />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Bills (Next 7 Days) */}
+            <Card className="border-zinc-200 shadow-sm bg-blue-50/30">
+              <CardHeader className="pb-3 border-b border-blue-100/50">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold text-blue-900 flex items-center gap-2">
+                    <CalendarClock className="w-4 h-4 text-blue-500" />
+                    A Vencer (7d)
+                  </CardTitle>
+                  {upcomingBills.length > 0 && <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{upcomingBills.length}</Badge>}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {upcomingBills.length > 0 ? (
+                  <div className="divide-y divide-blue-100/50">
+                    {upcomingBills.map(bill => (
+                      <div key={bill.id} className="p-4 hover:bg-blue-50/50 transition-colors">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-zinc-800">{bill.description}</span>
+                          <span className="text-sm font-bold text-red-600">{formatCurrency(bill.amount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-zinc-500">
+                          <span>{bill.category || 'Geral'}</span>
+                          <span className="text-blue-600 font-medium">
+                            {format(parseUTCDate(bill.date), "dd 'de' MMM")}
+                          </span>
+                        </div>
                       </div>
-                      
-                      <p className="text-xs text-right text-zinc-400">
-                        Restante: <span className={cn("font-medium", (comp?.remaining || 0) < 0 ? "text-red-400" : "text-blue-400")}>
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(comp?.remaining || 0)}
-                        </span>
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-sm text-zinc-500">
+                    <p>Tudo pago! Nenhuma conta para os próximos dias.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Budget Progress (Mini) */}
+            {budgets.length > 0 && (
+              <Card className="border-zinc-200 shadow-sm">
+                <CardHeader className="pb-3 border-b border-zinc-50">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-semibold">Orçamentos</CardTitle>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onNavigate?.('budgets')}>
+                      <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  {budgets.slice(0, 3).map(b => {
+                    const comp = budgetComparisons[b.id];
+                    const percent = comp ? (comp.spent / b.amount) * 100 : 0;
+                    return (
+                      <div key={b.id} className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium text-zinc-700">{b.name}</span>
+                          <span className={cn(percent > 100 ? "text-red-500" : "text-zinc-500")}>
+                            {percent.toFixed(0)}%
+                          </span>
+                        </div>
+                        <Progress value={percent} className="h-1.5" indicatorClassName={cn(percent > 100 ? "bg-red-500" : "bg-blue-500")} />
+                      </div>
+                    )
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         </div>
-      )}
-
-      {/* --- ROW 3: Evolução Patrimonial & Centro de Custo --- */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 rounded-3xl border-zinc-100 shadow-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-zinc-900">Evolução Patrimonial</CardTitle>
-          </CardHeader>
-          <CardContent className="pl-0">
-            <ChartContainer config={equityConfig} className="h-[250px] w-full">
-              <AreaChart data={equityEvolutionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fillVal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f4f4f5" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} tick={{fill: '#a1a1aa', fontSize: 12}} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <Area dataKey="value" type="monotone" fill="url(#fillVal)" stroke="#60a5fa" strokeWidth={3} />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3 rounded-3xl border-zinc-100 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
-              <PieChartIcon className="w-5 h-5 text-blue-400" />
-              Despesas por Centro de Custo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {expensesByCostCenterData.length > 0 ? (
-              <ChartContainer config={costCenterConfig} className="aspect-square h-[250px] mx-auto">
-                <PieChart>
-                  <Pie
-                    data={expensesByCostCenterData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    cornerRadius={4}
-                  >
-                    {expensesByCostCenterData.map((entry, index) => (
-                      <Cell key={`ccell-${index}`} fill={entry.fill} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <ChartLegend content={<ChartLegendContent />} className="flex-wrap gap-2 text-zinc-500 mt-4 max-h-48 overflow-y-auto pr-2" />
-                </PieChart>
-              </ChartContainer>
-            ) : (
-              <div className="h-[250px] flex items-center justify-center text-zinc-400 text-sm">Sem despesas por centro de custo este mês</div>
-            )}
-          </CardContent>
-        </Card>
       </div>
-      
     </div>
   );
 }
