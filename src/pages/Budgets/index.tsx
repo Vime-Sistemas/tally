@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getBudgets, deleteBudget, getBudgetComparison, createBudget } from '../../services/api';
 import { BudgetForm } from '../../components/BudgetForm';
 import { CategoryService, type Category } from '../../services/categoryService';
+import { BudgetWizard } from '../../components/BudgetWizard';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
@@ -17,7 +18,7 @@ import type { Budget, BudgetComparison } from '../../types/budget';
 import { BudgetType } from '../../types/budget';
 import { 
   Edit, Trash2, Plus, ChevronDown, ChevronUp, Copy, 
-  BarChart3, Target, X 
+  BarChart3, Target, X, Wand2 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { formatCurrency } from '../../utils/formatters';
@@ -317,6 +318,12 @@ export function BudgetsPage() {
           <div className="flex justify-center">
             <TabsList className="bg-zinc-200/50 p-1 rounded-full h-auto">
               <TabsTrigger 
+                value="wizard" 
+                className="rounded-full px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 text-zinc-500 transition-all gap-2"
+              >
+                <Wand2 className="h-4 w-4" /> Assistente
+              </TabsTrigger>
+              <TabsTrigger 
                 value="list" 
                 className="rounded-full px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-zinc-900 text-zinc-500 transition-all"
               >
@@ -337,6 +344,23 @@ export function BudgetsPage() {
               </TabsTrigger>
             </TabsList>
           </div>
+
+          {/* WIZARD TAB */}
+          <TabsContent value="wizard" className="space-y-6 focus-visible:outline-none">
+             <Card className="border-zinc-200 shadow-lg">
+               <CardContent className="p-6">
+                 <BudgetWizard 
+                    month={parseInt(selectedMonth)} 
+                    year={parseInt(selectedYear)} 
+                    onCreated={() => {
+                      loadBudgets();
+                      setActiveTab('list');
+                    }}
+                    onNavigateList={() => setActiveTab('list')}
+                 />
+               </CardContent>
+             </Card>
+          </TabsContent>
 
           {/* LIST TAB */}
           <TabsContent value="list" className="space-y-6 focus-visible:outline-none">
