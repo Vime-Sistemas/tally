@@ -67,6 +67,13 @@ export function CashflowFuturePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [includePending, setIncludePending] = useState(true);
 
+  const formatYAxis = useCallback((v: number) => {
+    const abs = Math.abs(v);
+    if (abs < 1000) return `R$ ${v.toFixed(0)}`;
+    if (abs < 10000) return `R$ ${(v / 1000).toFixed(1)}k`;
+    return `R$ ${(v / 1000).toFixed(0)}k`;
+  }, []);
+
   // Load Data
   const loadData = useCallback(async () => {
     try {
@@ -235,7 +242,8 @@ export function CashflowFuturePage() {
                          tick={{ fontSize: 11, fill: '#a1a1aa' }} 
                          axisLine={false} 
                          tickLine={false}
-                         tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`}
+                         tickFormatter={formatYAxis}
+                         domain={[(dataMin: number) => Math.min(0, dataMin * 1.1), (dataMax: number) => (dataMax || 0) * 1.1 + 50]}
                        />
                        <Tooltip 
                          cursor={{ fill: '#f4f4f5', opacity: 0.5 }}
