@@ -172,6 +172,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [openCategory, setOpenCategory] = useState(false);
   const [openTag, setOpenTag] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [presetApplied, setPresetApplied] = useState(false);
 
   // Editing State
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -217,6 +218,27 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (presetApplied || loading) return;
+    const raw = sessionStorage.getItem('transactionHistoryPreset');
+    if (!raw) {
+      setPresetApplied(true);
+      return;
+    }
+    try {
+      const preset = JSON.parse(raw);
+      if (preset.category) setCategoryFilter([preset.category]);
+      if (preset.tag) setTagFilter([preset.tag]);
+      if (preset.type) setTypeFilter(preset.type);
+      if (preset.searchTerm) setSearchTerm(preset.searchTerm);
+    } catch (error) {
+      console.error('Erro ao aplicar filtro do atalho', error);
+    } finally {
+      sessionStorage.removeItem('transactionHistoryPreset');
+      setPresetApplied(true);
+    }
+  }, [presetApplied, loading]);
 
   // --- Helpers ---
   const getSourceName = (transaction: Transaction): string => {

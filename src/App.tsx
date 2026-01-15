@@ -282,9 +282,9 @@ function AppContent() {
       case 'debts':
         return <Debts onNavigate={setCurrentPage} />;
       case 'params-categories':
-        return <Categories />;
+        return <Categories onNavigate={setCurrentPage} />;
       case 'params-tags':
-        return <Tags />;
+        return <Tags onNavigate={setCurrentPage} />;
       case 'planner-clients':
         return <PlannerClients />;
       case 'planner-dashboard':

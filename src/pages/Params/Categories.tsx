@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
 import { Badge } from "../../components/ui/badge";
-import { Plus, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle, List } from "lucide-react";
 import {
   Coffee,
   Car,
@@ -81,6 +81,8 @@ import { Progress } from "../../components/ui/progress";
 import { formatCurrency } from "../../utils/formatters";
 import { BudgetType } from "../../types/budget";
 import { cn } from "../../lib/utils";
+import type { Page } from "../../types/navigation";
+import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from "recharts";
 
 // Modern color palette presets
 const PRESET_COLORS = [
@@ -89,7 +91,11 @@ const PRESET_COLORS = [
   "#f43f5e", "#64748b"
 ];
 
-export function Categories() {
+interface CategoriesProps {
+  onNavigate?: (page: Page) => void;
+}
+
+export function Categories({ onNavigate }: CategoriesProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
@@ -229,6 +235,14 @@ export function Categories() {
     setIsDialogOpen(true);
   };
 
+  const handleNavigateToHistory = (category: Category) => {
+    sessionStorage.setItem('transactionHistoryPreset', JSON.stringify({
+      category: category.name,
+      type: category.type,
+    }));
+    onNavigate?.('transactions-history');
+  };
+
   const ICON_OPTIONS = [
     'Coffee','Car','Home','Zap','Heart','ShoppingBag','Shirt','Gamepad2','GraduationCap','Briefcase',
     'DollarSign','TrendingUp','ArrowRightLeft','PiggyBank','Coins','Banknote','Wallet','Building2','Globe',
@@ -250,6 +264,22 @@ export function Categories() {
     return map;
   }, [insights]);
 
+  const expenseChartData = useMemo(() => {
+    return insights
+      .filter(item => item.type === 'EXPENSE' && item.currentMonth.total > 0)
+      .map((item, index) => ({
+        name: item.name,
+        value: item.currentMonth.total,
+        color: item.color || PRESET_COLORS[index % PRESET_COLORS.length],
+        categoryId: item.categoryId,
+        type: item.type,
+      }));
+  }, [insights]);
+
+  const expensesTotal = useMemo(() => {
+    return expenseChartData.reduce((sum, item) => sum + item.value, 0);
+  }, [expenseChartData]);
+
   const maxCurrentValue = useMemo(() => {
     if (insights.length === 0) return 0;
     return insights.reduce((max, item) => Math.max(max, item.currentMonth.total), 0);
@@ -265,6 +295,17 @@ export function Categories() {
   };
 
   const summaryLabel = `${MONTH_LABELS[insightsPeriod.month - 1] || ''} ${insightsPeriod.year}`;
+
+  const renderChartTooltip = ({ active, payload }: any) => {
+    if (!active || !payload?.length) return null;
+    const item = payload[0].payload;
+    return (
+      <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-sm text-xs text-zinc-700">
+        <div className="font-semibold text-zinc-900">{item.name}</div>
+        <div className="text-zinc-600">{formatCurrency(item.value)}</div>
+      </div>
+    );
+  };
 
   const renderCategoryInsight = (category: Category) => {
     if (insightsLoading) {
@@ -410,6 +451,75 @@ export function Categories() {
         {insightsLoading ? 'Calculando resumo das categorias...' : `Resumo de ${summaryLabel}`}
       </div>
 
+      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-zinc-500">Despesas por categoria</p>
+            <p className="text-lg font-semibold text-zinc-900">{summaryLabel}</p>
+          </div>
+          <Badge variant="secondary" className="bg-blue-50 text-blue-500 border-transparent">Mês atual</Badge>
+        </div>
+
+        <div className="grid gap-6 mt-4 lg:grid-cols-[1.2fr_1fr]">
+          <div className="h-64">
+            {insightsLoading ? (
+              <div className="h-full w-full animate-pulse rounded-2xl bg-zinc-100" />
+            ) : expenseChartData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-zinc-500 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                Sem despesas registradas neste período.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={expenseChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    outerRadius={90}
+                    stroke="transparent"
+                    onClick={(item) => {
+                      const category = categories.find(c => c.id === (item as any).categoryId);
+                      if (category) handleNavigateToHistory(category);
+                    }}
+                  >
+                    {expenseChartData.map((entry, index) => (
+                      <Cell key={entry.name} fill={entry.color} className="cursor-pointer" />
+                    ))}
+                  </Pie>
+                  <Tooltip content={renderChartTooltip} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-auto pr-1">
+            {expenseChartData.map((item) => {
+              const percent = expensesTotal ? (item.value / expensesTotal) * 100 : 0;
+              return (
+                <button
+                  key={item.categoryId}
+                  onClick={() => {
+                    const category = categories.find(c => c.id === item.categoryId);
+                    if (category) handleNavigateToHistory(category);
+                  }}
+                  className="w-full rounded-xl border border-zinc-100 bg-zinc-50/50 px-3 py-2 text-left hover:bg-zinc-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm font-medium text-zinc-900 truncate">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-zinc-900">{formatCurrency(item.value)}</span>
+                  </div>
+                  <div className="text-xs text-zinc-500">{percent.toFixed(1)}% das despesas</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* List */}
       <div className="border rounded-lg bg-white overflow-hidden shadow-sm">
         <Table>
@@ -476,6 +586,9 @@ export function Categories() {
                     </TableCell>
                     <TableCell className="text-right align-top">
                       <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleNavigateToHistory(category)} title="Ver histórico">
+                          <List className="h-4 w-4 text-blue-500" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(category)}>
                           <Edit2 className="h-4 w-4 text-zinc-500" />
                         </Button>
