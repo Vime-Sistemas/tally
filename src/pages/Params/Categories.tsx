@@ -487,10 +487,6 @@ export function Categories({ onNavigate }: CategoriesProps) {
         </div>
       </div>
 
-      <div className="text-xs text-zinc-500 px-1">
-        {insightsLoading ? 'Calculando resumo das categorias...' : `Resumo de ${summaryLabel}`}
-      </div>
-
       <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
