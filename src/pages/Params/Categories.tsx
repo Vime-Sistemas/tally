@@ -483,7 +483,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
                       if (category) handleNavigateToHistory(category);
                     }}
                   >
-                    {expenseChartData.map((entry, index) => (
+                    {expenseChartData.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} className="cursor-pointer" />
                     ))}
                   </Pie>
