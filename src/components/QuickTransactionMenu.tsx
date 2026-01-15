@@ -9,9 +9,11 @@ import { useUser } from "../contexts/UserContext";
 
 export const TRANSACTION_INTENT_KEY = "transaction_intent";
 
+type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
+
 export type TransactionIntent = {
   tab: "TRANSACTION" | "TRANSFER" | "INVESTMENT";
-  type?: TransactionType;
+  type?: IncomeExpenseType;
 };
 
 interface QuickTransactionMenuProps {

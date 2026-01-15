@@ -117,16 +117,21 @@ const expenseCategoriesLabels: Record<string, string> = {
   OTHER_EXPENSE: 'Outros',
 };
 
+type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
+
 interface TransactionFormProps {
   onSuccess?: () => void;
   initialData?: Transaction;
   onNavigate?: (page: any) => void;
-  defaultType?: TransactionType;
+  defaultType?: IncomeExpenseType;
 }
 
 export function TransactionForm({ onSuccess, initialData, defaultType }: TransactionFormProps) {
   const { costCenters } = useUser();
-  const initialType = initialData?.type || defaultType || TransactionType.EXPENSE;
+  const initialType: IncomeExpenseType =
+    initialData?.type === TransactionType.INCOME || initialData?.type === TransactionType.EXPENSE
+      ? initialData.type
+      : defaultType || TransactionType.EXPENSE;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(
     initialType
@@ -359,9 +364,9 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
     }
   };
 
-  const handleTypeChange = (value: string) => {
-    const type = value as TransactionType;
-    setSelectedType(type);
+  const handleTypeChange = (value: IncomeExpenseType) => {
+    setSelectedType(value);
+    setValue('type', value);
   };
 
   return (

@@ -14,6 +14,7 @@ import { TransactionType } from '../../types/transaction';
 import { TRANSACTION_INTENT_KEY, type TransactionIntent } from '../../components/QuickTransactionMenu';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
+type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
 
 interface TransactionsProps {
   onNavigate?: (page: Page) => void;
@@ -21,7 +22,7 @@ interface TransactionsProps {
 
 export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
-  const [prefilledType, setPrefilledType] = useState<TransactionType | null>(null);
+  const [prefilledType, setPrefilledType] = useState<IncomeExpenseType | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function Transactions({ onNavigate }: TransactionsProps) {
       const validTab = intent.tab === 'TRANSACTION' || intent.tab === 'TRANSFER' || intent.tab === 'INVESTMENT';
       if (validTab) {
         setActiveTab(intent.tab);
-        if (intent.tab === 'TRANSACTION' && intent.type) {
+        if (intent.tab === 'TRANSACTION' && intent.type && (intent.type === TransactionType.INCOME || intent.type === TransactionType.EXPENSE)) {
           setPrefilledType(intent.type);
         } else {
           setPrefilledType(null);

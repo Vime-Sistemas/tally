@@ -71,6 +71,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "../ui/sheet";
 import { useUser } from "../../contexts/UserContext";
 import type { Page } from "../../types/navigation";
 
@@ -163,6 +171,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   });
   const [openCategory, setOpenCategory] = useState(false);
   const [openTag, setOpenTag] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Editing State
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -419,6 +428,21 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
     );
   };
 
+  const clearFilters = () => {
+    setCategoryFilter([]);
+    setTagFilter([]);
+    setAccountFilter("ALL");
+    setTypeFilter("ALL");
+    setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+    setSearchTerm("");
+  };
+
+  const activeFilters =
+    (categoryFilter.length > 0 ? 1 : 0) +
+    (tagFilter.length > 0 ? 1 : 0) +
+    (accountFilter !== "ALL" ? 1 : 0) +
+    (typeFilter !== "ALL" ? 1 : 0);
+
   if (loading) {
     return <div className="p-8 text-center text-zinc-500 animate-pulse">Carregando histórico...</div>;
   }
@@ -452,10 +476,8 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 flex flex-col lg:flex-row gap-3">
-          
-          {/* Search */}
+        {/* Search + Filters Sheet */}
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-zinc-100 flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
@@ -465,171 +487,213 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
-          {/* Filters Group */}
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-10 rounded-xl border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900">
-                  <CalendarClock className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? `${format(dateRange.from, "dd/MM")} - ${format(dateRange.to, "dd/MM")}` : format(dateRange.from, "dd/MM")
-                  ) : "Data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
-              </PopoverContent>
-            </Popover>
-
-            <Popover open={openCategory} onOpenChange={setOpenCategory}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className={cn(
-                    "w-[200px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
-                    categoryFilter.length === 0 && "text-zinc-400"
-                  )}
-                >
-                  <div className="flex items-center gap-1 truncate">
-                    {categoryFilter.length === 0 ? (
-                      "Categorias"
-                    ) : categoryFilter.length === 1 ? (
-                      getSortedCategories().find(cat => cat.name === categoryFilter[0])?.label
-                    ) : (
-                      <span className="text-xs">{categoryFilter.length} selecionadas</span>
-                    )}
-                  </div>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[250px] p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar categoria..." />
-                  <CommandList>
-                    <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="CLEAR"
-                        onSelect={() => {
-                          setCategoryFilter([]);
-                          setOpenCategory(false);
-                        }}
-                      >
-                        <Check className="mr-2 h-4 w-4 opacity-0" />
-                        Limpar seleção
-                      </CommandItem>
-                      {getSortedCategories().map((cat) => (
-                        <CommandItem
-                          key={cat.name}
-                          value={cat.name}
-                          onSelect={(value) => {
-                            setCategoryFilter(prev => 
-                              prev.includes(value) 
-                                ? prev.filter(c => c !== value)
-                                : [...prev, value]
-                            );
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              categoryFilter.includes(cat.name) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {cat.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            <Popover open={openTag} onOpenChange={setOpenTag}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className={cn(
-                    "w-[160px] h-10 rounded-xl border-zinc-200 justify-between text-zinc-900 font-normal",
-                    tagFilter.length === 0 && "text-zinc-400"
-                  )}
-                >
-                  <div className="flex items-center gap-1 truncate">
-                    {tagFilter.length === 0 ? (
-                      "Tags"
-                    ) : tagFilter.length === 1 ? (
-                      tags.find(tag => tag.id === tagFilter[0])?.name
-                    ) : (
-                      <span className="text-xs">{tagFilter.length} selecionadas</span>
-                    )}
-                  </div>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar tag..." />
-                  <CommandList>
-                    <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="CLEAR"
-                        onSelect={() => {
-                          setTagFilter([]);
-                          setOpenTag(false);
-                        }}
-                      >
-                        <Check className="mr-2 h-4 w-4 opacity-0" />
-                        Limpar seleção
-                      </CommandItem>
-                      {tags.map((tag) => (
-                        <CommandItem
-                          key={tag.id}
-                          value={tag.id}
-                          onSelect={(value) => {
-                            setTagFilter(prev => 
-                              prev.includes(value) 
-                                ? prev.filter(t => t !== value)
-                                : [...prev, value]
-                            );
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              tagFilter.includes(tag.id) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {tag.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            <Select value={accountFilter} onValueChange={setAccountFilter}>
-              <SelectTrigger className="w-[160px] h-10 rounded-xl border-zinc-200">
-                <SelectValue placeholder="Conta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas Contas</SelectItem>
-                {accounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
-                {cards.map(card => <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {(categoryFilter.length > 0 || tagFilter.length > 0 || accountFilter !== "ALL" || searchTerm !== "") && (
-               <Button variant="ghost" size="icon" onClick={() => { setCategoryFilter([]); setTagFilter([]); setAccountFilter("ALL"); setSearchTerm(""); }} className="h-10 w-10 text-red-500 hover:bg-red-50 rounded-xl" title="Limpar Filtros">
-                 <X className="h-4 w-4" />
-               </Button>
-            )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <CalendarClock className="mr-2 h-4 w-4" />
+              Filtros
+              {activeFilters > 0 && (
+                <Badge variant="secondary" className="ml-2 bg-blue-50 text-blue-500 border-transparent">{activeFilters}</Badge>
+              )}
+            </Button>
           </div>
         </div>
+
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md bg-white p-6 overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Filtros</SheetTitle>
+              <SheetDescription>Refine o que você vê no histórico.</SheetDescription>
+            </SheetHeader>
+
+            <div className="space-y-6 mt-6">
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500">Período</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-11 bg-zinc-50 border-zinc-100 hover:bg-white">
+                      <div className="flex items-center gap-2 text-zinc-700">
+                        <CalendarClock className="h-4 w-4 text-blue-400" />
+                        {dateRange?.from ? (
+                          dateRange.to ? `${format(dateRange.from, "dd/MM")} - ${format(dateRange.to, "dd/MM")}` : format(dateRange.from, "dd/MM")
+                        ) : "Selecione"}
+                      </div>
+                      <ChevronsUpDown className="h-4 w-4 text-zinc-400" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500">Categorias</Label>
+                <Popover open={openCategory} onOpenChange={setOpenCategory}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full h-11 justify-between bg-zinc-50 border-zinc-100 hover:bg-white text-zinc-900 font-normal",
+                        categoryFilter.length === 0 && "text-zinc-400"
+                      )}
+                    >
+                      <div className="flex items-center gap-1 truncate">
+                        {categoryFilter.length === 0 ? (
+                          "Todas"
+                        ) : categoryFilter.length === 1 ? (
+                          getSortedCategories().find(cat => cat.name === categoryFilter[0])?.label
+                        ) : (
+                          <span className="text-xs">{categoryFilter.length} selecionadas</span>
+                        )}
+                      </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full min-w-[260px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar categoria..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="CLEAR"
+                            onSelect={() => {
+                              setCategoryFilter([]);
+                              setOpenCategory(false);
+                            }}
+                          >
+                            <Check className="mr-2 h-4 w-4 opacity-0" />
+                            Limpar seleção
+                          </CommandItem>
+                          {getSortedCategories().map((cat) => (
+                            <CommandItem
+                              key={cat.name}
+                              value={cat.name}
+                              onSelect={(value) => {
+                                setCategoryFilter(prev => 
+                                  prev.includes(value) 
+                                    ? prev.filter(c => c !== value)
+                                    : [...prev, value]
+                                );
+                                setOpenCategory(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  categoryFilter.includes(cat.name) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {cat.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500">Tags</Label>
+                <Popover open={openTag} onOpenChange={setOpenTag}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full h-11 justify-between bg-zinc-50 border-zinc-100 hover:bg-white text-zinc-900 font-normal"
+                    >
+                      <div className="flex items-center gap-1 truncate">
+                        {tagFilter.length === 0 ? (
+                          "Todas"
+                        ) : tagFilter.length === 1 ? (
+                          tags.find(tag => tag.id === tagFilter[0])?.name
+                        ) : (
+                          <span className="text-xs">{tagFilter.length} selecionadas</span>
+                        )}
+                      </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full min-w-[240px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar tag..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem value="CLEAR" onSelect={() => { setTagFilter([]); setOpenTag(false); }}>
+                            <Check className="mr-2 h-4 w-4 opacity-0" />
+                            Limpar seleção
+                          </CommandItem>
+                          {tags.map((tag) => (
+                            <CommandItem
+                              key={tag.id}
+                              value={tag.id}
+                              onSelect={(value) => {
+                                setTagFilter(prev => 
+                                  prev.includes(value) 
+                                    ? prev.filter(t => t !== value)
+                                    : [...prev, value]
+                                );
+                                setOpenTag(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  tagFilter.includes(tag.id) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {tag.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500">Contas</Label>
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                  <SelectTrigger className="w-full h-11 bg-zinc-50 border-zinc-100">
+                    <SelectValue placeholder="Todas as contas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todas as contas</SelectItem>
+                    {accounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                    {cards.map(card => <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-500">Tipo</Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full h-11 bg-zinc-50 border-zinc-100">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos</SelectItem>
+                    <SelectItem value={TransactionType.INCOME}>Receitas</SelectItem>
+                    <SelectItem value={TransactionType.EXPENSE}>Despesas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <SheetFooter className="mt-6 flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={clearFilters}>Limpar</Button>
+              <Button className="flex-1 bg-blue-400 hover:bg-blue-500 text-white" onClick={() => setFiltersOpen(false)}>Aplicar</Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
 
         {/* Active Filters */}
         {(categoryFilter.length > 0 || tagFilter.length > 0) && (

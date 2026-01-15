@@ -54,14 +54,19 @@ const expenseCategoriesLabels: Record<string, string> = {
   OTHER_EXPENSE: 'Outros',
 };
 
+type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
+
 interface TransactionFormProps {
   onSuccess?: () => void;
   initialData?: any;
-  defaultType?: TransactionType;
+  defaultType?: IncomeExpenseType;
 }
 
 export function MobileTransactionForm({ onSuccess, initialData, defaultType }: TransactionFormProps) {
-  const initialType = initialData?.type || defaultType || TransactionType.EXPENSE;
+  const initialType: IncomeExpenseType =
+    initialData?.type === TransactionType.INCOME || initialData?.type === TransactionType.EXPENSE
+      ? initialData.type
+      : defaultType || TransactionType.EXPENSE;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(
     initialType
