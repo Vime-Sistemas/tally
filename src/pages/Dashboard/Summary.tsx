@@ -17,7 +17,6 @@ import {
   Wallet, 
   Landmark,
   MoreHorizontal,
-  TrendingUp,
   CalendarClock,
   PieChart as PieChartIcon,
 } from "lucide-react";
