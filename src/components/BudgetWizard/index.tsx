@@ -86,6 +86,25 @@ const fixedTemplates = [
 
 const makeId = () => Math.random().toString(36).slice(2, 9);
 
+const templateMatchers: Record<string, string[]> = {
+  HOUSING: ['moradia', 'aluguel', 'aluguel', 'casa'],
+  UTILITIES: ['contas', 'fixas', 'luz', 'agua', 'água', 'internet', 'gás'],
+  FOOD: ['alimentacao', 'alimentação', 'mercado', 'supermercado', 'restaurante', 'refeição'],
+  TRANSPORT: ['transporte', 'uber', 'combustivel', 'combustível', 'onibus', 'ônibus', 'carro'],
+  HEALTHCARE: ['saude', 'saúde', 'medico', 'médico', 'farmacia', 'farmácia'],
+  INSURANCE: ['seguro'],
+  EDUCATION: ['educacao', 'educação', 'curso', 'faculdade', 'escola'],
+  SHOPPING: ['compras', 'shopping'],
+  CLOTHING: ['roupa', 'vestuario', 'vestuário'],
+  ENTERTAINMENT: ['lazer'],
+  SUBSCRIPTIONS: ['assinatura', 'streaming', 'netflix', 'spotify'],
+  TAXES: ['imposto'],
+  FEES: ['taxa', 'tarifa'],
+  PETS: ['pet'],
+  DONATIONS: ['doacao', 'doação'],
+  TRAVEL: ['viagem'],
+};
+
 export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetWizardProps) {
   const [step, setStep] = useState(0);
   const [monthlyIncome, setMonthlyIncome] = useState<number>(0);
@@ -152,12 +171,36 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthlyIncome, savingsAmount]);
 
+  const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[^a-z0-9\s]/g, '');
+
+  const pickCategory = (templateKey: string, fallbackLabel: string, used: Set<string>) => {
+    const expenseUserCategories = userCategories.filter((cat) => cat.type === 'EXPENSE');
+    const matcher = templateMatchers[templateKey] || [];
+
+    for (const cat of expenseUserCategories) {
+      if (used.has(cat.id)) continue;
+      const normalizedName = normalize(cat.name);
+      if (matcher.some((m) => normalizedName.includes(normalize(m)))) {
+        used.add(cat.id);
+        return { category: cat.id, label: cat.name };
+      }
+    }
+
+    for (const cat of expenseUserCategories) {
+      if (used.has(cat.id)) continue;
+      used.add(cat.id);
+      return { category: cat.id, label: cat.name };
+    }
+
+    return { category: templateKey, label: fallbackLabel };
+  };
+
   const applySuggestions = () => {
     const poolAfterSavings = Math.max(monthlyIncome - savingsAmount, 0);
+    const usedCategories = new Set<string>();
     const fixed = fixedTemplates.map((template) => ({
       id: `fixed-${template.category}`,
-      label: template.label,
-      category: template.category,
+      ...pickCategory(template.category, template.label, usedCategories),
       amount: Number((poolAfterSavings * template.weight).toFixed(2)),
       type: BudgetType.EXPENSE,
       included: true,
@@ -169,8 +212,7 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
 
     const flex = flexTemplates.map((template) => ({
       id: `flex-${template.category}`,
-      label: template.label,
-      category: template.category,
+      ...pickCategory(template.category, template.label, usedCategories),
       amount: Number((remaining * template.weight).toFixed(2)),
       type: BudgetType.EXPENSE,
       included: true,
@@ -220,6 +262,8 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
   };
 
   const resolveCategoryLabel = (category: string, type: BudgetType) => {
+    const userCategory = userCategories.find((cat) => cat.id === category);
+    if (userCategory) return userCategory.name;
     if (type === BudgetType.INCOME) return incomeCategoriesLabels[category] || category;
     return expenseCategoriesLabels[category] || category;
   };
