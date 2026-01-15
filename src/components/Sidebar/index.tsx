@@ -36,6 +36,7 @@ import type { Page } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useMemo } from "react";
+import { QuickTransactionMenu } from "../QuickTransactionMenu";
 
 interface SidebarProps {
   onNavigate: (page: Page) => void;
@@ -229,6 +230,11 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
             </div>
           )}
         </div>
+      </div>
+
+      {/* Quick Transaction */}
+      <div className="p-3 pb-1">
+        <QuickTransactionMenu onNavigate={onNavigate} collapsed={collapsed} />
       </div>
 
       {/* --- Navigation --- */}

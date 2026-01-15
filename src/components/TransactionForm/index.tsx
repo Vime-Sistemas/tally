@@ -121,13 +121,15 @@ interface TransactionFormProps {
   onSuccess?: () => void;
   initialData?: Transaction;
   onNavigate?: (page: any) => void;
+  defaultType?: TransactionType;
 }
 
-export function TransactionForm({ onSuccess, initialData }: TransactionFormProps) {
+export function TransactionForm({ onSuccess, initialData, defaultType }: TransactionFormProps) {
   const { costCenters } = useUser();
+  const initialType = initialData?.type || defaultType || TransactionType.EXPENSE;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(
-    initialData?.type || TransactionType.EXPENSE
+    initialType
   );
   const [isInstallment, setIsInstallment] = useState(
     !!initialData?.installments && initialData.installments > 1
@@ -201,10 +203,11 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
     reset,
     control,
     watch,
+    setValue,
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: (initialData?.type as any) || TransactionType.EXPENSE,
+      type: initialType,
       category: initialData?.category || '',
       amount: initialData ? Math.abs(initialData.amount) : undefined,
       description: initialData?.description || '',
@@ -227,6 +230,13 @@ export function TransactionForm({ onSuccess, initialData }: TransactionFormProps
       setSelectedTags(tagIds);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (!initialData && defaultType && defaultType !== selectedType) {
+      setSelectedType(defaultType);
+      setValue('type', defaultType);
+    }
+  }, [defaultType, initialData, selectedType, setValue]);
 
   const selectedCategory = watch('category');
 

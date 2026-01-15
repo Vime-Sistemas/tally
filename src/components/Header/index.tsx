@@ -36,6 +36,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import type { Page, AppContext } from "../../types/navigation";
 import { useUser } from "../../contexts/UserContext";
+import { QuickTransactionMenu } from "../QuickTransactionMenu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,7 +296,9 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-4">
-            
+
+            <QuickTransactionMenu onNavigate={onNavigate} variant="header" />
+
             {/* Context Selector */}
             {hasBusiness && (
               <Select value={currentContext} onValueChange={(v) => onContextChange(v as AppContext)}>

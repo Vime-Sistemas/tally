@@ -57,12 +57,14 @@ const expenseCategoriesLabels: Record<string, string> = {
 interface TransactionFormProps {
   onSuccess?: () => void;
   initialData?: any;
+  defaultType?: TransactionType;
 }
 
-export function MobileTransactionForm({ onSuccess, initialData }: TransactionFormProps) {
+export function MobileTransactionForm({ onSuccess, initialData, defaultType }: TransactionFormProps) {
+  const initialType = initialData?.type || defaultType || TransactionType.EXPENSE;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<TransactionType>(
-    initialData?.type || TransactionType.EXPENSE
+    initialType
   );
   const [isInstallment, setIsInstallment] = useState(!!initialData?.installments);
   const [isRecurring, setIsRecurring] = useState(false);
@@ -113,7 +115,7 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: initialData?.type || TransactionType.EXPENSE,
+      type: initialType,
       date: initialData?.date?.substring(0, 10) || new Date().toISOString().split('T')[0],
       description: initialData?.description || '',
       amount: initialData?.amount || undefined,
@@ -131,6 +133,13 @@ export function MobileTransactionForm({ onSuccess, initialData }: TransactionFor
   const selectedEquity = watch('equityId');
   const watchedInstallments = watch('installments');
   const watchedFrequency = watch('frequency');
+
+  useEffect(() => {
+    if (!initialData && defaultType && defaultType !== selectedType) {
+      setSelectedType(defaultType);
+      setValue('type', defaultType);
+    }
+  }, [defaultType, initialData, selectedType, setValue]);
 
   // Build category options
   const categoryOptions: PickerOption[] = useMemo(() => {

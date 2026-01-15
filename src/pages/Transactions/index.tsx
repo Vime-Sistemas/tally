@@ -10,6 +10,8 @@ import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { List, ArrowRightLeft, TrendingUp, PiggyBank } from 'lucide-react';
 import type { Page } from '../../types/navigation';
+import { TransactionType } from '../../types/transaction';
+import { TRANSACTION_INTENT_KEY, type TransactionIntent } from '../../components/QuickTransactionMenu';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
 
@@ -19,7 +21,29 @@ interface TransactionsProps {
 
 export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
+  const [prefilledType, setPrefilledType] = useState<TransactionType | null>(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(TRANSACTION_INTENT_KEY);
+    if (!stored) return;
+    try {
+      const intent = JSON.parse(stored) as TransactionIntent;
+      const validTab = intent.tab === 'TRANSACTION' || intent.tab === 'TRANSFER' || intent.tab === 'INVESTMENT';
+      if (validTab) {
+        setActiveTab(intent.tab);
+        if (intent.tab === 'TRANSACTION' && intent.type) {
+          setPrefilledType(intent.type);
+        } else {
+          setPrefilledType(null);
+        }
+      }
+    } catch (err) {
+      console.error('Não foi possível ler o atalho de transação', err);
+    } finally {
+      sessionStorage.removeItem(TRANSACTION_INTENT_KEY);
+    }
+  }, []);
 
   // Atalhos de teclado (mantidos)
   useEffect(() => {
@@ -105,7 +129,11 @@ export function Transactions({ onNavigate }: TransactionsProps) {
 
         {/* Área do Formulário */}
         <div className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-          {activeTab === 'TRANSACTION' && (isMobile ? <MobileTransactionForm /> : <TransactionForm />)}
+          {activeTab === 'TRANSACTION' && (
+            isMobile 
+              ? <MobileTransactionForm defaultType={prefilledType ?? undefined} /> 
+              : <TransactionForm defaultType={prefilledType ?? undefined} />
+          )}
           {activeTab === 'TRANSFER' && (isMobile ? <MobileTransferForm /> : <TransferForm />)}
           {activeTab === 'INVESTMENT' && (isMobile ? <MobileInvestmentForm /> : <InvestmentForm />)}
         </div>
