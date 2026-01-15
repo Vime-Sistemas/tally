@@ -7,6 +7,7 @@ export interface Category {
   type: 'INCOME' | 'EXPENSE';
   color?: string;
   icon?: string;
+  parentId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,6 +26,7 @@ export interface CategoryInsight {
   type: 'INCOME' | 'EXPENSE';
   color?: string;
   icon?: string;
+  parentId?: string | null;
   currentMonth: {
     total: number;
     transactions: number;
@@ -59,6 +61,7 @@ export class CategoryService {
     type: 'INCOME' | 'EXPENSE';
     color?: string;
     icon?: string;
+    parentId?: string | null;
   }): Promise<Category> {
     const response = await api.post('/categories', data);
     return response.data;
@@ -69,6 +72,7 @@ export class CategoryService {
     type?: 'INCOME' | 'EXPENSE';
     color?: string;
     icon?: string;
+    parentId?: string | null;
   }): Promise<any> {
     const response = await api.put(`/categories/${id}`, data);
     return response.data;

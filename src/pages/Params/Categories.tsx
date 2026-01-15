@@ -119,6 +119,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
     type: 'EXPENSE' as 'INCOME' | 'EXPENSE',
     color: '#3b82f6',
     icon: '' as string | undefined,
+    parentId: null as string | null,
   });
 
   useEffect(() => {
@@ -189,10 +190,10 @@ export function Categories({ onNavigate }: CategoriesProps) {
 
     try {
       if (editingCategory) {
-        await CategoryService.updateCategory(editingCategory.id, formData);
+        await CategoryService.updateCategory(editingCategory.id, { ...formData, parentId: formData.parentId || null });
         toast.success('Categoria atualizada');
       } else {
-        const created = await CategoryService.createCategory(formData);
+        const created = await CategoryService.createCategory({ ...formData, parentId: formData.parentId || null });
         toast.success('Categoria criada');
         handleOpenBudgetDialog(created);
       }
@@ -221,7 +222,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
 
   const resetForm = () => {
     setEditingCategory(null);
-    setFormData({ name: '', type: 'EXPENSE', color: '#3b82f6', icon: undefined });
+    setFormData({ name: '', type: 'EXPENSE', color: '#3b82f6', icon: undefined, parentId: null });
   };
 
   const openEdit = (category: Category) => {
@@ -231,6 +232,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
       type: category.type,
       color: category.color || '#3b82f6',
       icon: category.icon || undefined,
+      parentId: category.parentId || null,
     });
     setIsDialogOpen(true);
   };
@@ -258,6 +260,44 @@ export function Categories({ onNavigate }: CategoriesProps) {
 
   const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    categories.forEach(cat => {
+      if (cat.parentId) {
+        const list = map.get(cat.parentId) || [];
+        list.push(cat.id);
+        map.set(cat.parentId, list);
+      }
+    });
+    return map;
+  }, [categories]);
+
+  const getDescendantIds = useMemo(() => {
+    return (id: string) => {
+      const stack = [...(childrenMap.get(id) || [])];
+      const result: string[] = [];
+      while (stack.length) {
+        const current = stack.pop()!;
+        result.push(current);
+        const next = childrenMap.get(current);
+        if (next) stack.push(...next);
+      }
+      return result;
+    };
+  }, [childrenMap]);
+
+  const blockedParentIds = useMemo(() => {
+    if (!editingCategory) return new Set<string>();
+    const blocked = new Set<string>([editingCategory.id]);
+    getDescendantIds(editingCategory.id).forEach(id => blocked.add(id));
+    return blocked;
+  }, [editingCategory, getDescendantIds]);
+
+  const getParentName = (category: Category) => {
+    if (!category.parentId) return null;
+    return categories.find(c => c.id === category.parentId)?.name || null;
+  };
+
   const insightsById = useMemo(() => {
     const map = new Map<string, CategoryInsight>();
     insights.forEach(item => map.set(item.categoryId, item));
@@ -266,7 +306,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
 
   const expenseChartData = useMemo(() => {
     return insights
-      .filter(item => item.type === 'EXPENSE' && item.currentMonth.total > 0)
+      .filter(item => item.type === 'EXPENSE' && item.parentId == null && item.currentMonth.total > 0)
       .map((item, index) => ({
         name: item.name,
         value: item.currentMonth.total,
@@ -563,6 +603,11 @@ export function Categories({ onNavigate }: CategoriesProps) {
                           <div className="flex items-center gap-2 text-zinc-900 font-semibold">
                             {CategoryIcon ? <CategoryIcon className="h-4 w-4 text-zinc-500" /> : null}
                             <span>{category.name}</span>
+                            {category.parentId && (
+                              <Badge variant="outline" className="text-xs font-normal border-zinc-200 text-zinc-600 bg-zinc-50">
+                                Subcategoria de {getParentName(category) || 'categoria'}
+                              </Badge>
+                            )}
                           </div>
                           {insight && (
                             <span className="text-xs text-zinc-500">
@@ -625,7 +670,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
               <Label>Tipo</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}
+                onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value, parentId: null }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -667,6 +712,26 @@ export function Categories({ onNavigate }: CategoriesProps) {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Categoria mãe (opcional)</Label>
+              <Select
+                value={formData.parentId ?? 'NONE'}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, parentId: value === 'NONE' ? null : value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sem categoria mãe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Sem categoria mãe</SelectItem>
+                  {categories
+                    .filter(cat => cat.type === formData.type && !blockedParentIds.has(cat.id))
+                    .map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
