@@ -11,7 +11,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
-import { CategoryService, type Category } from '../../services/categoryService';
+import { CategoryService, type Category, type CategoryInsight } from '../../services/categoryService';
 
 interface BudgetWizardProps {
   month: number;
@@ -114,7 +114,9 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
   const [flexAllocations, setFlexAllocations] = useState<Allocation[]>([]);
   const [customAllocations, setCustomAllocations] = useState<Allocation[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const [userCategories, setUserCategories] = useState<Category[]>([]);
+  const [insights, setInsights] = useState<CategoryInsight[]>([]);
   const [selectedCustomCategory, setSelectedCustomCategory] = useState<string>('');
   const [customLabel, setCustomLabel] = useState<string>('');
   const [customAmount, setCustomAmount] = useState<number>(0);
@@ -167,9 +169,25 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
   }, []);
 
   useEffect(() => {
-    applySuggestions();
+    const loadInsights = async () => {
+      try {
+        setLoadingInsights(true);
+        const response = await CategoryService.getCategoryInsights({ month, year });
+        setInsights(response.insights || []);
+      } catch (error) {
+        console.error('Erro ao carregar insights de categorias:', error);
+      } finally {
+        setLoadingInsights(false);
+      }
+    };
+
+    loadInsights();
+  }, [month, year]);
+
+  useEffect(() => {
+    applyInsightsOrTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlyIncome, savingsAmount]);
+  }, [monthlyIncome, savingsAmount, insights, loadingInsights]);
 
   const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[^a-z0-9\s]/g, '');
 
@@ -195,8 +213,35 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
     return { category: templateKey, label: fallbackLabel };
   };
 
-  const applySuggestions = () => {
+  const applyInsightsOrTemplates = () => {
     const poolAfterSavings = Math.max(monthlyIncome - savingsAmount, 0);
+
+    const expenseInsights = insights.filter((insight) => insight.type === 'EXPENSE');
+    const totalSpent = expenseInsights.reduce((sum, insight) => sum + (insight.currentMonth.total || 0), 0);
+
+    // Prefer histórico real quando houver dados de gasto
+    if (!loadingInsights && totalSpent > 0) {
+      const sorted = [...expenseInsights].sort((a, b) => (b.currentMonth.total || 0) - (a.currentMonth.total || 0));
+      const allocations = sorted.map((insight) => {
+        const weight = (insight.currentMonth.total || 0) / totalSpent;
+        return {
+          id: `insight-${insight.categoryId}`,
+          label: insight.name,
+          category: insight.categoryId,
+          amount: Number((poolAfterSavings * weight).toFixed(2)),
+          type: BudgetType.EXPENSE,
+          included: true,
+          suggested: true,
+        } as Allocation;
+      });
+
+      setFixedAllocations(allocations);
+      setFlexAllocations([]);
+      setCustomAllocations([]);
+      return;
+    }
+
+    // Fallback: templates que tentam casar com categorias do usuário
     const usedCategories = new Set<string>();
     const fixed = fixedTemplates.map((template) => ({
       id: `fixed-${template.category}`,
@@ -384,7 +429,7 @@ export function BudgetWizard({ month, year, onCreated, onNavigateList }: BudgetW
             <div className="text-sm text-zinc-600">
               Sugerimos valores com base na renda menos a economia. Você pode ligar/desligar ou editar valores.
             </div>
-            <Button variant="outline" size="sm" onClick={applySuggestions}>
+            <Button variant="outline" size="sm" onClick={applyInsightsOrTemplates}>
               Recalcular sugestões
             </Button>
           </div>
