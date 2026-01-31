@@ -1,0 +1,427 @@
+import { useState, useEffect } from "react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  Menu,
+  X,
+  TrendingUp,
+  ShieldCheck,
+  Zap,
+  Layout,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// --- PLACEHOLDER COMPONENTS ---
+// Substitua as divs internas por <img src="..." /> quando tiver os assets.
+
+const HeroPlaceholder = () => (
+  <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-2xl shadow-zinc-200/50 group">
+    {/* Estrutura de Browser Mockup para dar contexto */}
+    <div className="h-8 bg-white border-b border-zinc-100 flex items-center px-4 gap-2">
+      <div className="w-3 h-3 rounded-full bg-red-400/20" />
+      <div className="w-3 h-3 rounded-full bg-yellow-400/20" />
+      <div className="w-3 h-3 rounded-full bg-green-400/20" />
+    </div>
+
+    {/* Área da Imagem */}
+    <div className="w-full h-full flex items-center justify-center bg-zinc-50 text-zinc-400">
+      <div className="text-center space-y-2">
+        <Layout className="w-16 h-16 mx-auto opacity-20" />
+        <p className="font-mono text-xs uppercase tracking-widest font-semibold">
+          Dashboard Hero Image
+        </p>
+        <p className="text-[10px] opacity-60">
+          Sugestão: 1920x1080px (Alta Definição)
+        </p>
+      </div>
+    </div>
+
+    {/* Efeito de brilho ao passar o mouse (Estilo Linear) */}
+    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+  </div>
+);
+
+const FeaturePlaceholder = ({ label }: { label: string }) => (
+  <div className="w-full aspect-[4/3] bg-zinc-100 rounded-lg border border-zinc-200/60 flex items-center justify-center text-zinc-300 overflow-hidden relative">
+    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(0,0,0,0.02)_50%,transparent_75%)] bg-[length:250%_250%] animate-shine opacity-50" />
+    <span className="font-mono text-[10px] uppercase font-bold">
+      {label} PREVIEW
+    </span>
+  </div>
+);
+
+export function SignUp() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Controle de Toggle (Pessoal vs Planejador) para alterar o conteúdo dinamicamente
+  const [activePersona, setActivePersona] = useState<"PERSONAL" | "PLANNER">(
+    "PERSONAL",
+  );
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const content = {
+    PERSONAL: {
+      headline: "Domine sua independência financeira.",
+      subheadline:
+        "Pare de apenas pagar contas. Comece a construir patrimônio com uma plataforma inteligente que une controle de orçamento e investimentos.",
+      primaryCta: "Criar Conta Grátis",
+      color: "blue",
+    },
+    PLANNER: {
+      headline: "A plataforma para consultores de elite.",
+      subheadline:
+        "Centralize a gestão dos seus clientes. Automatize relatórios, monitore carteiras em tempo real e escale sua consultoria.",
+      primaryCta: "Conhecer Planos Pro",
+      color: "emerald",
+    },
+  };
+
+  const current = content[activePersona];
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-100 overflow-x-hidden">
+      {/* --- NAVBAR --- */}
+      <nav
+        className={cn(
+          "fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b",
+          isScrolled
+            ? "bg-white/80 backdrop-blur-md border-zinc-200 py-3"
+            : "bg-transparent border-transparent py-5",
+        )}
+      >
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-white font-bold text-xs">
+              <img src="icon.svg"></img>
+            </div>
+            <span className="font-bold tracking-tight text-lg">CDF</span>
+          </div>
+
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-600">
+            <a
+              href="#features"
+              className="hover:text-zinc-900 transition-colors"
+            >
+              Recursos
+            </a>
+            <a
+              href="#testimonials"
+              className="hover:text-zinc-900 transition-colors"
+            >
+              Depoimentos
+            </a>
+            <a
+              href="#planos-e-precos"
+              className="hover:text-zinc-900 transition-colors"
+            >
+              Planos
+            </a>
+          </div>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button
+              variant="ghost"
+              className="text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 font-medium"
+            >
+              Entrar
+            </Button>
+            <Button className="bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-full px-5 shadow-lg shadow-zinc-900/10 transition-all hover:-translate-y-0.5">
+              Começar Agora
+            </Button>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden text-zinc-900"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X /> : <Menu />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-zinc-200 p-6 flex flex-col gap-4 shadow-xl">
+            <a href="#features" className="text-lg font-medium text-zinc-600">
+              Recursos
+            </a>
+            <a
+              href="#planos-e-precos"
+              className="text-lg font-medium text-zinc-600"
+            >
+              Planos
+            </a>
+            <hr className="border-zinc-100" />
+            <Button variant="outline" className="w-full justify-center">
+              Entrar
+            </Button>
+            <Button className="w-full justify-center bg-zinc-900">
+              Começar Agora
+            </Button>
+          </div>
+        )}
+      </nav>
+
+      {/* --- HERO SECTION --- */}
+      <section className="pt-32 pb-16 px-6 relative overflow-hidden">
+        {/* Background Gradient (Subtle) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-zinc-100/80 to-transparent rounded-[100%] blur-3xl -z-10" />
+
+        <div className="max-w-5xl mx-auto text-center space-y-8">
+          {/* Announcement Pill */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-zinc-200 shadow-sm transition-transform hover:scale-105 cursor-pointer">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-xs font-semibold text-zinc-600">
+              Novidade: Transações Recorrentes
+            </span>
+            <ChevronRight className="w-3 h-3 text-zinc-400" />
+          </div>
+
+          {/* Main Headline */}
+          <div className="space-y-6">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-blue-400 leading-[1.1]">
+              O cérebro da sua <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-300">
+                vida financeira.
+              </span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto leading-relaxed">
+              Substitua planilhas complexas por uma plataforma simples, bonita e
+              poderosa. Organize, planeje e invista em um único lugar.
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <Button className="h-12 px-8 rounded-full bg-blue-400 text-white font-semibold text-base shadow-xl hover:bg-blue-500 hover:scale-105 transition-all duration-300 w-full sm:w-auto">
+              Criar Conta Grátis
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 px-8 rounded-full border-zinc-200 text-zinc-700 font-medium hover:bg-zinc-50 transition-all w-full sm:w-auto"
+            >
+              Ver Planos e Preços
+            </Button>
+          </div>
+        </div>
+
+        {/* --- HERO IMAGE CONTAINER --- */}
+        {/* Aqui é onde a mágica acontece. O Placeholder estilo 'Apple' */}
+        <div className="max-w-6xl mx-auto mt-16 sm:mt-24 px-2 sm:px-0 perspective-1000">
+          <div className="transition-transform duration-700 hover:rotate-x-2 hover:scale-[1.01]">
+            <img src="cdf dashboard.png"></img>
+          </div>
+        </div>
+      </section>
+
+      {/* --- PERSONA SWITCHER SECTION (Linear Style) --- */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">
+              Feito para todo momento financeiro
+            </h2>
+
+            {/* Custom Tab Switcher */}
+            <div className="inline-flex p-1.5 bg-zinc-100 rounded-full border border-zinc-200/50 relative mt-4">
+              {/* Background pill animation logic can be added here with framer-motion, using simple CSS for now */}
+              <button
+                onClick={() => setActivePersona("PERSONAL")}
+                className={cn(
+                  "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300",
+                  activePersona === "PERSONAL"
+                    ? "bg-white shadow-sm text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-700",
+                )}
+              >
+                Para Você
+              </button>
+              <button
+                onClick={() => setActivePersona("PLANNER")}
+                className={cn(
+                  "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300",
+                  activePersona === "PLANNER"
+                    ? "bg-white shadow-sm text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-700",
+                )}
+              >
+                Para Consultores
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Content Block */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Copy */}
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 key={activePersona}">
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-2xl flex items-center justify-center mb-6",
+                  activePersona === "PERSONAL"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-emerald-100 text-emerald-600",
+                )}
+              >
+                {activePersona === "PERSONAL" ? (
+                  <Users className="w-6 h-6" />
+                ) : (
+                  <TrendingUp className="w-6 h-6" />
+                )}
+              </div>
+
+              <h3 className="text-4xl font-bold text-zinc-900 tracking-tight">
+                {current.headline}
+              </h3>
+              <p className="text-lg text-zinc-500 leading-relaxed">
+                {current.subheadline}
+              </p>
+
+              <ul className="space-y-4 pt-4">
+                {[1, 2, 3].map((_, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 text-zinc-700 font-medium"
+                  >
+                    <CheckCircle2
+                      className={cn(
+                        "w-5 h-5",
+                        activePersona === "PERSONAL"
+                          ? "text-blue-500"
+                          : "text-emerald-500",
+                      )}
+                    />
+                    <span>
+                      Benefício Exclusivo{" "}
+                      {activePersona === "PERSONAL"
+                        ? "Pessoal"
+                        : "Profissional"}{" "}
+                      #{i + 1}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-4">
+                <Button
+                  variant="link"
+                  className={cn(
+                    "p-0 text-base font-semibold",
+                    activePersona === "PERSONAL"
+                      ? "text-blue-600"
+                      : "text-emerald-600",
+                  )}
+                >
+                  {current.primaryCta} <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Right: Feature Grid (Bento Box Style) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4 mt-8">
+                <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md transition-shadow">
+                  <Zap className="w-6 h-6 text-zinc-900 mb-4" />
+                  <h4 className="font-bold text-sm">Controle Total</h4>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Você no comando das suas finanças.
+                  </p>
+                </div>
+                <img src="dashboard_mobile.png"></img>
+              </div>
+              <div className="space-y-4">
+                <img src="fluxofuturo.png"></img>
+                <div className="bg-blue-400 p-6 rounded-2xl text-white shadow-lg">
+                  <ShieldCheck className="w-6 h-6 mb-4 text-white" />
+                  <h4 className="font-bold text-sm">Segurança Bancária</h4>
+                  <p className="text-xs text-white mt-1">
+                    Criptografia de ponta a ponta.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- PLANOS E PREÇOS (Simple & Bold) --- */}
+      <section
+        id="planos-e-precos"
+        className="py-24 bg-zinc-50 border-y border-zinc-200"
+      >
+        <div className="max-w-4xl mx-auto text-center px-6">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-zinc-900 mb-6">
+            Comece simples, escale quando precisar.
+          </h2>
+          <p className="text-zinc-500 text-lg mb-10 max-w-2xl mx-auto">
+            Planos transparentes. Sem taxas escondidas. Cancele a qualquer
+            momento.
+          </p>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <div className="p-8 bg-white rounded-2xl border border-zinc-200 shadow-sm flex-1 max-w-sm mx-auto hover:border-zinc-300 transition-colors">
+              <h3 className="font-bold text-zinc-900">Pessoal</h3>
+              <div className="text-4xl font-extrabold mt-4 mb-2">R$ 0</div>
+              <p className="text-sm text-zinc-500 mb-6">
+                Para sempre, com recursos essenciais.
+              </p>
+              <Button className="w-full bg-zinc-100 text-zinc-900 hover:bg-zinc-200">
+                Criar Conta Grátis
+              </Button>
+            </div>
+
+            <div className="p-8 bg-blue-400 rounded-2xl border border-blue-300 shadow-xl flex-1 max-w-sm mx-auto text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-blue-500 text-[10px] font-bold px-3 py-1 rounded-bl-lg">
+                POPULAR
+              </div>
+              <h3 className="font-bold">Premium</h3>
+              <div className="text-4xl font-extrabold mt-4 mb-2">R$ 15</div>
+              <p className="text-sm text-white mb-6">Controle Completo e IA.</p>
+              <Button className="w-full bg-white hover:bg-slate-200 text-zinc-900 border-0">
+                Assinar Agora
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- FOOTER --- */}
+      <footer className="bg-white py-12 border-t border-zinc-100">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-zinc-600 font-bold text-[10px]">
+              <img src="icon.svg"></img>
+            </div>
+            <span className="font-bold tracking-tight text-zinc-900">CDF</span>
+          </div>
+          <p className="text-sm text-zinc-400">
+            © 2025 Cérebro das Finanças. Feito com precisão.
+          </p>
+          <div className="flex gap-6 text-sm text-zinc-500 font-medium">
+            <a href="#" className="hover:text-zinc-900">
+              Twitter
+            </a>
+            <a href="#" className="hover:text-zinc-900">
+              Instagram
+            </a>
+            <a href="#" className="hover:text-zinc-900">
+              LinkedIn
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

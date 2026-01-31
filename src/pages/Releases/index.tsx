@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp, Sparkles, Bug, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
-import type { Page } from '../../types/navigation';
 
 interface ReleaseNote {
   version: string;
@@ -10,10 +10,6 @@ interface ReleaseNote {
   features: string[];
   fixes: string[];
   improvements: string[];
-}
-
-interface ReleasesProps {
-  onNavigate: (page: Page) => void;
 }
 
 const releases: ReleaseNote[] = [
@@ -247,8 +243,9 @@ const releases: ReleaseNote[] = [
   }
 ];
 
-export function Releases({ onNavigate }: ReleasesProps) {
+export function Releases() {
   const [expandedVersion, setExpandedVersion] = useState<string>('1.2.0');
+  const navigate = useNavigate();
 
   const toggleExpanded = (version: string) => {
     setExpandedVersion(expandedVersion === version ? '' : version);
@@ -346,7 +343,7 @@ export function Releases({ onNavigate }: ReleasesProps) {
         <div className="mt-8 p-4 bg-white rounded-lg text-center">
           <p className="text-gray-600 mb-4">Gostaria de fazer login para acessar o app?</p>
           <Button
-            onClick={() => onNavigate('login')}
+            onClick={() => navigate('/login')}
             className="bg-blue-400 text-white hover:bg-gray-800"
           >
             Fazer Login

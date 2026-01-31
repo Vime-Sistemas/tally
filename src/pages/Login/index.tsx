@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,7 +24,6 @@ import {
   Briefcase 
 } from "lucide-react";
 import { encryptPayload, decryptPayload } from "@/utils/crypto";
-import type { Page } from "@/types/navigation";
 
 // --- Types & Schema ---
 type AccountType = 'PERSONAL' | 'PLANNER';
@@ -34,14 +34,11 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-interface LoginProps {
-  onNavigate: (page: Page) => void;
-}
-
-export function Login({ onNavigate }: LoginProps) {
+export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
   const { loginWithRedirect } = useAuth0();
+  const navigate = useNavigate();
 
   const [lastSocial, setLastSocial] = useState<string | null>(null);
   const [lastAccount, setLastAccount] = useState<string | null>(null);
@@ -383,7 +380,7 @@ export function Login({ onNavigate }: LoginProps) {
             <div className="text-center text-sm">
               <span className="text-zinc-500">Ainda não tem conta? </span>
               <button 
-                onClick={() => onNavigate('signup')} 
+                onClick={() => navigate('/cadastro')} 
                 className={cn("font-medium hover:underline underline-offset-4", theme.text)}
               >
                 Criar conta gratuita

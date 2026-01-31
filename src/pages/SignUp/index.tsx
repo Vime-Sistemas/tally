@@ -1,324 +1,279 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useAuth0 } from "@auth0/auth0-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom'; // Assumindo react-router-dom
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  ArrowLeft, 
+  CheckCircle2, 
   CreditCard, 
-  Target, 
-  TrendingUp, 
-  LayoutDashboard,
-  Users,
-  FileText,
-  Chrome, 
-  Facebook,
-  ArrowRight,
-  Check,
-  ShieldCheck,
-  Briefcase,
-  User
-} from "lucide-react";
-import type { Page } from "@/types/navigation";
+  Loader2, 
+  Lock, 
+  ShieldCheck 
+} from 'lucide-react';
 
-// --- Types & Schema ---
-type AccountType = 'PERSONAL' | 'PLANNER';
+// --- TIPO E DADOS ---
+type PlanType = 'free' | 'monthly' | 'annual';
 
-const signUpSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("E-mail inválido"),
-});
+const PLAN_DETAILS = {
+  free: { name: 'Starter', price: 'R$ 0,00', period: '/mês', features: ['Acesso Básico', '2 Contas'] },
+  monthly: { name: 'Pro Mensal', price: 'R$ 15,00', period: '/mês', features: ['Fluxo de Caixa', 'Gestão de Dívidas', 'Cobrança mensal'] },
+  annual: { name: 'Pro Anual', price: 'R$ 120,00', period: '/ano', features: ['Fluxo de Caixa', 'Gestão de Dívidas', 'Cobrança única'] },
+};
 
-type SignUpFormValues = z.infer<typeof signUpSchema>;
+// --- COMPONENTES UI MICRO ---
+// Input com estilo "Linear/Stripe" (borda suave, foco forte)
+const Input = ({ label, ...props }: any) => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
+    <input 
+      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-slate-900 focus:bg-white focus:ring-1 focus:ring-slate-900 placeholder:text-slate-400"
+      {...props}
+    />
+  </div>
+);
 
-// --- Images (Unsplash IDs) ---
-// Adicionei parâmetros 'auto=format' e 'q=80' para otimizar o carregamento
-const IMG_PERSONAL = "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=2000&auto=format&fit=crop";
-const IMG_PLANNER = "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=2000&auto=format&fit=crop";
+// Simulação visual do Stripe Element (Para o layout)
+const MockStripeElement = () => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dados do Cartão</label>
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-all focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900">
+      <div className="flex items-center gap-3">
+        <CreditCard className="h-4 w-4 text-slate-400" />
+        <input placeholder="0000 0000 0000 0000" className="w-full bg-transparent text-sm outline-none placeholder:text-slate-300" />
+      </div>
+      <div className="mt-2 flex gap-3 border-t border-slate-100 pt-2">
+        <input placeholder="MM / AA" className="w-1/2 bg-transparent text-sm outline-none placeholder:text-slate-300" />
+        <input placeholder="CVC" className="w-1/2 bg-transparent text-sm outline-none placeholder:text-slate-300" />
+      </div>
+    </div>
+    <p className="text-[10px] text-slate-400 flex items-center gap-1">
+      <Lock className="h-3 w-3" /> Pagamento processado de forma segura via Stripe.
+    </p>
+  </div>
+);
 
-interface LandingPageProps {
-  onNavigate: (page: Page) => void;
-}
-
-export function SignUp({ onNavigate }: LandingPageProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
-  const [animateHeader, setAnimateHeader] = useState(false);
-  const { loginWithRedirect } = useAuth0();
-
-  const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: { name: "", email: "" },
-  });
-
-  useEffect(() => { setAnimateHeader(true) }, []);
-
-  const onSubmit = async (data: SignUpFormValues) => {
-    setIsLoading(true);
-    localStorage.setItem('signup_account_type', accountType);
-    await loginWithRedirect({
-      authorizationParams: {
-        screen_hint: 'signup',
-        login_hint: data.email,
-        connection: 'Username-Password-Authentication',
-      }
-    });
-    setIsLoading(false);
-  };
-
-  const handleSocialLogin = (connection: string) => {
-    localStorage.setItem('signup_account_type', accountType);
-    loginWithRedirect({ authorizationParams: { connection, screen_hint: 'signup' } });
-  };
-
-  // --- Dynamic Styling Configuration ---
-  const isPlanner = accountType === 'PLANNER';
+export default function RegistrationPage() {
+  const [searchParams] = useSearchParams();
+  // Pega o plano da URL ou define 'free' como fallback
+  const planKey = (searchParams.get('plan') as PlanType) || 'free';
+  const plan = PLAN_DETAILS[planKey] || PLAN_DETAILS.free;
   
-  const theme = isPlanner ? {
-    primary: "bg-emerald-400 hover:bg-emerald-500",
-    text: "text-emerald-400",
-    lightBg: "bg-emerald-50",
-    border: "border-emerald-100",
-    ring: "focus-visible:ring-emerald-600",
-  } : {
-    primary: "bg-blue-400 hover:bg-blue-500",
-    text: "text-blue-400",
-    lightBg: "bg-blue-50",
-    border: "border-blue-100",
-    ring: "focus-visible:ring-blue-600",
-  };
+  // Steps: 1 = Conta, 2 = Pagamento, 3 = Sucesso
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 = avançar, -1 = voltar
 
-  const content = {
-    PERSONAL: {
-      pill: "Para Você e sua Família",
-      headlineStart: "O cérebro da sua",
-      headlineEnd: "independência financeira.",
-      description: "Chega de planilhas quebradas. Centralize contas, cartões e investimentos em uma plataforma inteligente que trabalha por você.",
-      features: [
-        { title: "Controle Total", desc: "Cartões e contas em um só lugar.", icon: CreditCard },
-        { title: "Metas Reais", desc: "Planejamento visual de sonhos.", icon: Target },
-        { title: "Investimentos", desc: "Acompanhamento de rentabilidade.", icon: TrendingUp },
-      ]
-    },
-    PLANNER: {
-      pill: "Para Consultores & Planejadores",
-      headlineStart: "Potencialize sua",
-      headlineEnd: "consultoria financeira.",
-      description: "Centralize a gestão financeira dos seus clientes. Aumente sua produtividade, elimine o trabalho manual e entregue valor real com análises profissionais.",
-      features: [
-        { title: "Gestão de Clientes", desc: "Painel multiparceiros unificado.", icon: Users },
-        { title: "Visão Integrada", desc: "Todas as carteiras em um só lugar.", icon: LayoutDashboard },
-        { title: "Relatórios Auto", desc: "PDFs profissionais em 1 clique.", icon: FileText },
-      ]
+  // Lógica para pular pagamento se for Free
+  const isFree = planKey === 'free';
+  const totalSteps = isFree ? 1 : 2;
+
+  const handleNext = async () => {
+    setLoading(true);
+    // Simula delay de rede (Auth0 ou Stripe)
+    await new Promise(r => setTimeout(r, 1500));
+    setLoading(false);
+
+    if (step < totalSteps) {
+      setDirection(1);
+      setStep(s => s + 1);
+    } else {
+      // Finalizar cadastro
+      setDirection(1);
+      setStep(3); // Vai para tela de sucesso
     }
   };
 
-  const current = content[accountType];
+  const handleBack = () => {
+    setDirection(-1);
+    setStep(s => s - 1);
+  };
 
   return (
-    // FIX 1: Removida a cor de fundo (bg-zinc-50) daqui para não cobrir a imagem
-    <div className="min-h-screen text-zinc-900 font-sans selection:bg-zinc-100 overflow-x-hidden relative flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 selection:bg-slate-900 selection:text-white">
       
-      {/* --- Background Images (FIXED POSITION) --- */}
-      {/* FIX 2: Usando 'fixed inset-0' e z-index negativo para garantir que fique no fundo mas visível */}
-      <div className="fixed inset-0 -z-50">
-        {/* Image for Personal */}
-        <div 
-          className={cn(
-            "absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out",
-            !isPlanner ? "opacity-100" : "opacity-0"
+      {/* --- LEFT PANEL (FORM) --- */}
+      <div className="flex-1 flex flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white relative overflow-hidden">
+        <div className="mx-auto w-full max-w-sm lg:w-96 relative z-10">
+          
+          {/* Logo / Header */}
+          <div className="mb-10">
+            <Link to="/" className="flex items-center gap-2 mb-6 group">
+               <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:-translate-x-1 transition-transform"/>
+               <span className="text-sm font-medium text-slate-500">Voltar para Home</span>
+            </Link>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              {step === 3 ? 'Bem-vindo ao CDF!' : 'Vamos criar sua conta'}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              {step === 1 && "Preencha seus dados para começar."}
+              {step === 2 && "Configure seu método de pagamento seguro."}
+              {step === 3 && "Sua jornada financeira começa agora."}
+            </p>
+          </div>
+
+          {/* Wrapper Animado do Formulário */}
+          <motion.div 
+            layout // A mágica: anima a altura do container quando o conteúdo muda
+            className="relative overflow-visible"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <AnimatePresence mode='wait' custom={direction}>
+              
+              {/* STEP 1: CONTA (Auth0 fields) */}
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  custom={direction}
+                  initial={{ x: direction === 1 ? 20 : -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: direction === 1 ? -20 : 20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Nome" placeholder="Seu nome" />
+                    <Input label="Sobrenome" placeholder="Sobrenome" />
+                  </div>
+                  <Input label="Email" type="email" placeholder="seu@email.com" />
+                  <Input label="Senha" type="password" placeholder="••••••••" />
+                  
+                  {/* Auth0 Disclaimer */}
+                  <div className="bg-slate-50 p-3 rounded-md border border-slate-100 flex gap-3 items-start">
+                     <ShieldCheck className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                     <p className="text-xs text-slate-500 leading-relaxed">
+                       Usamos <strong>Auth0</strong> para proteger sua identidade. Seus dados nunca são compartilhados sem permissão.
+                     </p>
+                  </div>
+
+                  <button 
+                    onClick={handleNext}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center rounded-lg bg-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-70 transition-all active:scale-[0.98]"
+                  >
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (isFree ? 'Criar Conta Gratuita' : 'Continuar para Pagamento')}
+                  </button>
+                </motion.div>
+              )}
+
+              {/* STEP 2: PAGAMENTO (Stripe Elements) */}
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  custom={direction}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <MockStripeElement />
+                  
+                  <div className="flex items-center justify-between text-sm text-slate-600 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <span>Total a pagar hoje:</span>
+                    <span className="font-bold text-slate-900">{plan.price}</span>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                        onClick={handleBack}
+                        className="flex-1 rounded-lg border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                        Voltar
+                    </button>
+                    <button 
+                        onClick={handleNext}
+                        disabled={loading}
+                        className="flex-[2] flex items-center justify-center rounded-lg bg-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-70 transition-all active:scale-[0.98]"
+                    >
+                         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : `Assinar ${plan.name}`}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 3: SUCESSO */}
+              {step === 3 && (
+                <motion.div
+                  key="success"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-center py-8"
+                >
+                    <motion.div 
+                        initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                        className="mx-auto h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6"
+                    >
+                        <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                    </motion.div>
+                    <h3 className="text-xl font-bold text-slate-900">Cadastro realizado!</h3>
+                    <p className="text-slate-600 mt-2 mb-8">
+                        Enviamos um email de confirmação para você.
+                    </p>
+                    <Link to="/app/dashboard" className="block w-full rounded-lg bg-slate-900 py-3 text-sm font-bold text-white hover:bg-slate-800 transition-colors">
+                        Acessar o Sistema
+                    </Link>
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+          </motion.div>
+          
+          {/* Progress Indicator */}
+          {!isFree && step < 3 && (
+              <div className="mt-8 flex justify-center gap-2">
+                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 1 ? 'w-8 bg-slate-900' : 'w-2 bg-slate-200'}`} />
+                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'w-8 bg-slate-900' : 'w-2 bg-slate-200'}`} />
+              </div>
           )}
-          style={{ backgroundImage: `url(${IMG_PERSONAL})` }}
-        />
-        {/* Image for Planner */}
-        <div 
-          className={cn(
-            "absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out",
-            isPlanner ? "opacity-100" : "opacity-0"
-          )}
-          style={{ backgroundImage: `url(${IMG_PLANNER})` }}
-        />
-        {/* Overlay branco suave para garantir leitura do texto */}
-        <div className="absolute inset-0 bg-white/90 backdrop-blur-[1px]" />
+        </div>
       </div>
 
-      {/* --- Navbar --- */}
-      <nav className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={"h-9 w-9"}>
-              <img src="icon.svg"></img>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-zinc-900">CDF</span>
-          </div>
-          <div className="flex items-center gap-4">
-             <span className="hidden sm:inline text-sm text-zinc-600 font-medium">Já tem conta?</span>
-             <Button variant="outline" onClick={() => onNavigate('login')} className="font-medium bg-white/50 hover:bg-white/80 border-zinc-200/50">
-               Entrar
-             </Button>
-          </div>
-        </div>
-      </nav>
-
-      {/* --- Main Section --- */}
-      <main className="flex-1 pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto w-full relative z-10">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-20 items-center">
-          
-          {/* LEFT: Copy & Value Prop */}
-          <div className={`lg:col-span-7 space-y-8 transition-all duration-700 ${animateHeader ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            
-            {/* Pill Badge */}
-            <div className={cn("inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-300 bg-white/80 backdrop-blur-md shadow-sm", theme.text, theme.border)}>
-              <span className={cn("flex h-2 w-2 rounded-full mr-2 animate-pulse bg-current")} />
-              {current.pill}
-            </div>
-            
-            {/* Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-zinc-900 leading-[1.1] drop-shadow-sm">
-              {current.headlineStart} <br className="hidden lg:block"/>
-              <span className={cn("transition-colors duration-500 block mt-2", theme.text)}>
-                {current.headlineEnd}
-              </span>
-            </h1>
-            
-            <p className="text-xl text-zinc-600 max-w-2xl leading-relaxed font-medium">
-              {current.description}
-            </p>
-
-            {/* Feature Cards */}
-            <div className="grid sm:grid-cols-3 gap-4 pt-4">
-              {current.features.map((feature, idx) => (
-                <div key={idx} className="group flex flex-col gap-3 p-4 rounded-2xl bg-white/60 border border-white/50 shadow-sm hover:shadow-md transition-all backdrop-blur-md">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300", theme.lightBg, theme.text)}>
-                    <feature.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-zinc-900">{feature.title}</h4>
-                    <p className="text-sm text-zinc-600 leading-snug mt-1 font-medium">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-6 text-sm text-zinc-600 font-medium pt-2">
-               <div className="flex items-center gap-2">
-                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                 Dados Criptografados
+      {/* --- RIGHT PANEL (SUMMARY) --- */}
+      <div className="relative hidden w-0 flex-1 lg:block bg-slate-900">
+        {/* Background Pattern estilizado */}
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        
+        <div className="relative z-10 h-full flex flex-col justify-center p-12 text-slate-300">
+           <div className="max-w-md mx-auto w-full">
+               <div className="bg-slate-800/50 backdrop-blur border border-slate-700 p-8 rounded-2xl shadow-2xl">
+                   <h3 className="text-lg font-medium text-white mb-6">Resumo do Pedido</h3>
+                   
+                   <div className="flex justify-between items-center py-4 border-b border-slate-700">
+                       <div>
+                           <p className="text-white font-semibold">Plano {plan.name}</p>
+                           <p className="text-xs text-slate-400">Assinatura {plan.period.replace('/', '')}</p>
+                       </div>
+                       <div className="text-white font-bold">{plan.price}</div>
+                   </div>
+                   
+                   <div className="py-4 space-y-3">
+                       {plan.features.map((feature: string, idx: number) => (
+                           <div key={idx} className="flex items-center text-sm">
+                               <div className="h-5 w-5 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3 text-emerald-400">
+                                   <CheckCircle2 className="h-3 w-3" />
+                               </div>
+                               {feature}
+                           </div>
+                       ))}
+                   </div>
+                   
+                   <div className="mt-6 pt-6 border-t border-slate-700 flex justify-between items-end">
+                       <span className="text-sm">Total a pagar hoje</span>
+                       <span className="text-3xl font-bold text-white">{plan.price}</span>
+                   </div>
                </div>
-               <div className="hidden sm:flex items-center gap-2">
-                 <Check className="w-4 h-4 text-emerald-600" />
-                 Setup Gratuito
+
+               {/* Testimonial ou Social Proof (Opcional, mas comum no onboarding) */}
+               <div className="mt-12 flex gap-4 items-center opacity-70">
+                   <div className="flex -space-x-2">
+                       {[1,2,3].map(i => (
+                           <div key={i} className="h-8 w-8 rounded-full bg-slate-700 border-2 border-slate-900" />
+                       ))}
+                   </div>
+                   <p className="text-xs">Junte-se a +1000 fundadores organizando suas finanças.</p>
                </div>
-            </div>
-          </div>
-
-          {/* RIGHT: High-Converting Form */}
-          <div className="lg:col-span-5 w-full">
-            <div className="relative bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-zinc-900/10 border border-white/60 p-8 overflow-hidden">
-              
-              {/* Toggle Switch */}
-              <div className="flex justify-center mb-8">
-                <div className="bg-zinc-100/80 p-1.5 rounded-full inline-flex w-full sm:w-auto relative border border-zinc-200/50">
-                  <div 
-                    className={cn(
-                      "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
-                      isPlanner ? "translate-x-[100%] left-1.5" : "left-1.5"
-                    )}
-                  />
-                  
-                  <button 
-                    type="button"
-                    onClick={() => setAccountType('PERSONAL')}
-                    className={cn(
-                      "relative z-10 flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-colors duration-300",
-                      !isPlanner ? "text-blue-500" : "text-zinc-500 hover:text-zinc-700"
-                    )}
-                  >
-                    <User className="w-4 h-4" /> Para mim
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setAccountType('PLANNER')}
-                    className={cn(
-                      "relative z-10 flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition-colors duration-300",
-                      isPlanner ? "text-emerald-600" : "text-zinc-500 hover:text-zinc-700"
-                    )}
-                  >
-                    <Briefcase className="w-4 h-4" /> Sou Planejador
-                  </button>
-                </div>
-              </div>
-
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-zinc-900">
-                  {isPlanner ? "Comece a escalar" : "Crie sua conta"}
-                </h3>
-                <p className="text-zinc-500 mt-2 text-sm font-medium">
-                  {isPlanner ? "Ferramenta profissional para consultores." : "Junte-se a 10.000+ membros inteligentes."}
-                </p>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-11 w-full hover:bg-zinc-50 font-medium border-zinc-200/80 bg-white/50" type="button" onClick={() => handleSocialLogin('google-oauth2')}>
-                    <Chrome className={cn("mr-2 h-4 w-4", theme.text)} /> Google
-                  </Button>
-                  <Button variant="outline" className="h-11 w-full hover:bg-zinc-50 font-medium border-zinc-200/80 bg-white/50" type="button" onClick={() => handleSocialLogin('facebook')}>
-                    <Facebook className={cn("mr-2 h-4 w-4", theme.text)} /> Facebook
-                  </Button>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200/80" /></div>
-                  <div className="relative flex justify-center text-xs uppercase font-medium tracking-wide"><span className="bg-white/80 px-3 text-zinc-400">ou e-mail</span></div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-xs font-semibold text-zinc-700 ml-1">NOME COMPLETO</Label>
-                    <Input id="name" placeholder="Como você quer ser chamado?" {...form.register("name")} className={cn("h-11 bg-white/50 border-zinc-200/80 transition-all", theme.ring)} />
-                    {form.formState.errors.name && <p className="text-xs text-red-500 mt-1 ml-1">{form.formState.errors.name.message}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-xs font-semibold text-zinc-700 ml-1">E-MAIL</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" {...form.register("email")} className={cn("h-11 bg-white/50 border-zinc-200/80 transition-all", theme.ring)} />
-                    {form.formState.errors.email && <p className="text-xs text-red-500 mt-1 ml-1">{form.formState.errors.email.message}</p>}
-                  </div>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className={cn("w-full h-12 text-white font-bold text-base shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 mt-2", theme.primary)} 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Processando..." : (
-                    <span className="flex items-center">
-                      {isPlanner ? "Criar Conta Profissional" : "Criar Conta Grátis"} 
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </span>
-                  )}
-                </Button>
-              </form>
-              
-              <p className="mt-6 text-center text-xs text-zinc-500 font-medium">
-                Ao clicar em criar, você concorda com nossos Termos de Uso.
-              </p>
-            </div>
-          </div>
+           </div>
         </div>
-      </main>
-
-      {/* --- Footer --- */}
-      <footer className="py-8 text-center border-t border-white/20 bg-white/40 backdrop-blur-md relative z-10">
-        <p className="text-zinc-500 text-sm font-medium">
-          © 2025 Cérebro das Finanças (CDF).
-        </p>
-      </footer>
+      </div>
     </div>
   );
 }

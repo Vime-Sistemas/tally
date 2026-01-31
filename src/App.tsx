@@ -12,7 +12,10 @@ import { Goals } from "./pages/Dashboard/Goals";
 import { EquityNew } from "./pages/Equity/New";
 import { EquityList } from "./pages/Equity/List";
 import { Profile } from "./pages/Profile";
-import { SignUp } from "./pages/SignUp";
+import HomePage from "./pages/SignUp/HomePage";
+import NewFeaturesPage from "./pages/SignUp/NewFeaturesPage";
+import PricingPage from "./pages/SignUp/PricingPage";
+import SignUp from "./pages/SignUp";
 import { Login } from "./pages/Login";
 import { Releases } from "./pages/Releases";
 import { BudgetsPage } from "./pages/Budgets/index";
@@ -36,7 +39,13 @@ import { PlannerDashboard } from "./pages/Planner/Dashboard";
 import { InviteLandingPage } from "./pages/InviteLandingPage";
 import { PlannerInvitesDialog } from "./components/PlannerInvitesDialog";
 import { CashflowFuturePage } from "./pages/CashflowFuture";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import { FloatingDock } from "./components/FloatingDock";
 import { cn } from "@/lib/utils";
 
@@ -48,17 +57,10 @@ function AppContent() {
     getAccessTokenSilently,
     user: auth0User,
   } = useAuth0();
+  const navigate = useNavigate();
   const { setUser, setCostCenters, user } = useUser();
 
-  // Detect initial page from pathname
-  const getInitialPage = (): Page => {
-    const pathname = window.location.pathname;
-    if (pathname.includes("/releases")) return "releases";
-    if (pathname.includes("/login")) return "login";
-    return "signup";
-  };
-
-  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage());
+  const [currentPage, setCurrentPage] = useState<Page>("dashboard-summary");
   const [hasBusiness, setHasBusiness] = useState(false);
   const [currentContext, setCurrentContext] = useState<AppContext>("PERSONAL");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -255,12 +257,12 @@ function AppContent() {
     );
   }
 
+  if (!isLoading && !isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   const renderPage = () => {
     switch (currentPage) {
-      case "signup":
-        return <SignUp onNavigate={setCurrentPage} />;
-      case "login":
-        return <Login onNavigate={setCurrentPage} />;
       case "transactions-new":
         return <Transactions onNavigate={setCurrentPage} />;
       case "transactions-history":
@@ -308,8 +310,6 @@ function AppContent() {
             </div>
           </div>
         );
-      case "releases":
-        return <Releases onNavigate={setCurrentPage} />;
       case "budgets":
         return <BudgetsPage />;
       case "debts":
@@ -361,7 +361,7 @@ function AppContent() {
     | "sidebar"
     | "header"
     | "dock";
-  const isAuthPage = ["signup", "login", "releases"].includes(currentPage);
+  const isAuthPage = false;
   // Lógica de exibição
   const showSidebar = menuPreference === "sidebar" && !isMobile && !isAuthPage;
   const showDock = menuPreference === "dock" && !isMobile && !isAuthPage;
@@ -444,7 +444,7 @@ function AppContent() {
       )}
 
       {/* ... Dialogs e Analytics ... */}
-      <SessionExpiredDialog onRedirect={() => setCurrentPage("login")} />
+      <SessionExpiredDialog onRedirect={() => navigate("/login") } />
       {isTokenReady && <PlannerInvitesDialog />}
       <Toaster />
       <Analytics />
@@ -453,13 +453,43 @@ function AppContent() {
   );
 }
 
+function LandingRoute() {
+  const { isAuthenticated, isLoading } = useAuth0();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate("/app", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  return <HomePage />;
+}
+
+function LoginRoute() {
+  const { isAuthenticated, isLoading } = useAuth0();
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return <Login />;
+}
+
 function App() {
   return (
     <UserProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingRoute />} />
+          <Route path="/funcionalidades" element={<NewFeaturesPage />} />
+          <Route path="/planos" element={<PricingPage />} />
+          <Route path="/cadastro" element={<SignUp />} />
+          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/releases" element={<Releases />} />
           <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
-          <Route path="*" element={<AppContent />} />
+          <Route path="/app/*" element={<AppContent />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </UserProvider>
