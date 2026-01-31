@@ -198,6 +198,7 @@ export const Footer = () => {
       {/* MOBILE BOTTOM NAVIGATION BAR */}
       <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-16 bg-white/80 backdrop-blur-xl border border-slate-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.1)] rounded-3xl z-[60] flex items-center justify-around px-2">
         <BottomNavLink to="/" icon={<Home size={20}/>} label="Home" active={isActive('/')} />
+        <BottomNavLink to="/planos" icon={<LayoutGrid size={20}/>} label="Planos" active={isActive('/planos')} />
         <BottomNavLink to="/funcionalidades" icon={<Layers size={20}/>} label="Recursos" active={isActive('/funcionalidades')} />
         <BottomNavLink to="/comparativo-planilha-e-cdf" icon={<BarChart3 size={20}/>} label="Planilhas" active={isActive('/comparativo-planilha-e-cdf')} />
         <BottomNavLink to="/login" icon={<User size={20}/>} label="Perfil" active={isActive('/login')} />
