@@ -26,7 +26,7 @@ export default function FeaturesPage() {
 
   return (
     <PageWrapper>
-      <section className="py-24 bg-slate-50/50 min-h-screen">
+      <section className="py-24 bg-white min-h-screen">
         <div className="container mx-auto px-4 md:px-6">
           <div className="mb-12 text-center max-w-2xl mx-auto">
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl font-bold tracking-tight text-slate-900 mb-4">
