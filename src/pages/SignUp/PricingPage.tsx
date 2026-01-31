@@ -1,23 +1,24 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createCheckoutSession } from '@/services/stripe';
 import { PageWrapper, MotionButton } from './NewReusableComponents';
+import { setAuthToken } from '@/services/api';
 
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<null | 'annual' | 'monthly'>(null);
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth0();
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
 
-  const priceIds = {
+  const priceIds = useMemo(() => ({
     annual: import.meta.env.VITE_STRIPE_PRICE_ANNUAL,
     monthly: import.meta.env.VITE_STRIPE_PRICE_MONTHLY,
-  };
+  }), []);
 
-  const handleCheckout = async (plan: 'annual' | 'monthly') => {
+  const handleCheckout = useCallback(async (plan: 'annual' | 'monthly') => {
     const priceId = priceIds[plan];
 
     if (!priceId) {
@@ -25,17 +26,25 @@ export default function PricingPage() {
       return;
     }
 
-    if (!isLoading && !isAuthenticated) {
-      navigate(`/login?redirect=/planos&plan=${plan}`);
+    if (isLoading) {
       return;
     }
 
-    if (isLoading) {
+    if (!isAuthenticated) {
+      localStorage.setItem('pending_checkout_plan', plan);
+      await loginWithRedirect({ appState: { returnTo: `/planos` } });
       return;
     }
 
     try {
       setLoadingPlan(plan);
+      localStorage.removeItem('pending_checkout_plan');
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
+      setAuthToken(token);
       const { url } = await createCheckoutSession(priceId);
       if (url) {
         window.location.href = url;
@@ -45,7 +54,16 @@ export default function PricingPage() {
     } finally {
       setLoadingPlan(null);
     }
-  };
+  }, [getAccessTokenSilently, isLoading, isAuthenticated, loginWithRedirect, navigate, priceIds]);
+
+  // Auto-dispara checkout após login, se havia um plano pendente
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    const pendingPlan = localStorage.getItem('pending_checkout_plan');
+    if (pendingPlan === 'annual' || pendingPlan === 'monthly') {
+      handleCheckout(pendingPlan as 'annual' | 'monthly');
+    }
+  }, [isAuthenticated, isLoading, handleCheckout]);
 
   return (
     <PageWrapper>

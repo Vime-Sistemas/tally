@@ -468,7 +468,16 @@ function LandingRoute() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isLoading) return;
+
+    // Se há checkout pendente, prioriza planos
+    const pendingPlan = localStorage.getItem("pending_checkout_plan");
+    if (pendingPlan === "annual" || pendingPlan === "monthly") {
+      navigate("/planos", { replace: true });
+      return;
+    }
+
+    if (isAuthenticated) {
       navigate("/app", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
