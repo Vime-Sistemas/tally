@@ -1,10 +1,51 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createCheckoutSession } from '@/services/stripe';
 import { PageWrapper, MotionButton } from './NewReusableComponents';
 
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
+  const [loadingPlan, setLoadingPlan] = useState<null | 'annual' | 'monthly'>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth0();
+
+  const priceIds = {
+    annual: import.meta.env.VITE_STRIPE_PRICE_ANNUAL,
+    monthly: import.meta.env.VITE_STRIPE_PRICE_MONTHLY,
+  };
+
+  const handleCheckout = async (plan: 'annual' | 'monthly') => {
+    const priceId = priceIds[plan];
+
+    if (!priceId) {
+      console.error('Stripe priceId não configurado. Defina VITE_STRIPE_PRICE_ANNUAL e VITE_STRIPE_PRICE_MONTHLY.');
+      return;
+    }
+
+    if (!isLoading && !isAuthenticated) {
+      navigate(`/login?redirect=/planos&plan=${plan}`);
+      return;
+    }
+
+    if (isLoading) {
+      return;
+    }
+
+    try {
+      setLoadingPlan(plan);
+      const { url } = await createCheckoutSession(priceId);
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Falha ao iniciar checkout', error);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <PageWrapper>
@@ -96,10 +137,11 @@ export default function PricingPage() {
                 </div>
                 <MotionButton 
                     variant={isAnnual ? "primary" : "outline"} 
-                    asLink to={`/cadastro?plan=${isAnnual ? 'annual' : 'monthly'}`} 
+                    onClick={() => handleCheckout(isAnnual ? 'annual' : 'monthly')} 
                     className={`mt-8 w-full ${isAnnual ? 'bg-white text-slate-900 hover:bg-slate-100 border-none font-bold' : ''}`}
+                    disabled={loadingPlan !== null}
                 >
-                  {isAnnual ? 'Assinar Anual' : 'Assinar Mensal'}
+                  {loadingPlan ? 'Redirecionando...' : isAnnual ? 'Assinar Anual' : 'Assinar Mensal'}
                 </MotionButton>
               </motion.div>
 

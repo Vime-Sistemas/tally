@@ -1,4 +1,4 @@
-import { ArrowRight, LayoutDashboard } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 // Importe os componentes compartilhados acima
 import { PageWrapper, MotionButton } from './NewReusableComponents';
