@@ -59,12 +59,41 @@ export default function HomePage() {
             initial={{ opacity: 0, rotateX: 20, z: -100, scale: 0.9 }}
             animate={{ opacity: 1, rotateX: 0, z: 0, scale: 1 }}
             transition={{ duration: 1.2, delay: 0.6, type: "spring", bounce: 0.2 }}
-            className="mt-16 relative mx-auto max-w-5xl perspective-1000"
+            className="mt-16 relative mx-auto max-w-5xl perspective-1000 hidden md:block"
           >
             <div className="rounded-xl border border-slate-200 bg-white/50 backdrop-blur p-2 shadow-2xl relative overflow-hidden group">
                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none z-20 group-hover:from-white/80 transition-all" />
               <div className="rounded-lg bg-slate-50 border border-slate-100 aspect-[21/9] flex items-center justify-center relative overflow-hidden">
                 <img src="/dashboard.png" alt="Dashboard Cérebro das Finanças" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Mobile-first preview */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-10 md:hidden"
+          >
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-lg p-4">
+              <div className="rounded-lg bg-slate-50 border border-slate-100 aspect-[4/3] flex items-center justify-center overflow-hidden">
+                <img
+                  src="/dashboard.png"
+                  alt="Dashboard mobile"
+                  className="h-full w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+              <div className="text-left mt-4 space-y-2">
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Fluxo de caixa, metas e cartões num layout adaptado para telas menores.
+                </p>
+                <div className="flex gap-2">
+                  <MotionButton asLink to="/cadastro" className="h-10 px-4 text-sm flex-1">Criar conta</MotionButton>
+                  <MotionButton variant="outline" asLink to="/login" className="h-10 px-4 text-sm flex-1">Entrar</MotionButton>
+                </div>
               </div>
             </div>
           </motion.div>

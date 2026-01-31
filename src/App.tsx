@@ -42,6 +42,7 @@ import { PlannerInvitesDialog } from "./components/PlannerInvitesDialog";
 import { CashflowFuturePage } from "./pages/CashflowFuture";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -580,23 +581,68 @@ function AppContent() {
 function LandingRoute() {
   const { isAuthenticated, isLoading } = useAuth0();
   const navigate = useNavigate();
+  const [pendingPlan, setPendingPlan] = useState<"annual" | "monthly" | null>(null);
+
+  useEffect(() => {
+    const storedPlan = localStorage.getItem("pending_checkout_plan");
+    if (storedPlan === "annual" || storedPlan === "monthly") {
+      setPendingPlan(storedPlan);
+    }
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
-
-    // Se há checkout pendente, prioriza planos
-    const pendingPlan = localStorage.getItem("pending_checkout_plan");
-    if (pendingPlan === "annual" || pendingPlan === "monthly") {
-      navigate("/planos", { replace: true });
-      return;
-    }
 
     if (isAuthenticated) {
       navigate("/app", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  return <HomePage />;
+  const handleResumeCheckout = () => {
+    navigate("/planos");
+  };
+
+  const handleDismissCheckout = () => {
+    localStorage.removeItem("pending_checkout_plan");
+    setPendingPlan(null);
+  };
+
+  const pendingPlanLabel = pendingPlan === "annual" ? "Pro Anual" : "Pro Mensal";
+
+  return (
+    <>
+      {pendingPlan && (
+        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur">
+          <div className="max-w-6xl mx-auto px-4 md:px-6 py-3">
+            <Alert className="border-blue-400/40 bg-white shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <AlertTitle>Checkout em andamento</AlertTitle>
+                  <AlertDescription>
+                    Volte para concluir o plano {pendingPlanLabel.toLowerCase()}.
+                  </AlertDescription>
+                </div>
+                <div className="flex gap-2 self-end sm:self-auto">
+                  <Button variant="outline" size="sm" onClick={handleDismissCheckout}>
+                    Agora não
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-blue-400 text-white hover:bg-blue-400/90"
+                    onClick={handleResumeCheckout}
+                  >
+                    Retomar checkout
+                  </Button>
+                </div>
+              </div>
+            </Alert>
+          </div>
+        </div>
+      )}
+
+      <HomePage />
+    </>
+  );
 }
 
 function LoginRoute() {

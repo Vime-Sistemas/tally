@@ -89,6 +89,22 @@ export default function RegistrationPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 selection:bg-slate-900 selection:text-white">
+      {/* Mobile summary card */}
+      <div className="md:hidden px-4 pt-6">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+          <div className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Plano selecionado</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-slate-900">{plan.name}</p>
+              <p className="text-xs text-slate-600">{plan.features.join(', ')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-slate-900">{plan.price}</p>
+              <p className="text-xs text-slate-500">{plan.period}</p>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* --- LEFT PANEL (FORM) --- */}
       <div className="flex-1 flex flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white relative overflow-hidden">

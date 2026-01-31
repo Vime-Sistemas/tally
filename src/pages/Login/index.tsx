@@ -24,7 +24,6 @@ import {
   Briefcase,
   ArrowRight,
   ShieldCheck,
-  BarChart3,
   Brain
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -178,9 +177,28 @@ export function Login() {
   ];
 
   return (
-    <div className="w-full h-screen flex overflow-hidden bg-white font-sans text-slate-950 selection:bg-slate-900 selection:text-white">
+    <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-white font-sans text-slate-950 selection:bg-slate-900 selection:text-white">
       
-      {/* --- Left Side (Visual / Atmosfera) --- */}
+      {/* --- MOBILE HERO (Shown only on small screens) --- */}
+      <div className="lg:hidden w-full px-6 pt-8 pb-6 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100">
+        <div className="flex items-center gap-2 mb-4">
+           <div className="bg-blue-400 p-1.5 rounded-lg">
+             <Brain className="h-4 w-4 text-white" />
+           </div>
+           <span className="font-bold text-lg tracking-tight">CDF</span>
+        </div>
+        
+        <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm mb-4">
+           <ShieldCheck className="h-3 w-3 text-emerald-500" />
+           <span>Login seguro via Auth0</span>
+        </div>
+
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
+          O controle total do seu <br/><span className="text-blue-500">futuro financeiro.</span>
+        </h1>
+      </div>
+
+      {/* --- LEFT SIDE (Desktop Visual / Atmosfera) --- */}
       <div className="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden">
         {/* Dynamic Overlay */}
         <div className={cn("absolute inset-0 z-10 transition-colors duration-1000 ease-in-out", theme.overlay)} />
@@ -213,9 +231,9 @@ export function Login() {
         <div className="relative z-20 flex flex-col justify-between h-full p-16">
           <div className="flex items-center gap-3">
              <div className="h-10 w-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center">
-                <Brain className="h-5 w-5 text-blue-400" />
+                <Brain className="h-5 w-5 text-white" />
              </div>
-             <span className="text-xl font-bold tracking-tight text-white">Cérebro das Finanças</span>
+             <span className="text-xl font-bold tracking-tight text-white">CDF</span>
           </div>
 
           <div className="max-w-md">
@@ -254,38 +272,30 @@ export function Login() {
         </div>
       </div>
 
-      {/* --- Right Side (Form) --- */}
+      {/* --- RIGHT SIDE (Form) --- */}
       <div className="w-full lg:w-1/2 flex flex-col relative bg-white">
         
-        {/* Top Navigation for Mobile */}
-        <div className="lg:hidden p-6 flex items-center gap-2">
-           <div className="h-8 w-8 bg-slate-900 rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-4 w-4 text-white" />
-           </div>
-           <span className="font-bold">CDF</span>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-24">
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-24 overflow-y-auto">
           <div className="w-full max-w-sm space-y-10">
             
             {/* Header + Toggle */}
             <div className="space-y-8">
-               <div className="space-y-2 text-center">
+               <div className="space-y-2 text-center lg:text-left">
                 <motion.h1 
                     key={accountType}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-3xl font-bold tracking-tighter text-slate-900"
+                    className="text-3xl font-bold tracking-tighter text-slate-900 hidden lg:block"
                 >
                   {isPlanner ? "Portal do Advisor" : "Bem-vindo de volta"}
                 </motion.h1>
-                <p className="text-slate-500 text-sm">
+                <p className="text-slate-500 text-sm hidden lg:block">
                   {isPlanner ? "Gerencie carteiras de clientes." : "Acesse seu controle financeiro."}
                 </p>
               </div>
 
                {/* Custom Motion Toggle */}
-               <div className="flex justify-center">
+               <div className="flex justify-center lg:justify-start">
                   <div className="bg-slate-100 p-1 rounded-full inline-flex relative border border-slate-200">
                     {['PERSONAL', 'PLANNER'].map((type) => {
                         const isActive = accountType === type;
@@ -347,6 +357,7 @@ export function Login() {
                       
                       {/* Close Button Absolute */}
                       <button 
+                         type="button"
                          onClick={clearLastData} 
                          className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 transition-colors rounded-full hover:bg-slate-50"
                       >
@@ -394,7 +405,7 @@ export function Login() {
                                 theme.ring
                             )}
                         />
-                        {/* Status Icon Indicator (Optional Enhancement) */}
+                        {/* Status Icon Indicator */}
                         {!form.formState.errors.email && form.watch('email') && (
                             <div className="absolute right-3 top-3 text-emerald-500 animate-in fade-in zoom-in">
                                 <ShieldCheck className="w-5 h-5" />
