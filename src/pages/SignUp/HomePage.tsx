@@ -64,8 +64,7 @@ export default function HomePage() {
             <div className="rounded-xl border border-slate-200 bg-white/50 backdrop-blur p-2 shadow-2xl relative overflow-hidden group">
                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none z-20 group-hover:from-white/80 transition-all" />
               <div className="rounded-lg bg-slate-50 border border-slate-100 aspect-[21/9] flex items-center justify-center relative overflow-hidden">
-                <LayoutDashboard className="h-20 w-20 text-slate-300/50" />
-                <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#000_1px,transparent_1px),linear-gradient(to_bottom,#000_1px,transparent_1px)] bg-[size:20px_20px]" />
+                <img src='dashboard.png'></img>
               </div>
             </div>
           </motion.div>

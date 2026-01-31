@@ -147,7 +147,7 @@ export default function RegistrationPage() {
                   <button 
                     onClick={handleNext}
                     disabled={loading}
-                    className="w-full flex items-center justify-center rounded-lg bg-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-70 transition-all active:scale-[0.98]"
+                    className="w-full flex items-center justify-center rounded-lg bg-blue-400 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-blue-500 disabled:opacity-70 transition-all active:scale-[0.98]"
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (isFree ? 'Criar Conta Gratuita' : 'Continuar para Pagamento')}
                   </button>
@@ -182,7 +182,7 @@ export default function RegistrationPage() {
                     <button 
                         onClick={handleNext}
                         disabled={loading}
-                        className="flex-[2] flex items-center justify-center rounded-lg bg-slate-900 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-70 transition-all active:scale-[0.98]"
+                        className="flex-[2] flex items-center justify-center rounded-lg bg-blue-400 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 hover:bg-blue-500 disabled:opacity-70 transition-all active:scale-[0.98]"
                     >
                          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : `Assinar ${plan.name}`}
                     </button>
@@ -220,8 +220,8 @@ export default function RegistrationPage() {
           {/* Progress Indicator */}
           {!isFree && step < 3 && (
               <div className="mt-8 flex justify-center gap-2">
-                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 1 ? 'w-8 bg-slate-900' : 'w-2 bg-slate-200'}`} />
-                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'w-8 bg-slate-900' : 'w-2 bg-slate-200'}`} />
+                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 1 ? 'w-8 bg-blue-400' : 'w-2 bg-slate-200'}`} />
+                  <div className={`h-1.5 rounded-full transition-all duration-300 ${step >= 2 ? 'w-8 bg-blue-400' : 'w-2 bg-slate-200'}`} />
               </div>
           )}
         </div>
