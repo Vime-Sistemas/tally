@@ -72,14 +72,21 @@ function AppContent() {
     const syncUser = async () => {
       if (isAuthenticated && auth0User) {
         setIsSyncing(true);
+        let hasToken = false;
         try {
           const token = await getAccessTokenSilently({
             authorizationParams: {
               audience: import.meta.env.VITE_AUTH0_AUDIENCE,
             },
           });
+          if (!token) {
+            console.error("Auth0: token ausente após login.");
+            return;
+          }
+
           setAuthToken(token);
           setIsTokenReady(true);
+          hasToken = true;
 
           const signupAccountType = localStorage.getItem("signup_account_type");
           const inviteToken = localStorage.getItem("invite_token");
@@ -133,9 +140,12 @@ function AppContent() {
           const costCenters = await costCenterService.getCostCenters();
           setCostCenters(costCenters);
         } catch (err) {
-          console.error("Error syncing user:", err);
+          console.error("Error syncing user / token:", err);
         } finally {
           setIsSyncing(false);
+          if (!hasToken) {
+            return;
+          }
           if (
             auth0User &&
             (auth0User as any)["https://tally.app/type"] === "PLANNER"

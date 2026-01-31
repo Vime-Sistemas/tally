@@ -21,8 +21,13 @@ import {
   Clock, 
   X, 
   User, 
-  Briefcase 
+  Briefcase,
+  ArrowRight,
+  ShieldCheck,
+  BarChart3,
+  Brain
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { encryptPayload, decryptPayload } from "@/utils/crypto";
 
 // --- Types & Schema ---
@@ -79,7 +84,7 @@ export function Login() {
   };
 
   const clearLastData = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the parent click
+    e.stopPropagation();
     try { localStorage.removeItem('tally_u'); } catch (e) { /* ignore */ }
     setLastAccount(null);
     setLastSocial(null);
@@ -107,7 +112,6 @@ export function Login() {
     saveLastAccount(data.email);
     localStorage.setItem('signup_account_type', accountType);
     
-    // Você pode passar o accountType como parâmetro extra se precisar direcionar no Auth0
     await loginWithRedirect({
       authorizationParams: {
         login_hint: data.email,
@@ -129,262 +133,301 @@ export function Login() {
     });
   };
 
-  // --- Dynamic Theme ---
+  // --- Dynamic Theme (Updated for Linear Look) ---
   const isPlanner = accountType === 'PLANNER';
 
   const theme = isPlanner ? {
-    primary: "bg-emerald-500 hover:bg-emerald-600",
-    text: "text-emerald-600",
-    border: "border-emerald-100",
-    ring: "focus-visible:ring-emerald-500",
-    iconBg: "bg-emerald-50",
-    overlay: "bg-emerald-900/60 mix-blend-multiply",
-    socialActive: "border-emerald-400 bg-emerald-50/50 text-emerald-700"
+    // Planner: Emerald / Dark Green Professional
+    primary: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/10",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    ring: "focus-visible:ring-emerald-600",
+    iconBg: "bg-emerald-50 text-emerald-700",
+    pillActive: "bg-emerald-600 text-white",
+    socialActive: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    overlay: "bg-emerald-950/40 mix-blend-multiply" 
   } : {
-    // Usando Emerald conforme solicitado
-    primary: "bg-blue-400 hover:bg-blue-500",
-    text: "text-blue-400",
-    border: "border-blue-100",
-    ring: "focus-visible:ring-blue-500",
-    iconBg: "bg-blue-50",
-    overlay: "bg-blue-900/60 mix-blend-multiply",
-    socialActive: "border-blue-400 bg-blue-50/50 text-blue-700"
+    // Personal: Slate / Monochrome Minimalist
+    primary: "bg-blue-400 hover:bg-blue-500 shadow-blue-900/10",
+    text: "text-slate-700",
+    border: "border-slate-200",
+    ring: "focus-visible:ring-slate-900",
+    iconBg: "bg-slate-100 text-slate-900",
+    pillActive: "bg-blue-400 text-white",
+    socialActive: "border-slate-300 bg-slate-50 text-slate-900",
+    overlay: "bg-slate-950/40 mix-blend-multiply"
   };
 
-  // --- Content ---
+  // --- Content Slides ---
   const slides = [
     {
-      quote: "Finalmente consegui entender para onde meu dinheiro vai todo mês, sem planilhas complexas.",
-      author: "Controle financeiro pessoal",
-      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1470&auto=format&fit=crop"
+      quote: "O controle que faltava para escalar meu patrimônio com segurança.",
+      author: "Investidor Pessoal",
+      image: "https://images.unsplash.com/photo-1614028674026-a65e31bfd27c?q=80&w=2070&auto=format&fit=crop"
     },
     {
-      quote: "Ver minhas metas avançando aos poucos me ajudou a manter a disciplina financeira.",
-      author: "Organização e metas",
-      image: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2400&auto=format&fit=crop"
+      quote: "Centralizo a visão de todos os meus clientes em um único dashboard.",
+      author: "Wealth Advisor",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop"
     },
     {
-      quote: "A visão unificada das carteiras dos meus clientes aumentou minha produtividade.",
-      author: "Gestão profissional", // Um slide focado em B2B
-      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=2000&auto=format&fit=crop"
+      quote: "Adeus planilhas quebradas. Olá previsibilidade financeira.",
+      author: "CFO de Startups",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop"
     }
   ];
 
   return (
-    <div className="w-full h-screen flex overflow-hidden bg-white">
+    <div className="w-full h-screen flex overflow-hidden bg-white font-sans text-slate-950 selection:bg-slate-900 selection:text-white">
       
-      {/* --- Left Side (Visual) --- */}
-      <div className="hidden lg:flex w-1/2 relative bg-zinc-900 text-white overflow-hidden">
-        {/* Dynamic Overlay Color */}
-        <div className={cn("absolute inset-0 z-10 transition-colors duration-700", theme.overlay)} />
+      {/* --- Left Side (Visual / Atmosfera) --- */}
+      <div className="hidden lg:flex w-1/2 relative bg-slate-900 overflow-hidden">
+        {/* Dynamic Overlay */}
+        <div className={cn("absolute inset-0 z-10 transition-colors duration-1000 ease-in-out", theme.overlay)} />
         
-        {/* Content Wrapper */}
-        <div className="relative z-20 flex flex-col justify-between h-full p-12">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center text-white font-bold">
-              <img src="icon.svg"></img>
-            </div>
-            <span className="text-xl font-bold tracking-tight">CDF</span>
-          </div>
-
-          <div className="w-full max-w-md">
-            <Carousel 
-              plugins={[Autoplay({ delay: 5000 })]}
-              opts={{ loop: true }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {slides.map((slide, index) => (
-                  <CarouselItem key={index}>
-                    <div className="space-y-6 animate-in fade-in duration-700">
-                      <blockquote className="text-2xl font-medium leading-relaxed">
-                        "{slide.quote}"
-                      </blockquote>
-                      <div className="flex items-center gap-2 text-white/80">
-                        <div className="h-0.5 w-4 bg-white/50" />
-                        <p className="font-medium text-sm">{slide.author}</p>
-                      </div>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-          
-          <div className="text-xs text-white/40 flex justify-between items-end">
-            <p>© 2025 Cérebro das Finanças</p>
-          </div>
-        </div>
-
-        {/* Background Images Carousel */}
-        <div className="absolute inset-0 z-0">
+        {/* Animated Background Image Carousel */}
+        <div className="absolute inset-0 z-0 scale-105">
            <Carousel 
-             plugins={[Autoplay({ delay: 5000 })]}
+             plugins={[Autoplay({ delay: 6000 })]}
              opts={{ loop: true, watchDrag: false }} 
              className="w-full h-full"
            >
              <CarouselContent className="h-full ml-0">
                {slides.map((slide, index) => (
                  <CarouselItem key={index} className="pl-0 h-full">
-                    <img 
+                    <motion.img 
+                      initial={{ scale: 1 }}
+                      animate={{ scale: 1.05 }}
+                      transition={{ duration: 10, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
                       src={slide.image} 
                       alt="Background" 
-                      className="w-full h-full object-cover opacity-60 grayscale transition-transform duration-[10s] hover:scale-105" 
+                      className="w-full h-full object-cover opacity-60 grayscale filter contrast-125" 
                     />
                  </CarouselItem>
                ))}
              </CarouselContent>
            </Carousel>
         </div>
+
+        {/* Content Wrapper */}
+        <div className="relative z-20 flex flex-col justify-between h-full p-16">
+          <div className="flex items-center gap-3">
+             <div className="h-10 w-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center">
+                <Brain className="h-5 w-5 text-blue-400" />
+             </div>
+             <span className="text-xl font-bold tracking-tight text-white">Cérebro das Finanças</span>
+          </div>
+
+          <div className="max-w-md">
+            <Carousel 
+              plugins={[Autoplay({ delay: 6000 })]}
+              opts={{ loop: true }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {slides.map((slide, index) => (
+                  <CarouselItem key={index}>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="space-y-6"
+                    >
+                      <blockquote className="text-3xl font-medium leading-tight text-white tracking-tight">
+                        "{slide.quote}"
+                      </blockquote>
+                      <div className="flex items-center gap-3">
+                        <div className="h-px w-8 bg-white/40" />
+                        <p className="font-medium text-sm text-white/80 uppercase tracking-wider">{slide.author}</p>
+                      </div>
+                    </motion.div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+          
+          <div className="text-xs text-white/30 flex justify-between items-end font-medium">
+            <p>© {new Date().getFullYear()} Cérebro das Finanças</p>
+            <p>v2.0.4</p>
+          </div>
+        </div>
       </div>
 
       {/* --- Right Side (Form) --- */}
       <div className="w-full lg:w-1/2 flex flex-col relative bg-white">
+        
+        {/* Top Navigation for Mobile */}
+        <div className="lg:hidden p-6 flex items-center gap-2">
+           <div className="h-8 w-8 bg-slate-900 rounded-lg flex items-center justify-center">
+              <BarChart3 className="h-4 w-4 text-white" />
+           </div>
+           <span className="font-bold">CDF</span>
+        </div>
+
         <div className="flex-1 flex items-center justify-center p-6 lg:p-24">
-          <div className="w-full max-w-sm space-y-8">
+          <div className="w-full max-w-sm space-y-10">
             
-            {/* Context Switcher (Pill) */}
-            <div className="flex justify-center mb-6">
-              <div className="bg-zinc-100 p-1.5 rounded-full inline-flex relative border border-zinc-200">
-                <div 
-                  className={cn(
-                    "absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-full shadow-sm transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]",
-                    isPlanner ? "translate-x-[100%] left-1.5" : "left-1.5"
-                  )}
-                />
-                <button 
-                  type="button"
-                  onClick={() => setAccountType('PERSONAL')}
-                  className={cn(
-                    "relative z-10 flex items-center gap-2 px-6 py-2 rounded-full text-xs font-semibold transition-colors duration-300",
-                    !isPlanner ? "text-blue-400" : "text-zinc-500 hover:text-zinc-700"
-                  )}
+            {/* Header + Toggle */}
+            <div className="space-y-8">
+               <div className="space-y-2 text-center">
+                <motion.h1 
+                    key={accountType}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-3xl font-bold tracking-tighter text-slate-900"
                 >
-                  <User className="w-3.5 h-3.5" /> Para mim
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setAccountType('PLANNER')}
-                  className={cn(
-                    "relative z-10 flex items-center gap-2 px-6 py-2 rounded-full text-xs font-semibold transition-colors duration-300",
-                    isPlanner ? "text-emerald-600" : "text-zinc-500 hover:text-zinc-700"
-                  )}
-                >
-                  <Briefcase className="w-3.5 h-3.5" /> Planejador
-                </button>
+                  {isPlanner ? "Portal do Advisor" : "Bem-vindo de volta"}
+                </motion.h1>
+                <p className="text-slate-500 text-sm">
+                  {isPlanner ? "Gerencie carteiras de clientes." : "Acesse seu controle financeiro."}
+                </p>
               </div>
+
+               {/* Custom Motion Toggle */}
+               <div className="flex justify-center">
+                  <div className="bg-slate-100 p-1 rounded-full inline-flex relative border border-slate-200">
+                    {['PERSONAL', 'PLANNER'].map((type) => {
+                        const isActive = accountType === type;
+                        return (
+                            <button
+                                key={type}
+                                onClick={() => setAccountType(type as AccountType)}
+                                className={cn(
+                                    "relative z-10 flex items-center gap-2 px-6 py-2 rounded-full text-xs font-semibold transition-colors duration-200",
+                                    isActive ? (isPlanner ? "text-white" : "text-white") : "text-slate-500 hover:text-slate-900"
+                                )}
+                            >
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="pill"
+                                        className={cn("absolute inset-0 rounded-full shadow-sm", theme.pillActive)}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2">
+                                    {type === 'PERSONAL' ? <User className="w-3.5 h-3.5" /> : <Briefcase className="w-3.5 h-3.5" />}
+                                    {type === 'PERSONAL' ? 'Para mim' : 'Advisor'}
+                                </span>
+                            </button>
+                        );
+                    })}
+                  </div>
+               </div>
             </div>
 
-            <div className="space-y-2 text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-                {isPlanner ? "Portal do Planejador" : "Bem-vindo de volta"}
-              </h1>
-              <p className="text-zinc-500">
-                {isPlanner 
-                  ? "Gerencie seus clientes com inteligência." 
-                  : "Acesse sua central de controle financeiro."}
-              </p>
-            </div>
-
-            {/* --- Last Account Recognition Card --- */}
-            {lastAccount && (
-              <div className={cn(
-                "relative group overflow-hidden bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer",
-                theme.border,
-                // Hover border color
-                isPlanner ? "hover:border-indigo-300" : "hover:border-emerald-300"
-              )}>
-                <div className="absolute top-0 right-0 p-3 z-10">
-                   <button 
-                    onClick={clearLastData} 
-                    className="text-zinc-300 hover:text-red-400 transition-colors p-1 hover:bg-zinc-50 rounded-full"
-                   >
-                      <X className="w-4 h-4" />
-                   </button>
-                </div>
+            {/* --- Main Content Area --- */}
+            <div className="space-y-6">
                 
-                <div 
-                  onClick={() => form.setValue('email', lastAccount)}
-                  className="flex items-center gap-4"
-                >
-                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center border-2 border-white shadow-sm shrink-0 transition-colors", theme.iconBg, theme.text)}>
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn("text-xs font-medium mb-0.5", theme.text)}>Continuar como</p>
-                    <p className="text-sm font-semibold text-zinc-900 truncate">{maskEmail(lastAccount)}</p>
-                  </div>
-                  <ChevronRight className={cn("w-5 h-5 text-zinc-300 group-hover:translate-x-1 transition-all", `group-hover:${theme.text}`)} />
+                {/* Last Account Recognition (Apple Style) */}
+                <AnimatePresence>
+                  {lastAccount && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className={cn(
+                          "relative group overflow-hidden bg-white border rounded-xl p-1 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer",
+                          theme.border
+                        )}
+                        onClick={() => form.setValue('email', lastAccount)}
+                    >
+                      <div className="flex items-center p-3 gap-4">
+                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors", theme.iconBg)}>
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-500">Continuar como</p>
+                          <p className={cn("text-sm font-semibold truncate", theme.text)}>{maskEmail(lastAccount)}</p>
+                        </div>
+                        <div className="pr-2">
+                           <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" />
+                        </div>
+                      </div>
+                      
+                      {/* Close Button Absolute */}
+                      <button 
+                         onClick={clearLastData} 
+                         className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 transition-colors rounded-full hover:bg-slate-50"
+                      >
+                         <X className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Social Login Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                    {[{ id: 'google-oauth2', icon: Chrome, label: 'Google' }, { id: 'facebook', icon: Facebook, label: 'Facebook' }].map((provider) => (
+                         <Button 
+                            key={provider.id}
+                            variant="outline" 
+                            type="button"
+                            className={cn(
+                            "h-11 bg-white hover:bg-slate-50 transition-all font-medium text-slate-600 border-slate-200", 
+                            lastSocial === provider.id && theme.socialActive
+                            )}
+                            onClick={() => handleSocialLogin(provider.id)}
+                        >
+                            <provider.icon className="mr-2 h-4 w-4" /> {provider.label}
+                        </Button>
+                    ))}
                 </div>
-              </div>
-            )}
 
-            {/* --- Social Login --- */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className={cn(
-                  "h-11 transition-all", 
-                  lastSocial === 'google-oauth2' ? theme.socialActive : "hover:bg-zinc-50"
-                )}
-                onClick={() => handleSocialLogin('google-oauth2')}
-              >
-                <Chrome className="mr-2 h-4 w-4" /> Google
-              </Button>
-              <Button 
-                variant="outline" 
-                className={cn(
-                  "h-11 transition-all", 
-                  lastSocial === 'facebook' ? theme.socialActive : "hover:bg-zinc-50"
-                )}
-                onClick={() => handleSocialLogin('facebook')}
-              >
-                <Facebook className="mr-2 h-4 w-4" /> Facebook
-              </Button>
-            </div>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-semibold"><span className="bg-white px-2 text-slate-400">Ou use e-mail</span></div>
+                </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100" /></div>
-              <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-400">Ou use seu e-mail</span></div>
-            </div>
-
-            {/* --- Email Form --- */}
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="seu@email.com" 
-                    {...form.register("email")} 
-                    className={cn(
-                      "h-11 bg-zinc-50/50 focus:bg-white transition-all",
-                      theme.ring
+                {/* Email Form */}
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-semibold text-slate-500 uppercase tracking-wider">E-mail</Label>
+                    <div className="relative">
+                         <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="seu@email.com" 
+                            {...form.register("email")} 
+                            className={cn(
+                                "h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all pl-4",
+                                theme.ring
+                            )}
+                        />
+                        {/* Status Icon Indicator (Optional Enhancement) */}
+                        {!form.formState.errors.email && form.watch('email') && (
+                            <div className="absolute right-3 top-3 text-emerald-500 animate-in fade-in zoom-in">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                        )}
+                    </div>
+                    {form.formState.errors.email && (
+                      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 font-medium">
+                          {form.formState.errors.email.message}
+                      </motion.p>
                     )}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
-                )}
-              </div>
+                  </div>
 
-              <Button 
-                type="submit" 
-                className={cn("w-full h-11 text-white font-semibold transition-all shadow-md hover:shadow-lg", theme.primary)} 
-                disabled={isLoading}
-              >
-                {isLoading ? "Entrando..." : "Entrar na conta"}
-                {!isLoading && <ChevronRight className="ml-2 h-4 w-4" />}
-              </Button>
-            </form>
+                  <Button 
+                    type="submit" 
+                    className={cn("w-full h-11 text-white font-bold tracking-wide transition-all shadow-lg active:scale-[0.98]", theme.primary)} 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Autenticando..." : "Entrar na Conta"}
+                    {!isLoading && <ChevronRight className="ml-2 h-4 w-4 opacity-70" />}
+                  </Button>
+                </form>
 
-            <div className="text-center text-sm">
-              <span className="text-zinc-500">Ainda não tem conta? </span>
-              <button 
-                onClick={() => navigate('/cadastro')} 
-                className={cn("font-medium hover:underline underline-offset-4", theme.text)}
-              >
-                Criar conta gratuita
-              </button>
+                <div className="text-center text-sm">
+                  <span className="text-slate-500">Novo por aqui? </span>
+                  <button 
+                    type="button"
+                    onClick={() => navigate('/cadastro')} 
+                    className={cn("font-bold hover:underline underline-offset-4 transition-colors", theme.text)}
+                  >
+                    Criar conta gratuita
+                  </button>
+                </div>
             </div>
 
           </div>
