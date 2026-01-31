@@ -64,7 +64,7 @@ export default function HomePage() {
             <div className="rounded-xl border border-slate-200 bg-white/50 backdrop-blur p-2 shadow-2xl relative overflow-hidden group">
                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none z-20 group-hover:from-white/80 transition-all" />
               <div className="rounded-lg bg-slate-50 border border-slate-100 aspect-[21/9] flex items-center justify-center relative overflow-hidden">
-                <img src='dashboard.png'></img>
+                <img src='/dashboard.png'></img>
               </div>
             </div>
           </motion.div>
