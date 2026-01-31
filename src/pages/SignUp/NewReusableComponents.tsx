@@ -47,6 +47,7 @@ export const NavBar = () => {
           {[
             { name: 'Funcionalidades', path: '/funcionalidades' },
             { name: 'Planos', path: '/planos' },
+            { name: 'Comparativo CDF vs Planilha', path: '/comparativo-planilha-e-cdf'},
              // Advisor poderia ser uma página separada ou uma seção na home, mantive como link externo por enquanto
             { name: 'Para Advisors', path: '/advisor' } 
           ].map((item) => (

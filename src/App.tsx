@@ -15,6 +15,7 @@ import { Profile } from "./pages/Profile";
 import HomePage from "./pages/SignUp/HomePage";
 import NewFeaturesPage from "./pages/SignUp/NewFeaturesPage";
 import PricingPage from "./pages/SignUp/PricingPage";
+import Comparativo from "./pages/SignUp/ComparativoPlanilhaVsCDF"
 import SignUp from "./pages/SignUp";
 import { Login } from "./pages/Login";
 import { Releases } from "./pages/Releases";
@@ -618,6 +619,7 @@ function App() {
           <Route path="/planos" element={<PricingPage />} />
           <Route path="/cadastro" element={<SignUp />} />
           <Route path="/login" element={<LoginRoute />} />
+          <Route path="/comparativo-planilha-e-cdf" element={<Comparativo />} />
           <Route path="/releases" element={<Releases />} />
           <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
           <Route path="/app/*" element={<AppContent />} />
