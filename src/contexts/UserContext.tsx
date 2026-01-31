@@ -10,6 +10,11 @@ export interface User {
   auth0Id: string;
   email: string;
   name: string;
+  plan?: 'FREE' | 'PRO_MONTHLY' | 'PRO_ANNUAL';
+  subscriptionStatus?: string | null;
+  stripeSubscriptionId?: string | null;
+  stripeCustomerId?: string | null;
+  subscriptionCurrentPeriodEnd?: string | null;
   picture?: string;
   coverImage?: string;
   phone?: string;
@@ -78,6 +83,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 auth0Id: parsed.auth0Id || parsed.account?.auth0Id || '',
                 email: parsed.email || parsed.account?.email || parsed.account?.user?.email || '',
                 name: parsed.name || parsed.account?.name || parsed.social?.name || '',
+                plan: parsed.plan || undefined,
+                subscriptionStatus: parsed.subscriptionStatus || undefined,
+                stripeSubscriptionId: parsed.stripeSubscriptionId || undefined,
+                stripeCustomerId: parsed.stripeCustomerId || undefined,
+                subscriptionCurrentPeriodEnd: parsed.subscriptionCurrentPeriodEnd || undefined,
                 picture: parsed.picture || parsed.account?.picture || parsed.social?.picture || undefined,
                 coverImage: parsed.coverImage || undefined,
                 phone: parsed.phone || undefined,
@@ -96,6 +106,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
                   auth0Id: possibleUser.auth0Id,
                   email: possibleUser.email,
                   name: possibleUser.name,
+                  plan: possibleUser.plan,
+                  subscriptionStatus: possibleUser.subscriptionStatus,
+                  stripeSubscriptionId: possibleUser.stripeSubscriptionId,
+                  stripeCustomerId: possibleUser.stripeCustomerId,
+                  subscriptionCurrentPeriodEnd: possibleUser.subscriptionCurrentPeriodEnd,
                   picture: possibleUser.picture,
                   coverImage: possibleUser.coverImage,
                   type: possibleUser.type,
@@ -132,6 +147,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
           auth0Id: u.auth0Id,
           email: u.email,
           name: u.name,
+          plan: u.plan,
+          subscriptionStatus: u.subscriptionStatus,
+          stripeSubscriptionId: u.stripeSubscriptionId,
+          stripeCustomerId: u.stripeCustomerId,
+          subscriptionCurrentPeriodEnd: u.subscriptionCurrentPeriodEnd,
           picture: u.picture,
           coverImage: u.coverImage,
           type: u.type,

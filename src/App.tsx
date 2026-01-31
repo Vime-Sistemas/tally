@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from "react";
+import { useState, useEffect, Component, useCallback, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -39,12 +39,24 @@ import { PlannerDashboard } from "./pages/Planner/Dashboard";
 import { InviteLandingPage } from "./pages/InviteLandingPage";
 import { PlannerInvitesDialog } from "./components/PlannerInvitesDialog";
 import { CashflowFuturePage } from "./pages/CashflowFuture";
+import { Badge } from "./components/ui/badge";
+import { Button } from "./components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
+import { CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 import { FloatingDock } from "./components/FloatingDock";
 import { cn } from "@/lib/utils";
@@ -58,6 +70,7 @@ function AppContent() {
     user: auth0User,
   } = useAuth0();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser, setCostCenters, user } = useUser();
 
   const [currentPage, setCurrentPage] = useState<Page>("dashboard-summary");
@@ -66,124 +79,160 @@ function AppContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTokenReady, setIsTokenReady] = useState(false);
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [isCheckoutSyncing, setIsCheckoutSyncing] = useState(false);
   const isMobile = useIsMobile();
+  const hasHandledCheckout = useRef(false);
+  const activePlanLabel = (() => {
+    if (user?.plan === "PRO_ANNUAL") return "Pro Anual";
+    if (user?.plan === "PRO_MONTHLY") return "Pro Mensal";
+    return null;
+  })();
+
+  const syncUser = useCallback(async () => {
+    if (!isAuthenticated || !auth0User) return;
+
+    setIsSyncing(true);
+    let hasToken = false;
+    let latestUserType: "PERSONAL" | "PLANNER" | undefined;
+    try {
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        },
+      });
+      if (!token) {
+        console.error("Auth0: token ausente após login.");
+        return;
+      }
+
+      setAuthToken(token);
+      setIsTokenReady(true);
+      hasToken = true;
+
+      const signupAccountType = localStorage.getItem("signup_account_type");
+      const inviteToken = localStorage.getItem("invite_token");
+
+      const syncData: any = {
+        email: auth0User.email,
+        name: auth0User.name,
+      };
+
+      if (signupAccountType) {
+        syncData.type = signupAccountType;
+      }
+
+      if (inviteToken) {
+        syncData.inviteToken = inviteToken;
+      }
+
+      const response = await api.post("/auth/sync", syncData);
+
+      if (signupAccountType) {
+        localStorage.removeItem("signup_account_type");
+      }
+
+      if (inviteToken) {
+        localStorage.removeItem("invite_token");
+      }
+
+      let existingMenuPref: "header" | "sidebar" | undefined = undefined;
+      try {
+        const raw = localStorage.getItem("user");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          existingMenuPref = parsed?.menuPreference;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      const mergedUser = {
+        ...(response.data || {}),
+        menuPreference: response.data?.menuPreference || existingMenuPref,
+      };
+      latestUserType = mergedUser?.type as "PERSONAL" | "PLANNER" | undefined;
+      setUser(mergedUser);
+
+      if (mergedUser.hasBusiness) {
+        setHasBusiness(true);
+      }
+
+      const costCenters = await costCenterService.getCostCenters();
+      setCostCenters(costCenters);
+
+      return mergedUser;
+    } catch (err) {
+      console.error("Error syncing user / token:", err);
+    } finally {
+      setIsSyncing(false);
+      if (!hasToken) {
+        return;
+      }
+
+      if (
+        auth0User &&
+        (auth0User as any)["https://tally.app/type"] === "PLANNER"
+      ) {
+        setCurrentPage("planner-clients");
+        return;
+      }
+
+      if (latestUserType === "PLANNER") {
+        setCurrentPage("planner-clients");
+        return;
+      }
+
+      try {
+        const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+        if (localUser.type === "PLANNER") {
+          setCurrentPage("planner-clients");
+        } else {
+          setCurrentPage("dashboard-summary");
+        }
+      } catch (e) {
+        setCurrentPage("dashboard-summary");
+      }
+    }
+  }, [
+    auth0User,
+    getAccessTokenSilently,
+    isAuthenticated,
+    setCostCenters,
+    setUser,
+  ]);
 
   useEffect(() => {
-    const syncUser = async () => {
-      if (isAuthenticated && auth0User) {
-        setIsSyncing(true);
-        let hasToken = false;
-        try {
-          const token = await getAccessTokenSilently({
-            authorizationParams: {
-              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-            },
-          });
-          if (!token) {
-            console.error("Auth0: token ausente após login.");
-            return;
-          }
-
-          setAuthToken(token);
-          setIsTokenReady(true);
-          hasToken = true;
-
-          const signupAccountType = localStorage.getItem("signup_account_type");
-          const inviteToken = localStorage.getItem("invite_token");
-
-          const syncData: any = {
-            email: auth0User.email,
-            name: auth0User.name,
-          };
-
-          if (signupAccountType) {
-            syncData.type = signupAccountType;
-          }
-
-          if (inviteToken) {
-            syncData.inviteToken = inviteToken;
-          }
-
-          const response = await api.post("/auth/sync", syncData);
-
-          if (signupAccountType) {
-            localStorage.removeItem("signup_account_type");
-          }
-
-          if (inviteToken) {
-            localStorage.removeItem("invite_token");
-          }
-
-          // Preserve any locally-stored menuPreference (server may not persist this yet)
-          let existingMenuPref: "header" | "sidebar" | undefined = undefined;
-          try {
-            const raw = localStorage.getItem("user");
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              existingMenuPref = parsed?.menuPreference;
-            }
-          } catch (e) {
-            // ignore
-          }
-
-          const mergedUser = {
-            ...(response.data || {}),
-            menuPreference: response.data?.menuPreference || existingMenuPref,
-          };
-          setUser(mergedUser);
-
-          if (mergedUser.hasBusiness) {
-            setHasBusiness(true);
-          }
-
-          // Load cost centers
-          const costCenters = await costCenterService.getCostCenters();
-          setCostCenters(costCenters);
-        } catch (err) {
-          console.error("Error syncing user / token:", err);
-        } finally {
-          setIsSyncing(false);
-          if (!hasToken) {
-            return;
-          }
-          if (
-            auth0User &&
-            (auth0User as any)["https://tally.app/type"] === "PLANNER"
-          ) {
-            setCurrentPage("planner-clients");
-          } else {
-            // We can also check the local user state if available, but auth0User might not have the type yet if it's not in the token.
-            // However, we just synced and got the user from backend.
-            // Let's rely on the response from sync if possible, but here we are in finally block.
-            // Actually, we can check the user context or the response data if we lift the variable.
-            // But simpler: let's check the localStorage user which we just updated.
-            try {
-              const localUser = JSON.parse(
-                localStorage.getItem("user") || "{}",
-              );
-              if (localUser.type === "PLANNER") {
-                setCurrentPage("planner-clients");
-              } else {
-                setCurrentPage("dashboard-summary");
-              }
-            } catch (e) {
-              setCurrentPage("dashboard-summary");
-            }
-          }
-        }
-      }
-    };
-
     if (!isLoading) {
       syncUser();
     }
+  }, [isLoading, syncUser]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const checkoutStatus = params.get("checkout");
+
+    if (checkoutStatus !== "success") {
+      return;
+    }
+
+    if (isLoading || !isAuthenticated || hasHandledCheckout.current) {
+      return;
+    }
+
+    hasHandledCheckout.current = true;
+    setShowCheckoutSuccess(true);
+
+    setIsCheckoutSyncing(true);
+    syncUser().finally(() => setIsCheckoutSyncing(false));
+
+    navigate("/app", { replace: true });
   }, [
     isAuthenticated,
     isLoading,
-    auth0User,
-    getAccessTokenSilently,
-    setUser,
-    setCostCenters,
+    location.search,
+    navigate,
+    syncUser,
   ]);
 
   // Keyboard navigation shortcuts
@@ -452,6 +501,70 @@ function AppContent() {
           )}
         </>
       )}
+
+      {/* Checkout success feedback */}
+      <AnimatePresence>
+        {showCheckoutSuccess && (
+          <motion.div
+            className="fixed top-4 right-4 z-50"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Badge className="bg-blue-400 text-white shadow-sm">
+              {isCheckoutSyncing
+                ? "Sincronizando assinatura..."
+                : activePlanLabel
+                  ? `${activePlanLabel} ativo`
+                  : "Pagamento confirmado"}
+            </Badge>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Dialog open={showCheckoutSuccess} onOpenChange={setShowCheckoutSuccess}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-400 text-white">
+                <CheckCircle2 className="h-5 w-5" />
+              </span>
+              Pagamento confirmado
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Obrigado pela compra! Estamos habilitando seu acesso premium.
+            </DialogDescription>
+          </DialogHeader>
+
+          <motion.div
+            className="rounded-lg border border-blue-400/50 bg-white p-4"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <p className="text-sm leading-relaxed">
+              {isCheckoutSyncing
+                ? "Sincronizando sua conta e plano..."
+                : activePlanLabel
+                  ? `${activePlanLabel} ativado. Aproveite o painel completo!`
+                  : "Assinatura habilitada. Aproveite o painel completo!"}
+            </p>
+          </motion.div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowCheckoutSuccess(false)}>
+              Fechar
+            </Button>
+            <Button
+              className="bg-blue-400 text-white hover:bg-blue-400/90"
+              onClick={() => setShowCheckoutSuccess(false)}
+            >
+              Ir para o painel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ... Dialogs e Analytics ... */}
       <SessionExpiredDialog onRedirect={() => navigate("/login") } />
