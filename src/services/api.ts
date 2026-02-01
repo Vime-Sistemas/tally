@@ -211,6 +211,7 @@ export interface CreateRecurringTransactionDTO {
   cardId?: string | null;
   destinationAccountId?: string | null;
   costCenterId?: string;
+  isActive?: boolean;
 }
 
 export const createRecurringTransaction = async (data: CreateRecurringTransactionDTO): Promise<any> => {
@@ -230,6 +231,80 @@ export const updateRecurringTransaction = async (id: string, data: Partial<Creat
 
 export const deleteRecurringTransaction = async (id: string): Promise<void> => {
   await api.delete(`/recurring-transactions/${id}`);
+};
+
+export const bulkDeleteRecurringTransactions = async (
+  ids: string[], 
+  deleteGeneratedTransactions: boolean = true
+): Promise<{ success: boolean; deletedRecurringCount: number; deletedTransactionsCount: number }> => {
+  const response = await api.post('/recurring-transactions/bulk-delete', { 
+    ids, 
+    deleteGeneratedTransactions 
+  });
+  return response.data;
+};
+
+// CREDIT CARD INVOICES API
+
+export interface CreditCardInvoice {
+  id: string;
+  cardId: string;
+  userId: string;
+  month: number;
+  year: number;
+  closingDate: string;
+  dueDate: string;
+  totalAmount: number;
+  isPaid: boolean;
+  paidAmount: number;
+  paidDate: string | null;
+  status: 'OPEN' | 'CLOSED' | 'PAID' | 'PARTIAL' | 'OVERDUE';
+  card?: {
+    id: string;
+    name: string;
+    color: string;
+    lastFourDigits: string | null;
+  };
+  transactions?: any[];
+  fullTransactions?: any[];
+}
+
+export const getCreditCardInvoices = async (cardId?: string, status?: string): Promise<CreditCardInvoice[]> => {
+  const params = new URLSearchParams();
+  if (cardId) params.append('cardId', cardId);
+  if (status) params.append('status', status);
+  
+  const response = await api.get(`/credit-card-invoices?${params.toString()}`);
+  return response.data;
+};
+
+export const getPendingInvoices = async (): Promise<CreditCardInvoice[]> => {
+  const response = await api.get('/credit-card-invoices/pending');
+  return response.data;
+};
+
+export const getCurrentInvoice = async (cardId: string): Promise<CreditCardInvoice> => {
+  const response = await api.get(`/credit-card-invoices/current/${cardId}`);
+  return response.data;
+};
+
+export const getInvoiceDetails = async (invoiceId: string): Promise<CreditCardInvoice> => {
+  const response = await api.get(`/credit-card-invoices/${invoiceId}`);
+  return response.data;
+};
+
+export const payInvoice = async (
+  invoiceId: string, 
+  amount?: number, 
+  accountId?: string
+): Promise<CreditCardInvoice> => {
+  const response = await api.post(`/credit-card-invoices/${invoiceId}/pay`, { amount, accountId });
+  return response.data;
+};
+
+export const generateRetroactiveInvoices = async (): Promise<{ processedCount: number }> => {
+  const response = await api.post('/credit-card-invoices/generate-retroactive');
+  return response.data;
 };
 
 // BUDGETS API

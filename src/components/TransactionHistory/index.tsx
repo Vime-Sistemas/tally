@@ -81,6 +81,7 @@ import {
 } from "../ui/sheet";
 import { useUser } from "../../contexts/UserContext";
 import type { Page } from "../../types/navigation";
+import { RecurringTransactionsManager } from "../RecurringTransactionsManager";
 
 // Local interface for display categories (includes label property)
 interface DisplayCategory {
@@ -158,6 +159,7 @@ function DesktopTransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [loading, setLoading] = useState(true);
   const [userCategories, setUserCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [recurringManagerOpen, setRecurringManagerOpen] = useState(false);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -480,6 +482,13 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
             <p className="text-zinc-500 text-sm">Visualize e gerencie suas movimentações.</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setRecurringManagerOpen(true)}
+              variant="outline"
+              className="border-blue-200 text-blue-600 hover:bg-blue-50 rounded-full shadow-md transition-all hover:scale-[1.02]"
+            >
+              <Repeat className="mr-2 h-4 w-4" /> Recorrentes
+            </Button>
             <Button 
               onClick={handleExportPDF}
               variant="outline"
@@ -985,6 +994,16 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Recurring Transactions Manager */}
+      <RecurringTransactionsManager
+        open={recurringManagerOpen}
+        onOpenChange={setRecurringManagerOpen}
+        onUpdate={() => {
+          // Recarrega as transações quando houver alterações nas recorrentes
+          getTransactions().then(setTransactions);
+        }}
+      />
 
     </div>
   );

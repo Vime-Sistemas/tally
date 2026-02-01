@@ -8,7 +8,8 @@ import {
   Landmark, 
   PiggyBank, 
   Banknote, 
-  Receipt
+  Receipt,
+  FileText
 } from "lucide-react";
 import { getAccounts, getCards } from '../../../services/api';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import { cn } from '../../../lib/utils';
 import { EditAccountDialog } from '../../EditAccountDialog';
 import { EditCardDialog } from '../../EditCardDialog';
 import { PayInvoiceDialog } from '../../PayInvoiceDialog';
+import { CreditCardInvoices } from '../../CreditCardInvoices';
 import { formatCurrency } from '../../../utils/formatters';
 
 interface AccountsListProps {
@@ -32,6 +34,7 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [payingCard, setPayingCard] = useState<CreditCard | null>(null);
+  const [viewingInvoicesCard, setViewingInvoicesCard] = useState<CreditCard | null>(null);
 
   useEffect(() => {
     loadData();
@@ -223,18 +226,32 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
                        <span className="text-[10px] opacity-60">
                           {card.lastFourDigits ? `•••• ${card.lastFourDigits}` : `Venc. dia ${card.closingDay}`}
                        </span>
-                       <Button 
-                          size="sm" 
-                          variant="secondary"
-                          className="h-7 text-xs bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md rounded-lg px-3"
-                          onClick={(e) => {
-                             e.stopPropagation();
-                             setPayingCard(card);
-                          }}
-                       >
-                          <Receipt className="w-3 h-3 mr-1.5" />
-                          Pagar
-                       </Button>
+                       <div className="flex gap-2">
+                         <Button 
+                            size="sm" 
+                            variant="secondary"
+                            className="h-7 text-xs bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md rounded-lg px-3"
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               setViewingInvoicesCard(card);
+                            }}
+                         >
+                            <FileText className="w-3 h-3 mr-1" />
+                            Faturas
+                         </Button>
+                         <Button 
+                            size="sm" 
+                            variant="secondary"
+                            className="h-7 text-xs bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md rounded-lg px-3"
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               setPayingCard(card);
+                            }}
+                         >
+                            <Receipt className="w-3 h-3 mr-1" />
+                            Pagar
+                         </Button>
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -275,6 +292,19 @@ export function MobileAccountsList({ onNavigate }: AccountsListProps) {
             if (!open) setPayingCard(null);
           }}
           onSuccess={handleReloadData}
+        />
+      )}
+
+      {viewingInvoicesCard && (
+        <CreditCardInvoices
+          cardId={viewingInvoicesCard.id}
+          cardName={viewingInvoicesCard.name}
+          cardColor={viewingInvoicesCard.color || "blue"}
+          open={!!viewingInvoicesCard}
+          onOpenChange={(open) => {
+            if (!open) setViewingInvoicesCard(null);
+          }}
+          onPaymentSuccess={handleReloadData}
         />
       )}
     </div>

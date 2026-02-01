@@ -48,6 +48,7 @@ import type { Tag } from "../../../services/tagService";
 import { toast } from "sonner";
 import type { Transaction } from "../../../types/transaction";
 import type { Account, CreditCard } from "../../../types/account";
+import { RecurringTransactionsManager } from "../../RecurringTransactionsManager";
 import { Button } from "../../ui/button";
 import { format, isToday, isYesterday, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -190,6 +191,7 @@ export function MobileTransactionHistory() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [recurringManagerOpen, setRecurringManagerOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -372,12 +374,21 @@ export function MobileTransactionHistory() {
         <div className="px-2 py-4 space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-zinc-900">Extrato</h1>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-zinc-100 text-zinc-500">
-                  <Filter className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full hover:bg-zinc-100 text-zinc-500"
+                onClick={() => setRecurringManagerOpen(true)}
+              >
+                <Repeat className="h-5 w-5" />
+              </Button>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-zinc-100 text-zinc-500">
+                    <Filter className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
             <SheetContent side="bottom" className="h-[95vh] rounded-t-[32px] p-0 bg-[#F2F2F7]">
               <div className="flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4 bg-white rounded-t-[32px] border-b border-gray-100">
@@ -522,7 +533,9 @@ export function MobileTransactionHistory() {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
+            </div>
+          </div>
+          
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
@@ -679,6 +692,13 @@ export function MobileTransactionHistory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Recurring Transactions Manager */}
+      <RecurringTransactionsManager
+        open={recurringManagerOpen}
+        onOpenChange={setRecurringManagerOpen}
+        onUpdate={() => getTransactions().then(setTransactions)}
+      />
     </div>
   );
 }
