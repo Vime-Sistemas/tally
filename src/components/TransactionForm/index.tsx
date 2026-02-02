@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent } from '../ui/card'; // Removemos Header/Title pois já está na página pai
+import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Kbd } from '../ui/kbd';
@@ -17,12 +17,9 @@ import {
 } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { createTransaction, confirmTransaction, getAccounts, getCards, createRecurringTransaction } from '../../services/api';
 import { transactionService } from '../../services/transactions';
 import { equityService } from '../../services/equities';
-import { CategoryService, type Category } from '../../services/categoryService';
-import { TagService, type Tag } from '../../services/tagService';
 import { useUser } from '../../contexts/UserContext';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { TransactionType, type TransactionCategory, type Transaction } from '../../types/transaction';
@@ -31,20 +28,9 @@ import type { Account, CreditCard } from '../../types/account';
 import type { Equity } from '../../types/equity';
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog';
 import { CurrencyInput } from '../ui/currency-input';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '../ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../ui/popover';
-import { Check, ChevronsUpDown, Calendar, CreditCard as CardIcon, Tag as TagIcon, AlignLeft, RefreshCw, Layers, Plus, X } from 'lucide-react';
+import { CategorySelector } from '../CategorySelector';
+import { TagSelector } from '../TagSelector';
+import { Calendar, CreditCard as CardIcon, AlignLeft, RefreshCw, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import DescriptionAutocomplete, { addStoredDescription } from '../DescriptionAutocomplete';
 
@@ -67,55 +53,6 @@ const transactionSchema = z.object({
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
-
-const incomeCategoriesLabels: Record<string, string> = {
-  SALARY: 'Salário',
-  BONUS: 'Bônus / PLR',
-  COMMISSION: 'Comissão',
-
-  FREELANCE: 'Freelance',
-  SELF_EMPLOYED: 'Autônomo / PJ',
-
-  INVESTMENT_INCOME: 'Rendimentos de Investimentos',
-  DIVIDENDS: 'Dividendos',
-  INTEREST: 'Juros',
-  RENT: 'Aluguel',
-
-  PENSION_INCOME: 'Previdência / Aposentadoria',
-
-  BENEFITS: 'Benefícios',
-  GIFTS: 'Presentes',
-  REFUND: 'Reembolsos',
-
-  OTHER_INCOME: 'Outros',
-};
-
-const expenseCategoriesLabels: Record<string, string> = {
-  HOUSING: 'Moradia',
-  UTILITIES: 'Contas Fixas (Água, Luz, Internet, Gás)',
-  FOOD: 'Alimentação',
-  TRANSPORT: 'Transporte',
-
-  HEALTHCARE: 'Saúde',
-  INSURANCE: 'Seguros',
-  EDUCATION: 'Educação',
-
-  SHOPPING: 'Compras',
-  CLOTHING: 'Vestuário',
-
-  ENTERTAINMENT: 'Lazer',
-  SUBSCRIPTIONS: 'Assinaturas',
-
-  TAXES: 'Impostos',
-  FEES: 'Taxas e Tarifas',
-
-  PETS: 'Pets',
-  DONATIONS: 'Doações',
-
-  TRAVEL: 'Viagens',
-
-  OTHER_EXPENSE: 'Outros',
-};
 
 type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
 
@@ -144,33 +81,24 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [equities, setEquities] = useState<Equity[]>([]);
-  const [userCategories, setUserCategories] = useState<Category[]>([]);
-  const [userTags, setUserTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [useUserCategories, setUseUserCategories] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
   const [balanceInfo, setBalanceInfo] = useState<any>(null);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
   const [isMac, setIsMac] = useState(false);
   const isMobile = useIsMobile();
-  const [openCategory, setOpenCategory] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [accData, cardData, eqData, catData, tagData] = await Promise.all([
+        const [accData, cardData, eqData] = await Promise.all([
           getAccounts(),
           getCards(),
           equityService.getAll(),
-          CategoryService.getCategories(),
-          TagService.getTags()
         ]);
         setAccounts(accData);
         setCards(cardData);
         setEquities(eqData);
-        setUserCategories(catData);
-        setUserTags(tagData);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
         toast.error('Erro ao carregar dados');
@@ -183,23 +111,6 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
     // Detectar SO
     setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.platform));
   }, []);
-
-  const getSortedCategories = () => {
-    if (useUserCategories) {
-      // Usar categorias do usuário
-      const filteredCategories = userCategories.filter(cat => cat.type === (selectedType === TransactionType.INCOME ? 'INCOME' : 'EXPENSE'));
-      return filteredCategories
-        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-        .map(cat => ({ key: cat.id, label: cat.name, color: cat.color }));
-    } else {
-      // Usar categorias globais
-      const labels = selectedType === TransactionType.INCOME ? incomeCategoriesLabels : expenseCategoriesLabels;
-      return Object.entries(labels)
-        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, 'pt-BR'))
-        .map(([key, label]) => ({ key, label }));
-    }
-  };
-  
 
   const {
     register,
@@ -232,9 +143,9 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
   useEffect(() => {
     if (initialData?.tags) {
       const tagIds = initialData.tags.map(tag => tag.id);
-      setSelectedTags(tagIds);
+      setValue('tags', tagIds);
     }
-  }, [initialData]);
+  }, [initialData, setValue]);
 
   useEffect(() => {
     if (!initialData && defaultType && defaultType !== selectedType) {
@@ -268,7 +179,6 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
 
         reset();
         setIsRecurring(false);
-        setSelectedTags([]);
         const count = result.transactionsGenerated || 1;
         toast.success(`${count} transação${count > 1 ? 's' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`);
       } else {
@@ -300,7 +210,6 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
           await createTransaction(payload);
           addStoredDescription(payload.description || '');
           reset();
-          setSelectedTags([]);
           toast.success('Movimentação registrada com sucesso!');
         }
       }
@@ -500,88 +409,23 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
                     )}
                   />
                   {errors.paymentMethod && <p className="text-xs text-red-500 ml-1">{errors.paymentMethod.message}</p>}
-                </div>
+              </div>
               </div>
 
               {/* Categoria & Descrição */}
               <div className="space-y-4">
                  <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-zinc-400 font-medium ml-1">Categoria</Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-500">Padrão</span>
-                      <Switch
-                        checked={useUserCategories}
-                        onCheckedChange={setUseUserCategories}
-                        className="scale-75"
-                      />
-                      <span className="text-xs text-zinc-500">Minhas</span>
-                    </div>
-                  </div>
+                  <Label className="text-xs text-zinc-400 font-medium ml-1">Categoria</Label>
                   <Controller
                     name="category"
                     control={control}
                     render={({ field }) => (
-                      <Popover open={openCategory} onOpenChange={setOpenCategory}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full pl-9 h-11 justify-between bg-zinc-50 border-zinc-100 hover:bg-white hover:border-zinc-300 focus:bg-white text-zinc-900 font-normal",
-                              !field.value && "text-zinc-400"
-                            )}
-                          >
-                            <TagIcon className="w-4 h-4 text-zinc-400 absolute left-3" />
-                            {field.value
-                              ? getSortedCategories().find((cat) => cat.key === field.value)?.label
-                              : 'Selecione a categoria'}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            {field.value && useUserCategories && (
-                              <div
-                                className="ml-2 w-3 h-3 rounded-full border border-white"
-                                style={{
-                                  backgroundColor: (getSortedCategories().find((cat) => cat.key === field.value) as any)?.color || '#60a5fa'
-                                }}
-                              />
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0">
-                          <Command filter={(value, search) => {
-                             const cat = getSortedCategories().find(c => c.key === value);
-                             if(!cat) return 0;
-                             const s = search.toLowerCase();
-                             return (cat.label.toLowerCase().includes(s) || cat.key.toLowerCase().includes(s)) ? 1 : 0;
-                          }}>
-                            <CommandInput placeholder="Buscar..." />
-                            <CommandList>
-                              <CommandEmpty>Nada encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                {getSortedCategories().map((cat) => (
-                                  <CommandItem
-                                    key={cat.key}
-                                    value={cat.key}
-                                    onSelect={(val) => {
-                                      field.onChange(val === field.value ? '' : val);
-                                      setOpenCategory(false);
-                                    }}
-                                  >
-                                    <Check className={cn('mr-2 h-4 w-4', field.value === cat.key ? 'opacity-100' : 'opacity-0')} />
-                                    {useUserCategories && (cat as any).color && (
-                                      <div
-                                        className="mr-2 w-3 h-3 rounded-full border border-gray-300"
-                                        style={{ backgroundColor: (cat as any).color }}
-                                      />
-                                    )}
-                                    {cat.label}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <CategorySelector
+                        value={field.value}
+                        onChange={(categoryId) => field.onChange(categoryId)}
+                        type={selectedType === TransactionType.INCOME ? 'INCOME' : 'EXPENSE'}
+                        error={errors.category?.message}
+                      />
                     )}
                   />
                   {errors.category && <p className="text-xs text-red-500 ml-1">{errors.category.message}</p>}
@@ -618,75 +462,11 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
                     name="tags"
                     control={control}
                     render={({ field }) => (
-                      <div className="flex flex-wrap gap-1 p-2 min-h-[44px] bg-zinc-50 border border-zinc-100 rounded-md focus-within:bg-white focus-within:border-zinc-300">
-                        {selectedTags.map((tagId) => {
-                          const tag = userTags.find(t => t.id === tagId);
-                          return tag ? (
-                            <Badge
-                              key={tagId}
-                              variant="secondary"
-                              className="flex items-center gap-1"
-                              style={{ backgroundColor: tag.color + '20', color: tag.color }}
-                            >
-                              {tag.name}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newTags = selectedTags.filter(id => id !== tagId);
-                                  setSelectedTags(newTags);
-                                  field.onChange(newTags);
-                                }}
-                                className="ml-1 hover:bg-black/10 rounded-full p-0.5"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </Badge>
-                          ) : null;
-                        })}
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-zinc-400 hover:text-zinc-600"
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Adicionar
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[200px] p-0">
-                            <Command>
-                              <CommandInput placeholder="Buscar tags..." />
-                              <CommandList>
-                                <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
-                                <CommandGroup>
-                                  {userTags
-                                    .filter(tag => !selectedTags.includes(tag.id))
-                                    .map((tag) => (
-                                      <CommandItem
-                                        key={tag.id}
-                                        onSelect={() => {
-                                          const newTags = [...selectedTags, tag.id];
-                                          setSelectedTags(newTags);
-                                          field.onChange(newTags);
-                                        }}
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <div
-                                            className="w-3 h-3 rounded-full border border-gray-300"
-                                            style={{ backgroundColor: tag.color }}
-                                          />
-                                          {tag.name}
-                                        </div>
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                      <TagSelector
+                        value={field.value || []}
+                        onChange={(tagIds) => field.onChange(tagIds)}
+                        maxTags={5}
+                      />
                     )}
                   />
                 </div>
