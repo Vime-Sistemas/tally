@@ -1,13 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "../../components/ui/dialog";
 import {
   AlertDialog,
@@ -22,7 +20,6 @@ import {
 import { Plus, X, Search, Tag as TagIcon, List } from "lucide-react";
 import { toast } from "sonner";
 import { TagService, type Tag } from "../../services/tagService";
-import { cn } from "../../lib/utils";
 import { getTransactions } from "../../services/api";
 import type { Transaction } from "../../types/transaction";
 import { TransactionType } from "../../types/transaction";
@@ -30,11 +27,8 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import type { Page } from "../../types/navigation";
 import { formatCurrency } from "../../utils/formatters";
-
-const PRESET_COLORS = [
-  "#64748b", "#ef4444", "#f97316", "#f59e0b", "#84cc16",
-  "#10b981", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#d946ef", "#f43f5e"
-];
+import { TagWizard, type TagWizardData } from "../../components/TagWizard";
+import { PRESET_COLORS } from "../../components/AnimatedColorPalette";
 
 interface TagsProps {
   onNavigate?: (page: Page) => void;
@@ -49,11 +43,6 @@ export function Tags({ onNavigate }: TagsProps) {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    color: '#64748b',
-  });
 
   useEffect(() => {
     loadTags();
@@ -88,23 +77,21 @@ export function Tags({ onNavigate }: TagsProps) {
     tag.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return toast.error('Nome é obrigatório');
-
+  const handleWizardSubmit = async (data: TagWizardData) => {
     try {
       if (editingTag) {
-        await TagService.updateTag(editingTag.id, formData);
+        await TagService.updateTag(editingTag.id, data);
         toast.success('Tag atualizada');
       } else {
-        await TagService.createTag(formData);
+        await TagService.createTag(data);
         toast.success('Tag criada');
       }
       setIsDialogOpen(false);
-      resetForm();
+      setEditingTag(null);
       loadTags();
     } catch (error) {
       toast.error('Erro ao salvar tag');
+      throw error;
     }
   };
 
@@ -121,17 +108,18 @@ export function Tags({ onNavigate }: TagsProps) {
     }
   };
 
-  const resetForm = () => {
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
     setEditingTag(null);
-    setFormData({ name: '', color: '#64748b' });
   };
 
   const openEdit = (tag: Tag) => {
     setEditingTag(tag);
-    setFormData({
-      name: tag.name,
-      color: tag.color || '#64748b',
-    });
+    setIsDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingTag(null);
     setIsDialogOpen(true);
   };
 
@@ -190,7 +178,7 @@ export function Tags({ onNavigate }: TagsProps) {
           <h1 className="text-2xl font-bold text-zinc-900">Tags</h1>
           <p className="text-sm text-zinc-500">Marcadores para organização flexível</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Nova Tag
         </Button>
@@ -328,55 +316,22 @@ export function Tags({ onNavigate }: TagsProps) {
         )}
       </div>
 
-      {/* Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+      {/* Tag Wizard Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTag ? 'Editar Tag' : 'Nova Tag'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label>Nome</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Viagem 2024"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Cor da Tag</Label>
-              <div className="grid grid-cols-6 gap-2">
-                {PRESET_COLORS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, color }))}
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                      formData.color === color ? "ring-2 ring-offset-2 ring-black scale-110" : "hover:scale-110 opacity-70 hover:opacity-100"
-                    )}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Input
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-full h-8 p-1 cursor-pointer"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar</Button>
-            </DialogFooter>
-          </form>
+          <TagWizard
+            key={editingTag?.id || 'new'}
+            initialData={editingTag ? {
+              name: editingTag.name,
+              color: editingTag.color || PRESET_COLORS[10],
+            } : undefined}
+            editingTagId={editingTag?.id}
+            onSubmit={handleWizardSubmit}
+            onCancel={handleDialogClose}
+          />
         </DialogContent>
       </Dialog>
 

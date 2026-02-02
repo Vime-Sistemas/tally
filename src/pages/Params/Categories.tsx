@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
 import {
   Table,
   TableBody,
@@ -22,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "../../components/ui/dialog";
 import {
   AlertDialog,
@@ -36,60 +27,18 @@ import {
 } from "../../components/ui/alert-dialog";
 import { Badge } from "../../components/ui/badge";
 import { Plus, Edit2, Trash2, Search, ArrowUpCircle, ArrowDownCircle, List } from "lucide-react";
-import {
-  Coffee,
-  Car,
-  Home,
-  Zap,
-  Heart,
-  ShoppingBag,
-  Shirt,
-  Gamepad2,
-  GraduationCap,
-  Briefcase,
-  DollarSign,
-  TrendingUp,
-  ArrowRightLeft,
-  PiggyBank,
-  Coins,
-  Banknote,
-  Wallet,
-  Building2,
-  Globe,
-  Repeat,
-  Landmark,
-  Receipt,
-  PawPrint,
-  Gift,
-  Plane,
-  MoreHorizontal,
-  Shield,
-  Percent,
-  Key,
-  MapPin,
-  Users,
-  Smartphone,
-  Glasses,
-  KeyRound,
-  Ticket,
-  Wifi
-} from 'lucide-react';
 import { toast } from "sonner";
 import { CategoryService, type Category, type CategoryInsight } from "../../services/categoryService";
 import { BudgetForm } from "../../components/BudgetForm";
+import { CategoryWizard, type CategoryWizardData } from "../../components/CategoryWizard";
 import { Progress } from "../../components/ui/progress";
 import { formatCurrency } from "../../utils/formatters";
 import { BudgetType } from "../../types/budget";
 import { cn } from "../../lib/utils";
 import type { Page } from "../../types/navigation";
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from "recharts";
-
-// Modern color palette presets
-const PRESET_COLORS = [
-  "#ef4444", "#f97316", "#f59e0b", "#84cc16", "#10b981",
-  "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#d946ef",
-  "#f43f5e", "#64748b"
-];
+import { ICON_MAP } from "../../components/AnimatedIconSelector";
+import { PRESET_COLORS } from "../../components/AnimatedColorPalette";
 
 interface CategoriesProps {
   onNavigate?: (page: Page) => void;
@@ -113,14 +62,6 @@ export function Categories({ onNavigate }: CategoriesProps) {
   });
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState<Category | null>(null);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    type: 'EXPENSE' as 'INCOME' | 'EXPENSE',
-    color: '#3b82f6',
-    icon: '' as string | undefined,
-    parentId: null as string | null,
-  });
 
   useEffect(() => {
     loadCategories();
@@ -184,25 +125,35 @@ export function Categories({ onNavigate }: CategoriesProps) {
     loadCategoryInsights();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return toast.error('Nome é obrigatório');
-
+  const handleWizardSubmit = async (data: CategoryWizardData) => {
     try {
+      const payload = {
+        name: data.name,
+        type: data.type,
+        color: data.color,
+        icon: data.icon,
+        parentId: data.parentId,
+      };
+
       if (editingCategory) {
-        await CategoryService.updateCategory(editingCategory.id, { ...formData, parentId: formData.parentId || null });
+        await CategoryService.updateCategory(editingCategory.id, payload);
         toast.success('Categoria atualizada');
       } else {
-        const created = await CategoryService.createCategory({ ...formData, parentId: formData.parentId || null });
+        const created = await CategoryService.createCategory(payload);
         toast.success('Categoria criada');
-        handleOpenBudgetDialog(created);
+        // If user wants to set up budget, open the budget dialog
+        if (data.setupBudget && data.budgetAmount) {
+          setBudgetCategory(created);
+          setBudgetDialogOpen(true);
+        }
       }
       setIsDialogOpen(false);
-      resetForm();
+      setEditingCategory(null);
       loadCategories();
       loadCategoryInsights();
     } catch (error) {
       toast.error('Erro ao salvar categoria');
+      throw error;
     }
   };
 
@@ -220,20 +171,18 @@ export function Categories({ onNavigate }: CategoriesProps) {
     }
   };
 
-  const resetForm = () => {
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
     setEditingCategory(null);
-    setFormData({ name: '', type: 'EXPENSE', color: '#3b82f6', icon: undefined, parentId: null });
   };
 
   const openEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      type: category.type,
-      color: category.color || '#3b82f6',
-      icon: category.icon || undefined,
-      parentId: category.parentId || null,
-    });
+    setIsDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingCategory(null);
     setIsDialogOpen(true);
   };
 
@@ -245,53 +194,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
     onNavigate?.('transactions-history');
   };
 
-  const ICON_OPTIONS = [
-    'Coffee','Car','Home','Zap','Heart','ShoppingBag','Shirt','Gamepad2','GraduationCap','Briefcase',
-    'DollarSign','TrendingUp','ArrowRightLeft','PiggyBank','Coins','Banknote','Wallet','Building2','Globe',
-    'Repeat','Landmark','Receipt','PawPrint','Gift','Plane','MoreHorizontal',
-    'Shield','Percent','Key','MapPin','Users', 'Smartphone', 'Glasses', 'KeyRound', 'Ticket', 'Wifi'
-  ];
-
-  const ICON_COMPONENTS: Record<string, any> = {
-    Coffee,Car,Home,Zap,Heart,ShoppingBag,Shirt,Gamepad2,GraduationCap,Briefcase,
-    DollarSign,TrendingUp,ArrowRightLeft,PiggyBank,Coins,Banknote,Wallet,Building2,Globe,
-    Repeat,Landmark,Receipt,PawPrint,Gift,Plane,MoreHorizontal,Shield,Percent,Key,MapPin,Users,Smartphone, Glasses, KeyRound, Ticket, Wifi
-  };
-
   const MONTH_LABELS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
-  const childrenMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    categories.forEach(cat => {
-      if (cat.parentId) {
-        const list = map.get(cat.parentId) || [];
-        list.push(cat.id);
-        map.set(cat.parentId, list);
-      }
-    });
-    return map;
-  }, [categories]);
-
-  const getDescendantIds = useMemo(() => {
-    return (id: string) => {
-      const stack = [...(childrenMap.get(id) || [])];
-      const result: string[] = [];
-      while (stack.length) {
-        const current = stack.pop()!;
-        result.push(current);
-        const next = childrenMap.get(current);
-        if (next) stack.push(...next);
-      }
-      return result;
-    };
-  }, [childrenMap]);
-
-  const blockedParentIds = useMemo(() => {
-    if (!editingCategory) return new Set<string>();
-    const blocked = new Set<string>([editingCategory.id]);
-    getDescendantIds(editingCategory.id).forEach(id => blocked.add(id));
-    return blocked;
-  }, [editingCategory, getDescendantIds]);
 
   const getParentName = (category: Category) => {
     if (!category.parentId) return null;
@@ -444,7 +347,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
           <h1 className="text-2xl font-bold text-zinc-900">Categorias</h1>
           <p className="text-sm text-zinc-500">Organize suas transações por tipo</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-2" />
           Nova Categoria
         </Button>
@@ -582,7 +485,7 @@ export function Categories({ onNavigate }: CategoriesProps) {
               </TableRow>
             ) : (
               filteredCategories.map((category) => {
-                const CategoryIcon = category.icon ? ICON_COMPONENTS[category.icon] : null;
+                const CategoryIcon = category.icon ? ICON_MAP[category.icon] : null;
                 const insight = insightsById.get(category.id);
 
                 return (
@@ -646,124 +549,28 @@ export function Categories({ onNavigate }: CategoriesProps) {
         </Table>
       </div>
 
-      {/* Dialog Form */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* Category Wizard Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
+            <DialogTitle>
+              {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Nome</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Ex: Alimentação"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value, parentId: null }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EXPENSE">Despesa</SelectItem>
-                  <SelectItem value="INCOME">Receita</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Cor</Label>
-              <div className="flex flex-wrap gap-2">
-                {PRESET_COLORS.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, color }))}
-                    className={`w-6 h-6 rounded-full transition-all ${
-                      formData.color === color ? 'ring-2 ring-offset-2 ring-black scale-110' : 'hover:scale-110'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-                <div className="relative">
-                  <input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                  />
-                  <div
-                    className="w-6 h-6 rounded-full border border-zinc-200 flex items-center justify-center text-[10px]"
-                    style={{ backgroundColor: formData.color }}
-                    aria-hidden
-                  >
-                    +
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Categoria mãe (opcional)</Label>
-              <Select
-                value={formData.parentId ?? 'NONE'}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, parentId: value === 'NONE' ? null : value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sem categoria mãe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE">Sem categoria mãe</SelectItem>
-                  {categories
-                    .filter(cat => cat.type === formData.type && !blockedParentIds.has(cat.id))
-                    .map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Ícone</Label>
-              <div className="grid grid-cols-6 gap-2">
-                <button
-                  type="button"
-                  className={`p-2 rounded-lg border ${!formData.icon ? 'ring-2 ring-offset-2 ring-black' : 'hover:border-zinc-300'}`}
-                  onClick={() => setFormData(prev => ({ ...prev, icon: undefined }))}
-                >
-                  -
-                </button>
-                {ICON_OPTIONS.map(name => {
-                  const Icon = ICON_COMPONENTS[name];
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, icon: name }))}
-                      className={`p-2 rounded-lg border flex items-center justify-center gap-2 ${formData.icon === name ? 'ring-2 ring-offset-2 ring-black' : 'hover:border-zinc-300'}`}
-                      title={name}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar</Button>
-            </DialogFooter>
-          </form>
+          <CategoryWizard
+            key={editingCategory?.id || 'new'}
+            initialData={editingCategory ? {
+              name: editingCategory.name,
+              type: editingCategory.type,
+              color: editingCategory.color || PRESET_COLORS[0],
+              icon: editingCategory.icon || undefined,
+              parentId: editingCategory.parentId || null,
+            } : undefined}
+            existingCategories={categories}
+            editingCategoryId={editingCategory?.id}
+            onSubmit={handleWizardSubmit}
+            onCancel={handleDialogClose}
+          />
         </DialogContent>
       </Dialog>
 
