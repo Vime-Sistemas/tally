@@ -27,6 +27,7 @@ export interface User {
   hasBusiness?: boolean;
   type?: 'PERSONAL' | 'PLANNER';
   menuPreference?: 'header' | 'sidebar';
+  onboardingCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }

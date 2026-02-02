@@ -103,7 +103,20 @@ api.interceptors.response.use(
   }
 );
 
-export const updateUser = async (data: { name?: string; phone?: string; occupation?: string; picture?: string }) => {
+export const updateUser = async (data: { 
+  name?: string; 
+  phone?: string; 
+  occupation?: string; 
+  picture?: string;
+  menuPreference?: string;
+  coverImage?: string;
+  businessName?: string;
+  businessCnpj?: string;
+  businessWebsite?: string;
+  hasBusiness?: boolean;
+  location?: string;
+  cep?: string;
+}) => {
   const response = await api.put('/users/me', data);
   return response.data;
 };
@@ -372,6 +385,50 @@ export const updateDebt = async (id: string, data: Partial<CreateDebtDTO>): Prom
 
 export const deleteDebt = async (id: string): Promise<void> => {
   await api.delete(`/debts/${id}`);
+};
+
+// CATEGORIES API
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  parentId?: string;
+  budgetLimit?: number;
+}
+
+export interface CreateCategoryDTO {
+  name: string;
+  color: string;
+  icon?: string;
+  parentId?: string;
+  budgetLimit?: number;
+}
+
+export const getCategories = async (): Promise<Category[]> => {
+  const response = await api.get('/categories');
+  return response.data;
+};
+
+export const createCategory = async (data: CreateCategoryDTO): Promise<Category> => {
+  const response = await api.post('/categories', data);
+  return response.data;
+};
+
+export const updateCategory = async (id: string, data: Partial<CreateCategoryDTO>): Promise<Category> => {
+  const response = await api.put(`/categories/${id}`, data);
+  return response.data;
+};
+
+export const deleteCategory = async (id: string): Promise<void> => {
+  await api.delete(`/categories/${id}`);
+};
+
+// ONBOARDING API
+
+export const completeOnboarding = async (): Promise<void> => {
+  await api.post('/users/complete-onboarding');
 };
 
 export default api;

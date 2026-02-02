@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { encryptPayload, decryptPayload } from "@/utils/crypto";
+import { AuthErrorAlert } from "@/components/AuthErrorAlert";
 
 // --- Types & Schema ---
 type AccountType = 'PERSONAL' | 'PLANNER';
@@ -41,11 +42,35 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [accountType, setAccountType] = useState<AccountType>('PERSONAL');
-  const { loginWithRedirect } = useAuth0();
+  const { loginWithRedirect, error: auth0Error } = useAuth0();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [lastSocial, setLastSocial] = useState<string | null>(null);
   const [lastAccount, setLastAccount] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Check for Auth0 error in URL params
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    
+    if (errorParam) {
+      setAuthError(errorParam);
+      // Clean URL params without page reload
+      searchParams.delete('error');
+      searchParams.delete('error_description');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Also check for Auth0 SDK error
+  useEffect(() => {
+    if (auth0Error) {
+      setAuthError(auth0Error.message || 'default');
+    }
+  }, [auth0Error]);
+
+  const dismissError = () => setAuthError(null);
 
   // --- Logic: Restore Session ---
   useEffect(() => {
@@ -325,6 +350,15 @@ export function Login() {
                   </div>
                </div>
             </div>
+
+            {/* Auth Error Alert */}
+            {authError && (
+              <AuthErrorAlert 
+                error={authError} 
+                onDismiss={dismissError}
+                variant={isPlanner ? 'emerald' : 'blue'}
+              />
+            )}
 
             {/* --- Main Content Area --- */}
             <div className="space-y-6">

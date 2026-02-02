@@ -40,6 +40,7 @@ import { PlannerDashboard } from "./pages/Planner/Dashboard";
 import { InviteLandingPage } from "./pages/InviteLandingPage";
 import { PlannerInvitesDialog } from "./components/PlannerInvitesDialog";
 import { CashflowFuturePage } from "./pages/CashflowFuture";
+import { Onboarding } from "./pages/Onboarding";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
@@ -163,6 +164,12 @@ function AppContent() {
       const costCenters = await costCenterService.getCostCenters();
       setCostCenters(costCenters);
 
+      // Check if user needs onboarding (new user without completed onboarding)
+      if (!mergedUser.onboardingCompleted && location.pathname !== '/onboarding') {
+        navigate('/onboarding', { replace: true });
+        return mergedUser;
+      }
+
       return mergedUser;
     } catch (err) {
       console.error("Error syncing user / token:", err);
@@ -202,6 +209,8 @@ function AppContent() {
     isAuthenticated,
     setCostCenters,
     setUser,
+    navigate,
+    location.pathname,
   ]);
 
   useEffect(() => {
@@ -655,6 +664,27 @@ function LoginRoute() {
   return <Login />;
 }
 
+function OnboardingRoute() {
+  const { isAuthenticated, isLoading } = useAuth0();
+  const { user } = useUser();
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect to app if onboarding already completed
+  if (user?.onboardingCompleted) {
+    return <Navigate to="/app" replace />;
+  }
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return <Onboarding />;
+}
+
 function App() {
   return (
     <UserProvider>
@@ -665,6 +695,7 @@ function App() {
           <Route path="/planos" element={<PricingPage />} />
           <Route path="/cadastro" element={<SignUp />} />
           <Route path="/login" element={<LoginRoute />} />
+          <Route path="/onboarding" element={<OnboardingRoute />} />
           <Route path="/comparativo-planilha-e-cdf" element={<Comparativo />} />
           <Route path="/releases" element={<Releases />} />
           <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
