@@ -47,7 +47,7 @@ import {
   AlertDialogTitle,
 } from "../ui/alert-dialog";
 
-import { MobileHeader } from "./Mobile";
+import { MobileNavigation } from "../MobileNavigation";
 
 interface HeaderProps {
   onNavigate: (page: Page) => void;
@@ -380,7 +380,7 @@ export function Header({ onNavigate, hasBusiness, currentContext, onContextChang
         </div>
       </header>
       
-      <MobileHeader onNavigate={onNavigate} currentPage={currentPage} />
+      <MobileNavigation onNavigate={onNavigate} currentPage={currentPage} />
     </>
   );
 }

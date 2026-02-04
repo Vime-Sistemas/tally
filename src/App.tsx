@@ -445,7 +445,8 @@ function AppContent() {
     mainPadding = "px-0";
   }
 
-  const bottomPadding = showDock ? "pb-32" : "pb-24";
+  // Bottom padding para acomodar navigation mobile (floating dock) ou desktop dock
+  const bottomPadding = isMobile ? "pb-28" : showDock ? "pb-32" : "pb-8";
 
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden">
