@@ -3,8 +3,8 @@ import { TransactionForm } from '../../components/TransactionForm';
 import { TransferForm } from '../../components/TransferForm';
 import { InvestmentForm } from '../../components/InvestmentForm';
 import { TransactionWizard, type WizardData } from '../../components/TransactionWizard';
-import { MobileTransferForm } from '../../components/TransferForm/Mobile';
-import { MobileInvestmentForm } from '../../components/InvestmentForm/Mobile';
+import { TransferWizard, type TransferWizardData } from '../../components/TransferWizard';
+import { InvestmentWizard, type InvestmentWizardData } from '../../components/InvestmentWizard';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
@@ -26,6 +26,8 @@ export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
   const [prefilledType, setPrefilledType] = useState<IncomeExpenseType | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [showTransferWizard, setShowTransferWizard] = useState(false);
+  const [showInvestmentWizard, setShowInvestmentWizard] = useState(false);
   const [wizardIntent, setWizardIntent] = useState<TransactionIntent | undefined>();
   const isMobile = useIsMobile();
 
@@ -37,15 +39,24 @@ export function Transactions({ onNavigate }: TransactionsProps) {
       const validTab = intent.tab === 'TRANSACTION' || intent.tab === 'TRANSFER' || intent.tab === 'INVESTMENT';
       if (validTab) {
         setActiveTab(intent.tab);
-        if (intent.tab === 'TRANSACTION' && intent.type && (intent.type === TransactionType.INCOME || intent.type === TransactionType.EXPENSE)) {
-          setPrefilledType(intent.type);
-          // On mobile, show wizard directly
-          if (isMobile) {
+        if (isMobile) {
+          if (intent.tab === 'TRANSACTION') {
+            if (intent.type && (intent.type === TransactionType.INCOME || intent.type === TransactionType.EXPENSE)) {
+              setPrefilledType(intent.type);
+            }
             setWizardIntent(intent);
             setShowWizard(true);
+          } else if (intent.tab === 'TRANSFER') {
+            setShowTransferWizard(true);
+          } else if (intent.tab === 'INVESTMENT') {
+            setShowInvestmentWizard(true);
           }
         } else {
-          setPrefilledType(null);
+          if (intent.tab === 'TRANSACTION' && intent.type && (intent.type === TransactionType.INCOME || intent.type === TransactionType.EXPENSE)) {
+            setPrefilledType(intent.type);
+          } else {
+            setPrefilledType(null);
+          }
         }
       }
     } catch (err) {
@@ -55,12 +66,18 @@ export function Transactions({ onNavigate }: TransactionsProps) {
     }
   }, [isMobile]);
 
-  // Show wizard on mobile when tab is TRANSACTION
+  // Show wizard on mobile when tab changes
   useEffect(() => {
-    if (isMobile && activeTab === 'TRANSACTION' && !showWizard) {
-      setShowWizard(true);
+    if (isMobile) {
+      if (activeTab === 'TRANSACTION' && !showWizard && !showTransferWizard && !showInvestmentWizard) {
+        setShowWizard(true);
+      } else if (activeTab === 'TRANSFER' && !showTransferWizard && !showWizard && !showInvestmentWizard) {
+        setShowTransferWizard(true);
+      } else if (activeTab === 'INVESTMENT' && !showInvestmentWizard && !showWizard && !showTransferWizard) {
+        setShowInvestmentWizard(true);
+      }
     }
-  }, [isMobile, activeTab, showWizard]);
+  }, [isMobile, activeTab, showWizard, showTransferWizard, showInvestmentWizard]);
 
   // Keyboard shortcuts (desktop only)
   useEffect(() => {
@@ -135,9 +152,117 @@ export function Transactions({ onNavigate }: TransactionsProps) {
   // Handle wizard cancel
   const handleWizardCancel = useCallback(() => {
     setShowWizard(false);
+    setShowTransferWizard(false);
+    setShowInvestmentWizard(false);
     setWizardIntent(undefined);
     if (onNavigate) {
       onNavigate('dashboard-summary');
+    }
+  }, [onNavigate]);
+
+  // Handle Transfer wizard completion
+  const handleTransferComplete = useCallback(async (data: TransferWizardData) => {
+    try {
+      await createTransaction({
+        type: 'TRANSFER',
+        category: 'TRANSFER',
+        amount: data.amount,
+        description: data.description || 'Transferência entre contas',
+        date: data.date,
+        accountId: data.fromAccountId,
+        destinationAccountId: data.toAccountId,
+      });
+      toast.success('Transferência realizada com sucesso!');
+      setShowTransferWizard(false);
+      if (onNavigate) {
+        onNavigate('transactions-history');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
+        try {
+          await confirmTransaction({
+            type: 'TRANSFER',
+            category: 'TRANSFER',
+            amount: data.amount,
+            description: data.description || 'Transferência entre contas',
+            date: data.date,
+            accountId: data.fromAccountId,
+            destinationAccountId: data.toAccountId,
+            confirmNegativeBalance: true,
+          });
+          toast.success('Transferência realizada com saldo negativo!');
+          setShowTransferWizard(false);
+          if (onNavigate) {
+            onNavigate('transactions-history');
+          }
+        } catch (confirmError) {
+          console.error('Erro ao confirmar transferência:', confirmError);
+          toast.error('Erro ao realizar transferência');
+        }
+      } else {
+        console.error('Erro ao realizar transferência:', error);
+        toast.error('Erro ao realizar transferência');
+      }
+    }
+  }, [onNavigate]);
+
+  // Handle Investment wizard completion
+  const handleInvestmentComplete = useCallback(async (data: InvestmentWizardData) => {
+    try {
+      const investmentTypeMap: Record<string, string> = {
+        'STOCKS': 'Ações',
+        'REAL_ESTATE': 'Imóveis',
+        'REAL_ESTATE_FUNDS': 'Fundos Imobiliários (FIIs)',
+        'CRYPTO': 'Criptomoedas',
+        'BONDS': 'Títulos Públicos',
+        'PRIVATE_BONDS': 'Títulos Privados (CDB, LCI, LCA)',
+        'MUTUAL_FUND': 'Fundos de Investimento',
+        'ETF': 'ETFs',
+        'PENSION': 'Previdência Privada',
+        'SAVINGS': 'Poupança',
+        'FOREIGN_INVESTMENT': 'Investimentos no Exterior',
+        'CASH': 'Reserva de Emergência',
+        'OTHER_INVESTMENT': 'Outros',
+      };
+
+      await createTransaction({
+        type: 'EXPENSE',
+        category: 'INVESTMENT',
+        amount: data.amount,
+        description: data.description || `Investimento em ${investmentTypeMap[data.investmentType] || data.investmentType}`,
+        date: data.date,
+        accountId: data.sourceAccountId,
+      });
+      toast.success('Aplicação registrada com sucesso!');
+      setShowInvestmentWizard(false);
+      if (onNavigate) {
+        onNavigate('transactions-history');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
+        try {
+          await confirmTransaction({
+            type: 'EXPENSE',
+            category: 'INVESTMENT',
+            amount: data.amount,
+            description: data.description || 'Aplicação',
+            date: data.date,
+            accountId: data.sourceAccountId,
+            confirmNegativeBalance: true,
+          });
+          toast.success('Aplicação registrada com saldo negativo!');
+          setShowInvestmentWizard(false);
+          if (onNavigate) {
+            onNavigate('transactions-history');
+          }
+        } catch (confirmError) {
+          console.error('Erro ao confirmar aplicação:', confirmError);
+          toast.error('Erro ao registrar aplicação');
+        }
+      } else {
+        console.error('Erro ao registrar aplicação:', error);
+        toast.error('Erro ao registrar aplicação');
+      }
     }
   }, [onNavigate]);
 
@@ -146,8 +271,15 @@ export function Transactions({ onNavigate }: TransactionsProps) {
     <button
       onClick={() => {
         setActiveTab(id);
-        if (isMobile && id === 'TRANSACTION') {
-          setShowWizard(true);
+        if (isMobile) {
+          // Reset all wizards first
+          setShowWizard(false);
+          setShowTransferWizard(false);
+          setShowInvestmentWizard(false);
+          // Then show the appropriate one
+          if (id === 'TRANSACTION') setShowWizard(true);
+          else if (id === 'TRANSFER') setShowTransferWizard(true);
+          else if (id === 'INVESTMENT') setShowInvestmentWizard(true);
         }
       }}
       className={cn(
@@ -184,6 +316,26 @@ export function Transactions({ onNavigate }: TransactionsProps) {
         onComplete={handleWizardComplete}
         onCancel={handleWizardCancel}
         initialIntent={wizardIntent}
+      />
+    );
+  }
+
+  // Mobile: Show Wizard for transfers
+  if (isMobile && showTransferWizard && activeTab === 'TRANSFER') {
+    return (
+      <TransferWizard
+        onComplete={handleTransferComplete}
+        onCancel={handleWizardCancel}
+      />
+    );
+  }
+
+  // Mobile: Show Wizard for investments
+  if (isMobile && showInvestmentWizard && activeTab === 'INVESTMENT') {
+    return (
+      <InvestmentWizard
+        onComplete={handleInvestmentComplete}
+        onCancel={handleWizardCancel}
       />
     );
   }
@@ -228,8 +380,8 @@ export function Transactions({ onNavigate }: TransactionsProps) {
           {activeTab === 'TRANSACTION' && !isMobile && (
             <TransactionForm defaultType={prefilledType ?? undefined} />
           )}
-          {activeTab === 'TRANSFER' && (isMobile ? <MobileTransferForm /> : <TransferForm />)}
-          {activeTab === 'INVESTMENT' && (isMobile ? <MobileInvestmentForm /> : <InvestmentForm />)}
+          {activeTab === 'TRANSFER' && !isMobile && <TransferForm />}
+          {activeTab === 'INVESTMENT' && !isMobile && <InvestmentForm />}
         </div>
       </div>
     </div>
