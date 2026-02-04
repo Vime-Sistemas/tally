@@ -301,6 +301,11 @@ export const getCurrentInvoice = async (cardId: string): Promise<CreditCardInvoi
   return response.data;
 };
 
+export const getNextInvoice = async (cardId: string): Promise<CreditCardInvoice> => {
+  const response = await api.get(`/credit-card-invoices/next/${cardId}`);
+  return response.data;
+};
+
 export const getInvoiceDetails = async (invoiceId: string): Promise<CreditCardInvoice> => {
   const response = await api.get(`/credit-card-invoices/${invoiceId}`);
   return response.data;
