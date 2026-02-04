@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, Calendar, CreditCard, Info } from 'lucide-react';
-import { format, addMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
 
 interface PreviewTransaction {
   id: string;

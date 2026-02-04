@@ -209,7 +209,7 @@ export function Summary({ onNavigate }: { onNavigate?: (page: Page) => void }) {
   }
 
   return (
-    <div className="w-full min-h-screen bg-zinc-50/50 pb-20 font-sans text-zinc-900 selection:bg-blue-100">
+    <div className="w-full min-h-screen bg-white pb-20 font-sans text-zinc-900 selection:bg-blue-100">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-8 space-y-8">
         
         {/* --- Header --- */}
