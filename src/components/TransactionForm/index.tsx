@@ -163,7 +163,9 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
       const [methodType, methodId] = data.paymentMethod.split(':');
       
       if (isRecurring && data.frequency) {
-        // Create recurring transaction
+        // Create recurring transaction with better feedback
+        toast.loading('Criando transações e faturas...', { id: 'creating-recurring' });
+        
         const result = await createRecurringTransaction({
           type: data.type === TransactionType.INCOME ? 'INCOME' : 'EXPENSE',
           category: data.category,
@@ -177,6 +179,7 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
           costCenterId: data.costCenterId || undefined,
         });
 
+        toast.dismiss('creating-recurring');
         reset();
         setIsRecurring(false);
         

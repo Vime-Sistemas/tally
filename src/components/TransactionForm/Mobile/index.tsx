@@ -227,7 +227,9 @@ export function MobileTransactionForm({ onSuccess, initialData, defaultType }: T
       }
 
       if (isRecurring && data.frequency) {
-        // Create recurring transaction
+        // Create recurring transaction with better feedback
+        toast.loading('Criando transações e faturas...', { id: 'creating-recurring' });
+        
         const result = await createRecurringTransaction({
           type: data.type === TransactionType.INCOME ? 'INCOME' : 'EXPENSE',
           category: data.category,
@@ -240,6 +242,7 @@ export function MobileTransactionForm({ onSuccess, initialData, defaultType }: T
           cardId: cardId || null,
         });
 
+        toast.dismiss('creating-recurring');
         reset();
         setSelectedType(TransactionType.EXPENSE);
         setIsInstallment(false);
