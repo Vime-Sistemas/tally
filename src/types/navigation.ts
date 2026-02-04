@@ -17,6 +17,7 @@ export type Page =
   | 'releases'
   | 'params-categories'
   | 'params-tags'
+  | 'invoice-admin'
   | 'planner-clients'
   | 'planner-dashboard';
 

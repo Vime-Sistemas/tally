@@ -63,6 +63,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { FloatingDock } from "./components/FloatingDock";
+import { InvoiceAdmin } from "./pages/InvoiceAdmin";
 import { cn } from "@/lib/utils";
 
 function AppContent() {
@@ -389,6 +390,8 @@ function AppContent() {
         return <Categories onNavigate={setCurrentPage} />;
       case "params-tags":
         return <Tags onNavigate={setCurrentPage} />;
+      case "invoice-admin":
+        return <InvoiceAdmin />;
       case "planner-clients":
         return <PlannerClients />;
       case "planner-dashboard":

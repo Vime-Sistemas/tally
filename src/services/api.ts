@@ -320,6 +320,16 @@ export const generateRetroactiveInvoices = async (): Promise<{ processedCount: n
   return response.data;
 };
 
+export const getInvoiceAllocationPreview = async (): Promise<{ data: any[], total: number }> => {
+  const response = await api.get('/credit-card-invoices/allocation-preview');
+  return response.data;
+};
+
+export const correctInvoiceAllocations = async (): Promise<{ corrected: number, total: number, message: string }> => {
+  const response = await api.post('/credit-card-invoices/correct-allocations');
+  return response.data;
+};
+
 // BUDGETS API
 
 export const getBudgets = async (year?: number, month?: number): Promise<Budget[]> => {
