@@ -330,6 +330,35 @@ export const correctInvoiceAllocations = async (): Promise<{ corrected: number, 
   return response.data;
 };
 
+export const getOrphanTransactionsCount = async (): Promise<{ orphanCount: number }> => {
+  const response = await api.get('/credit-card-invoices/orphan-count');
+  return response.data;
+};
+
+export const correctOrphanTransactions = async (batchSize: number = 50): Promise<{ 
+  processed: number, 
+  corrected: number, 
+  hasMore: boolean 
+}> => {
+  const response = await api.post('/credit-card-invoices/correct-orphans', { batchSize });
+  return response.data;
+};
+
+export const validateCurrentInvoice = async (): Promise<{ 
+  cards: Array<{
+    cardId: string,
+    cardName: string,
+    previousValue: number,
+    newValue: number,
+    difference: number,
+    needsCorrection: boolean
+  }>,
+  totalCorrected: number 
+}> => {
+  const response = await api.post('/credit-card-invoices/validate-current-invoice');
+  return response.data;
+};
+
 // BUDGETS API
 
 export const getBudgets = async (year?: number, month?: number): Promise<Budget[]> => {
