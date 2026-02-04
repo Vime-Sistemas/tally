@@ -15,6 +15,10 @@ import {
   Wallet, 
   CheckCircle2,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  PiggyBank,
+  ArrowRight,
 } from 'lucide-react';
 import { 
   ComposedChart, 
@@ -26,7 +30,9 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Area,
+  AreaChart,
 } from 'recharts';
 
 import { Badge } from '../../components/ui/badge';
@@ -109,18 +115,45 @@ export function CashflowFuturePage() {
     loadData();
   }, [loadData]);
 
-  // --- Chart Data Preparation ---
+  // --- Chart Data Preparation (Cumulative Balance) ---
   const chartData = useMemo(() => {
     return forecastMonths.map(m => ({
       name: m.label.split(' ')[0], // "jan.", "fev."
       fullLabel: m.label,
-         Entradas: m.effectiveIncome ?? 0,
-         Saídas: m.effectiveExpense ?? 0,
-         Saldo: m.effectiveNet ?? 0,
+      Entradas: m.effectiveIncome ?? 0,
+      Saídas: m.effectiveExpense ?? 0,
+      'Saldo Mensal': m.effectiveNet ?? 0,
+      'Saldo Acumulado': m.endingBalance ?? 0,
+      startingBalance: m.startingBalance ?? 0,
+      hasRealData: m.hasRealData ?? false,
     }));
   }, [forecastMonths]);
 
   const currentMonthForecast = forecastMonths[0];
+  
+  // Starting balance (from accounts)
+  const startingBalance = useMemo(() => {
+    return currentMonthForecast?.startingBalance ?? 0;
+  }, [currentMonthForecast]);
+
+  // Final projected balance (end of 12 months)
+  const finalProjectedBalance = useMemo(() => {
+    const lastMonth = forecastMonths[forecastMonths.length - 1];
+    return lastMonth?.endingBalance ?? 0;
+  }, [forecastMonths]);
+
+  // Balance trend (positive or negative over period)
+  const balanceTrend = useMemo(() => {
+    if (forecastMonths.length < 2) return 0;
+    const first = forecastMonths[0]?.startingBalance ?? 0;
+    const last = forecastMonths[forecastMonths.length - 1]?.endingBalance ?? 0;
+    return last - first;
+  }, [forecastMonths]);
+
+  // Months with negative balance
+  const negativeMonths = useMemo(() => {
+    return forecastMonths.filter(m => (m.endingBalance ?? 0) < 0);
+  }, [forecastMonths]);
   const isPositiveMonth = currentMonthForecast?.effectiveNet >= 0;
 
   // --- Handlers ---
@@ -170,40 +203,98 @@ export function CashflowFuturePage() {
           </div>
         </header>
 
-        {/* --- Hero Insight Card --- */}
+        {/* --- Hero Insight Card (Cumulative Balance) --- */}
         {!isLoading && currentMonthForecast && (
-          <div className={cn(
-            "rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 transition-all",
-            isPositiveMonth ? "bg-blue-50 border border-blue-100" : "bg-orange-50 border border-orange-100"
-          )}>
-             <div className="space-y-2 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2">
-                   <Badge className={cn("rounded-full px-3", isPositiveMonth ? "bg-blue-200 text-blue-800 hover:bg-blue-200" : "bg-orange-200 text-orange-800 hover:bg-orange-200")}>
-                      {currentMonthForecast.label}
-                   </Badge>
-                   <span className="text-sm text-zinc-500 font-medium">Previsão de Fechamento</span>
+          <div className="space-y-4">
+            {/* Main Balance Card */}
+            <div className={cn(
+              "rounded-3xl p-6 md:p-8 transition-all",
+              balanceTrend >= 0 ? "bg-blue-50 border border-blue-100" : "bg-orange-50 border border-orange-100"
+            )}>
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-2">
+                    <PiggyBank className={cn("h-5 w-5", balanceTrend >= 0 ? "text-blue-600" : "text-orange-600")} />
+                    <span className="text-sm text-zinc-500 font-medium">Saldo Atual</span>
+                  </div>
+                  <h2 className={cn("text-4xl md:text-5xl font-bold tracking-tight", balanceTrend >= 0 ? "text-blue-900" : "text-orange-900")}>
+                    {formatCurrency(startingBalance)}
+                  </h2>
+                  <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
+                    {balanceTrend >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={balanceTrend >= 0 ? "text-emerald-600" : "text-red-600"}>
+                      {balanceTrend >= 0 ? '+' : ''}{formatCurrency(balanceTrend)} em 12 meses
+                    </span>
+                  </div>
                 </div>
-                <h2 className={cn("text-4xl md:text-5xl font-bold tracking-tight", isPositiveMonth ? "text-blue-900" : "text-orange-900")}>
-                  {formatCurrency(currentMonthForecast.effectiveNet ?? 0)}
-                </h2>
-                <p className={cn("text-base md:text-lg max-w-md", isPositiveMonth ? "text-blue-700" : "text-orange-800")}>
-                   {isPositiveMonth 
-                     ? "Ótimo! Você deve fechar o mês no azul. Que tal separar uma parte para investir?" 
-                     : "Atenção! As despesas previstas superam as receitas. Revise seus gastos variáveis."}
-                </p>
-             </div>
 
-             {/* Mini Stats Grid */}
-             <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-                <div className="bg-white/60 rounded-2xl p-4 border border-white/50 backdrop-blur-sm">
-                   <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Entradas</p>
-                   <p className="text-xl font-bold text-blue-600">{formatCurrency(currentMonthForecast.effectiveIncome)}</p>
+                {/* Arrow and Final Balance */}
+                <div className="flex items-center gap-4">
+                  <ArrowRight className="h-6 w-6 text-zinc-300 hidden md:block" />
+                  <div className="bg-white/80 rounded-2xl p-4 md:p-6 border border-white/50 backdrop-blur-sm text-center">
+                    <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Em 12 meses</p>
+                    <p className={cn("text-2xl md:text-3xl font-bold", finalProjectedBalance >= 0 ? "text-blue-600" : "text-red-600")}>
+                      {formatCurrency(finalProjectedBalance)}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-white/60 rounded-2xl p-4 border border-white/50 backdrop-blur-sm">
-                   <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Saídas</p>
-                   <p className="text-xl font-bold text-zinc-700">{formatCurrency(currentMonthForecast.effectiveExpense)}</p>
+              </div>
+
+              {/* Alerts */}
+              {negativeMonths.length > 0 && (
+                <div className="mt-4 p-3 bg-orange-100/50 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-800">
+                      Atenção: {negativeMonths.length} {negativeMonths.length === 1 ? 'mês' : 'meses'} com saldo negativo projetado
+                    </p>
+                    <p className="text-xs text-orange-700 mt-1">
+                      {negativeMonths.map(m => m.label.split(' ')[0]).join(', ')}
+                    </p>
+                  </div>
                 </div>
-             </div>
+              )}
+            </div>
+
+            {/* Current Month Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="border-zinc-100 bg-white">
+                <CardContent className="p-4">
+                  <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">{currentMonthForecast.label}</p>
+                  <p className={cn("text-xl font-bold", isPositiveMonth ? "text-blue-600" : "text-orange-600")}>
+                    {formatCurrency(currentMonthForecast.effectiveNet ?? 0)}
+                  </p>
+                  <p className="text-xs text-zinc-400">resultado do mês</p>
+                </CardContent>
+              </Card>
+              <Card className="border-zinc-100 bg-white">
+                <CardContent className="p-4">
+                  <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Entradas</p>
+                  <p className="text-xl font-bold text-emerald-600">{formatCurrency(currentMonthForecast.effectiveIncome)}</p>
+                  <p className="text-xs text-zinc-400">previsto este mês</p>
+                </CardContent>
+              </Card>
+              <Card className="border-zinc-100 bg-white">
+                <CardContent className="p-4">
+                  <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Saídas</p>
+                  <p className="text-xl font-bold text-zinc-700">{formatCurrency(currentMonthForecast.effectiveExpense)}</p>
+                  <p className="text-xs text-zinc-400">previsto este mês</p>
+                </CardContent>
+              </Card>
+              <Card className="border-zinc-100 bg-white">
+                <CardContent className="p-4">
+                  <p className="text-xs text-zinc-500 uppercase font-semibold mb-1">Recorrentes</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {formatCurrency((currentMonthForecast.projectedRecurringIncome ?? 0) - (currentMonthForecast.projectedRecurringExpense ?? 0))}
+                  </p>
+                  <p className="text-xs text-zinc-400">saldo recorrente</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
@@ -225,53 +316,99 @@ export function CashflowFuturePage() {
            <Card className="border-zinc-200 shadow-sm overflow-hidden">
              <CardContent className="p-0">
                {isLoading ? (
-                 <Skeleton className="h-[320px] w-full" />
+                 <Skeleton className="h-[380px] w-full" />
                ) : (
-                 <div className="h-[320px] w-full pt-6 pr-6">
-                   <ResponsiveContainer width="100%" height="100%">
-                     <ComposedChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                       <XAxis 
-                         dataKey="name" 
-                         tick={{ fontSize: 12, fill: '#a1a1aa' }} 
-                         axisLine={false} 
-                         tickLine={false} 
-                         dy={10}
-                       />
-                       <YAxis 
-                         tick={{ fontSize: 11, fill: '#a1a1aa' }} 
-                         axisLine={false} 
-                         tickLine={false}
-                         tickFormatter={formatYAxis}
-                         domain={[(dataMin: number) => Math.min(0, dataMin * 1.1), (dataMax: number) => (dataMax || 0) * 1.1 + 50]}
-                       />
-                       <Tooltip 
-                         cursor={{ fill: '#f4f4f5', opacity: 0.5 }}
-                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                         labelStyle={{ color: '#71717a', marginBottom: '0.5rem' }}
-                         formatter={(value: number) => [formatCurrency(value), '']}
-                       />
-                       <Legend verticalAlign="top" height={36} iconType="circle"/>
-                       
-                       {/* Income Bar */}
-                       <Bar name="Receitas" dataKey="Entradas" fill={THEME.chartIncome} radius={[4, 4, 0, 0]} barSize={12} />
-                       
-                       {/* Expense Bar */}
-                       <Bar name="Despesas" dataKey="Saídas" fill={THEME.chartExpense} radius={[4, 4, 0, 0]} barSize={12} />
-                       
-                       {/* Net Line */}
-                       <Line 
-                         name="Saldo Previsto"
-                         type="monotone" 
-                         dataKey="Saldo" 
-                         stroke={THEME.chartNet} 
-                         strokeWidth={3} 
-                         dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                         activeDot={{ r: 6, stroke: THEME.chartNet }}
-                       />
-                       <ReferenceLine y={0} stroke="#e4e4e7" />
-                     </ComposedChart>
-                   </ResponsiveContainer>
+                 <div className="space-y-6">
+                   {/* Cumulative Balance Chart */}
+                   <div className="pt-4 px-4">
+                     <p className="text-xs text-zinc-500 uppercase font-semibold mb-2">Evolução do Patrimônio</p>
+                   </div>
+                   <div className="h-[180px] w-full pr-6">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                         <defs>
+                           <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                             <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                           </linearGradient>
+                         </defs>
+                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                         <XAxis 
+                           dataKey="name" 
+                           tick={{ fontSize: 11, fill: '#a1a1aa' }} 
+                           axisLine={false} 
+                           tickLine={false}
+                         />
+                         <YAxis 
+                           tick={{ fontSize: 11, fill: '#a1a1aa' }} 
+                           axisLine={false} 
+                           tickLine={false}
+                           tickFormatter={formatYAxis}
+                         />
+                         <Tooltip 
+                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                           formatter={(value: number, name: string) => {
+                             if (name === 'Saldo Acumulado') {
+                               return [formatCurrency(value), 'Saldo Projetado'];
+                             }
+                             return [formatCurrency(value), name];
+                           }}
+                         />
+                         <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="5 5" />
+                         <Area 
+                           type="monotone" 
+                           dataKey="Saldo Acumulado" 
+                           stroke={THEME.chartNet}
+                           strokeWidth={2}
+                           fillOpacity={1}
+                           fill="url(#balanceGradient)"
+                           dot={{ r: 3, strokeWidth: 2, fill: '#fff' }}
+                           activeDot={{ r: 5, stroke: THEME.chartNet }}
+                         />
+                       </AreaChart>
+                     </ResponsiveContainer>
+                   </div>
+
+                   {/* Monthly Breakdown Chart */}
+                   <div className="px-4">
+                     <p className="text-xs text-zinc-500 uppercase font-semibold mb-2">Entradas e Saídas por Mês</p>
+                   </div>
+                   <div className="h-[180px] w-full pr-6 pb-4">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <ComposedChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                         <XAxis 
+                           dataKey="name" 
+                           tick={{ fontSize: 11, fill: '#a1a1aa' }} 
+                           axisLine={false} 
+                           tickLine={false}
+                         />
+                         <YAxis 
+                           tick={{ fontSize: 11, fill: '#a1a1aa' }} 
+                           axisLine={false} 
+                           tickLine={false}
+                           tickFormatter={formatYAxis}
+                         />
+                         <Tooltip 
+                           cursor={{ fill: '#f4f4f5', opacity: 0.5 }}
+                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                           formatter={(value: number) => [formatCurrency(value), '']}
+                         />
+                         <Legend verticalAlign="top" height={36} iconType="circle"/>
+                         <Bar name="Receitas" dataKey="Entradas" fill={THEME.chartIncome} radius={[4, 4, 0, 0]} barSize={16} />
+                         <Bar name="Despesas" dataKey="Saídas" fill={THEME.chartExpense} radius={[4, 4, 0, 0]} barSize={16} />
+                         <Line 
+                           name="Saldo Mensal"
+                           type="monotone" 
+                           dataKey="Saldo Mensal" 
+                           stroke="#10b981"
+                           strokeWidth={2} 
+                           dot={{ r: 3, strokeWidth: 2, fill: '#fff' }}
+                         />
+                         <ReferenceLine y={0} stroke="#e4e4e7" />
+                       </ComposedChart>
+                     </ResponsiveContainer>
+                   </div>
                  </div>
                )}
              </CardContent>
