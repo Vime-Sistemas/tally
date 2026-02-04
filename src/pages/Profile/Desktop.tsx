@@ -224,7 +224,7 @@ export function DesktopProfile({ hasBusiness, setHasBusiness }: ProfileProps) {
   const isDirty = form.formState.isDirty;
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 p-6 md:p-10">
+    <div className="min-h-screen bg-white p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-zinc-200">
