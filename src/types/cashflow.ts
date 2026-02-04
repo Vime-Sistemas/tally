@@ -18,17 +18,29 @@ export interface CashflowForecastEntry {
   month: number;
   year: number;
   label: string;
+  // Transações reais do mês
   income: CashflowForecastTotals;
   expense: CashflowForecastTotals;
-  net: number;
-  pendingNet: number;
-  appliedPending: boolean;
+  // Projeções de recorrências (novos campos)
+  projectedRecurringIncome?: number;
+  projectedRecurringExpense?: number;
+  // Totais efetivos
   effectiveIncome: number;
   effectiveExpense: number;
   effectiveNet: number;
+  // Saldos cumulativos (NOVOS - essenciais para o cálculo correto)
+  startingBalance: number;
+  endingBalance: number;
+  // Compatibilidade com versão antiga
+  net: number;
+  pendingNet?: number;
+  appliedPending?: boolean;
+  // Metadados
+  filledByAverage?: boolean;
+  hasRealData?: boolean;
+  // Categorias
   categories: CashflowForecastCategory[];
   topExpenses: CashflowForecastCategory[];
-  filledByAverage?: boolean;
 }
 
 export interface CashflowForecastCategory {
@@ -39,11 +51,14 @@ export interface CashflowForecastCategory {
   pending: number;
   total: number;
   effectiveTotal: number;
+  projected?: number;
 }
 
 export interface CashflowForecastResponse {
   generatedAt: string;
+  startingBalance: number;
   months: CashflowForecastEntry[];
+  cacheHit?: boolean;
 }
 
 export type UpcomingTransactionStatus = 'pending' | 'paid' | 'all';
