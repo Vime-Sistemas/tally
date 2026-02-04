@@ -186,11 +186,14 @@ export function RecurringTransactionsManager({
 
   const handleDeleteSingle = async (id: string) => {
     try {
+      toast.loading('Excluindo transação...', { id: `deleting-${id}` });
       await deleteRecurringTransaction(id);
-      toast.success('Transação excluída');
+      toast.dismiss(`deleting-${id}`);
+      toast.success('Transação excluída com sucesso');
       loadTransactions();
       onUpdate?.();
     } catch (error) {
+      toast.dismiss(`deleting-${id}`);
       console.error('Erro ao excluir transação:', error);
       toast.error('Erro ao excluir transação');
     }
@@ -201,14 +204,22 @@ export function RecurringTransactionsManager({
 
     try {
       setIsDeleting(true);
+      const count = selectedIds.size;
+      toast.loading(
+        `Excluindo ${count} transação${count > 1 ? 'ões' : ''} recorrente${count > 1 ? 's' : ''}...`, 
+        { id: 'bulk-deleting' }
+      );
+      
       const result = await bulkDeleteRecurringTransactions(
         Array.from(selectedIds),
         deleteGeneratedTransactions
       );
       
+      toast.dismiss('bulk-deleting');
       toast.success(
-        `${result.deletedRecurringCount} transações recorrentes excluídas` +
-        (deleteGeneratedTransactions ? ` e ${result.deletedTransactionsCount} transações geradas removidas` : '')
+        `✅ ${result.deletedRecurringCount} transação${result.deletedRecurringCount > 1 ? 'ões' : ''} recorrente${result.deletedRecurringCount > 1 ? 's' : ''} excluída${result.deletedRecurringCount > 1 ? 's' : ''}` +
+        (deleteGeneratedTransactions ? `\n🗑️ ${result.deletedTransactionsCount} transação${result.deletedTransactionsCount > 1 ? 'ões' : ''} gerada${result.deletedTransactionsCount > 1 ? 's' : ''} removida${result.deletedTransactionsCount > 1 ? 's' : ''}` : ''),
+        { duration: 5000 }
       );
       
       setDeleteDialogOpen(false);
@@ -217,6 +228,7 @@ export function RecurringTransactionsManager({
       loadTransactions();
       onUpdate?.();
     } catch (error) {
+      toast.dismiss('bulk-deleting');
       console.error('Erro ao excluir transações:', error);
       toast.error('Erro ao excluir transações');
     } finally {

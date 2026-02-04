@@ -382,11 +382,14 @@ const renderCategoryIconForTransaction = (tx: Transaction) => {
     if (!selectedTransaction) return;
     setIsSubmitting(true);
     try {
+      toast.loading('Excluindo transação...', { id: 'deleting-transaction' });
       await deleteTransaction(selectedTransaction.id);
+      toast.dismiss('deleting-transaction');
       setTransactions(transactions.filter(t => t.id !== selectedTransaction.id));
       setIsDeleteDialogOpen(false);
-      toast.success('Transação deletada');
+      toast.success('Transação deletada com sucesso');
     } catch (error) {
+      toast.dismiss('deleting-transaction');
       console.error(error);
       toast.error('Erro ao deletar');
     } finally {
