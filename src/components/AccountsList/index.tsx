@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccountType } from "../../types/account";
 import { CreditCard, Wallet, Banknote, Plus, ArrowRight, Landmark, Receipt, PiggyBank, TrendingUp, FileText } from "lucide-react";
-import { getAccounts, getCards } from '../../services/api';
+import { getAccounts, getCards, getCurrentInvoice } from '../../services/api';
 import { toast } from 'sonner';
 import type { Account, CreditCard as CreditCardType } from '../../types/account';
 import { EditAccountDialog } from '../EditAccountDialog';
@@ -30,6 +30,7 @@ export function AccountsList({ onNavigate }: AccountsListProps) {
 function DesktopAccountsList({ onNavigate }: AccountsListProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cards, setCards] = useState<CreditCardType[]>([]);
+  const [cardsWithInvoices, setCardsWithInvoices] = useState<(CreditCardType & { invoiceMonth?: number; invoiceYear?: number })[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingCard, setEditingCard] = useState<CreditCardType | null>(null);
@@ -48,6 +49,25 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
       ]);
       setAccounts(accountsData);
       setCards(cardsData);
+
+      // Para cada cartão, buscar informações da fatura atual
+      const cardsWithInvoiceData = await Promise.all(
+        cardsData.map(async (card: CreditCardType) => {
+          try {
+            const invoiceResponse = await getCurrentInvoice(card.id);
+            return {
+              ...card,
+              invoiceMonth: invoiceResponse?.month,
+              invoiceYear: invoiceResponse?.year
+            };
+          } catch (error) {
+            console.error(`Erro ao buscar fatura do cartão ${card.id}:`, error);
+            return card;
+          }
+        })
+      );
+
+      setCardsWithInvoices(cardsWithInvoiceData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar contas e cartões');
@@ -192,11 +212,26 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cards.map((card) => {
+                  {cardsWithInvoices.map((card) => {
                     // Lógica visual para barra de progresso do limite
                     const limitUsed = card.limitUsed || 0;
                     const limitPercent = Math.min((limitUsed / card.limit) * 100, 100);
                     const available = card.limit - limitUsed;
+
+                    // Formatação da competência da fatura
+                    const getInvoiceCompetencyText = () => {
+                      if (card.currentInvoice <= 0) {
+                        return 'Sem Faturas Pendentes';
+                      }
+                      if (card.invoiceMonth && card.invoiceYear) {
+                        const monthNames = [
+                          'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                          'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+                        ];
+                        return `Fatura de ${monthNames[card.invoiceMonth - 1]}/${card.invoiceYear}`;
+                      }
+                      return 'Fatura Atual';
+                    };
 
                     return (
                       <div
@@ -221,7 +256,7 @@ function DesktopAccountsList({ onNavigate }: AccountsListProps) {
                            </div>
 
                            <div className="space-y-1">
-                              <p className="text-xs font-medium opacity-70 uppercase tracking-wider">Fatura Atual</p>
+                              <p className="text-xs font-medium opacity-70 uppercase tracking-wider">{getInvoiceCompetencyText()}</p>
                               <h3 className="text-3xl font-bold tracking-tight">{formatCurrency(card.currentInvoice)}</h3>
                            </div>
 

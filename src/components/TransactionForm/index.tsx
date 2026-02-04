@@ -163,7 +163,9 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
       const [methodType, methodId] = data.paymentMethod.split(':');
       
       if (isRecurring && data.frequency) {
-        // Create recurring transaction
+        // Create recurring transaction with better feedback
+        toast.loading('Criando transações e faturas...', { id: 'creating-recurring' });
+        
         const result = await createRecurringTransaction({
           type: data.type === TransactionType.INCOME ? 'INCOME' : 'EXPENSE',
           category: data.category,
@@ -177,10 +179,34 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
           costCenterId: data.costCenterId || undefined,
         });
 
+        toast.dismiss('creating-recurring');
         reset();
         setIsRecurring(false);
+        
         const count = result.transactionsGenerated || 1;
-        toast.success(`${count} transação${count > 1 ? 's' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`);
+        const invoices = result.invoicesCreated || 0;
+        const errors = result.invoiceErrors || 0;
+        
+        if (methodType === 'card' && invoices > 0) {
+          if (errors === 0) {
+            toast.success(
+              `✅ ${count} transação${count > 1 ? 'ões' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!\n` +
+              `🗂️ ${invoices} fatura${invoices > 1 ? 's' : ''} criada${invoices > 1 ? 's' : ''} automaticamente.`,
+              { duration: 5000 }
+            );
+          } else {
+            toast.warning(
+              `⚠️ ${count} transação${count > 1 ? 'ões' : ''} criada${count > 1 ? 's' : ''}, mas ${errors} fatura${errors > 1 ? 's' : ''} com erro.\n` +
+              `✅ ${invoices} fatura${invoices > 1 ? 's' : ''} criada${invoices > 1 ? 's' : ''} com sucesso.`,
+              { duration: 7000 }
+            );
+          }
+        } else {
+          toast.success(
+            `✅ ${count} transação${count > 1 ? 'ões' : ''} recorrente${count > 1 ? 's' : ''} criada${count > 1 ? 's' : ''}!`,
+            { duration: 4000 }
+          );
+        }
       } else {
         // Create single transaction
         const payload = {
@@ -599,7 +625,11 @@ export function TransactionForm({ onSuccess, initialData, defaultType }: Transac
               )}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Salvando...' : (initialData ? 'Atualizar Movimentação' : 'Registrar Movimentação')}
+              {isSubmitting ? (
+                isRecurring ? 'Criando transações e faturas...' : 'Salvando...'
+              ) : (
+                initialData ? 'Atualizar Movimentação' : 'Registrar Movimentação'
+              )}
               {!isSubmitting && !isMobile && (
                 <Kbd className="ml-2 bg-white/20 text-white border-white/20 text-xs">
                   {isMac ? '⌘' : 'Ctrl'}+Enter

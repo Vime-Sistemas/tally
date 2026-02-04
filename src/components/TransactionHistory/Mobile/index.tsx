@@ -277,12 +277,15 @@ export function MobileTransactionHistory() {
   const confirmDelete = async () => {
     if (!deletingTransaction) return;
     try {
+      toast.loading('Excluindo transação...', { id: 'deleting-mobile' });
       await transactionService.delete(deletingTransaction.id);
+      toast.dismiss('deleting-mobile');
       setTransactions(prev => prev.filter(t => t.id !== deletingTransaction.id));
       toast.success("Transação excluída com sucesso");
       setIsDeleteDialogOpen(false);
       setDeletingTransaction(null);
     } catch (error) {
+      toast.dismiss('deleting-mobile');
       console.error("Erro ao excluir transação:", error);
       toast.error("Erro ao excluir transação");
     }

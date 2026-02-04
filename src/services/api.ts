@@ -301,6 +301,11 @@ export const getCurrentInvoice = async (cardId: string): Promise<CreditCardInvoi
   return response.data;
 };
 
+export const getNextInvoice = async (cardId: string): Promise<CreditCardInvoice> => {
+  const response = await api.get(`/credit-card-invoices/next/${cardId}`);
+  return response.data;
+};
+
 export const getInvoiceDetails = async (invoiceId: string): Promise<CreditCardInvoice> => {
   const response = await api.get(`/credit-card-invoices/${invoiceId}`);
   return response.data;
@@ -327,6 +332,35 @@ export const getInvoiceAllocationPreview = async (): Promise<{ data: any[], tota
 
 export const correctInvoiceAllocations = async (): Promise<{ corrected: number, total: number, message: string }> => {
   const response = await api.post('/credit-card-invoices/correct-allocations');
+  return response.data;
+};
+
+export const getOrphanTransactionsCount = async (): Promise<{ orphanCount: number }> => {
+  const response = await api.get('/credit-card-invoices/orphan-count');
+  return response.data;
+};
+
+export const correctOrphanTransactions = async (batchSize: number = 50): Promise<{ 
+  processed: number, 
+  corrected: number, 
+  hasMore: boolean 
+}> => {
+  const response = await api.post('/credit-card-invoices/correct-orphans', { batchSize });
+  return response.data;
+};
+
+export const validateCurrentInvoice = async (): Promise<{ 
+  cards: Array<{
+    cardId: string,
+    cardName: string,
+    previousValue: number,
+    newValue: number,
+    difference: number,
+    needsCorrection: boolean
+  }>,
+  totalCorrected: number 
+}> => {
+  const response = await api.post('/credit-card-invoices/validate-current-invoice');
   return response.data;
 };
 

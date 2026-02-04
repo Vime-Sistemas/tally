@@ -21,9 +21,9 @@ import {
   DialogFooter,
 } from '../ui/dialog';
 import { toast } from 'sonner';
-import { createTransaction, getAccounts } from '../../services/api';
+import { getAccounts, getCurrentInvoice, getNextInvoice, payInvoice, type CreditCardInvoice } from '../../services/api';
 import type { CreditCard, Account } from '../../types/account';
-import { TransactionType, TransactionCategory } from '../../types/transaction';
+
 import { useIsMobile } from '../../hooks/use-mobile';
 import { MobilePayInvoiceDialog } from './Mobile';
 
@@ -32,6 +32,7 @@ const payInvoiceSchema = z.object({
   accountId: z.string().min(1, 'Conta de origem é obrigatória'),
   date: z.string().min(1, 'Data é obrigatória'),
   description: z.string().optional(),
+  invoiceType: z.enum(['current', 'next'], { message: 'Tipo de fatura é obrigatório' }),
 });
 
 type PayInvoiceFormData = z.infer<typeof payInvoiceSchema>;
@@ -57,6 +58,9 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [currentInvoice, setCurrentInvoice] = useState<CreditCardInvoice | null>(null);
+  const [nextInvoice, setNextInvoice] = useState<CreditCardInvoice | null>(null);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
 
   const {
     register,
@@ -65,20 +69,26 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm<PayInvoiceFormData>({
     resolver: zodResolver(payInvoiceSchema),
     defaultValues: {
       amount: card.currentInvoice,
       date: new Date().toISOString().split('T')[0],
       description: `Pagamento Fatura ${card.name}`,
+      invoiceType: 'current',
     },
   });
+
+  const invoiceType = watch('invoiceType');
 
   useEffect(() => {
     if (open) {
       setValue('amount', card.currentInvoice);
       setValue('description', `Pagamento Fatura ${card.name}`);
+      setValue('invoiceType', 'current');
       loadAccounts();
+      loadInvoices();
     }
   }, [open, card, setValue]);
 
@@ -94,21 +104,58 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
     }
   };
 
+  const loadInvoices = async () => {
+    try {
+      setLoadingInvoices(true);
+      const [current, next] = await Promise.all([
+        getCurrentInvoice(card.id).catch(() => null),
+        getNextInvoice(card.id).catch(() => null)
+      ]);
+      setCurrentInvoice(current);
+      setNextInvoice(next);
+    } catch (error) {
+      console.error('Erro ao carregar faturas:', error);
+      toast.error('Erro ao carregar faturas');
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  // Verifica se há faturas disponíveis para pagamento
+  const hasAvailableInvoices = (currentInvoice && currentInvoice.totalAmount > 0) || (nextInvoice && nextInvoice.totalAmount > 0);
+
+  // Atualiza o valor quando o tipo de fatura muda
+  useEffect(() => {
+    if (invoiceType === 'current' && currentInvoice && currentInvoice.totalAmount > 0) {
+      setValue('amount', currentInvoice.totalAmount);
+      setValue('description', `Pagamento Fatura ${card.name} - ${currentInvoice.month}/${currentInvoice.year}`);
+    } else if (invoiceType === 'next' && nextInvoice && nextInvoice.totalAmount > 0) {
+      setValue('amount', nextInvoice.totalAmount);
+      setValue('description', `Pagamento Antecipado Fatura ${card.name} - ${nextInvoice.month}/${nextInvoice.year}`);
+    } else if (!hasAvailableInvoices) {
+      // Se não há faturas, fecha o diálogo e mostra mensagem
+      toast.success('Não há faturas pendentes para pagamento!');
+      onOpenChange(false);
+    }
+  }, [invoiceType, currentInvoice, nextInvoice, setValue, card.name, hasAvailableInvoices, onOpenChange]);
+
   const onSubmit = async (data: PayInvoiceFormData) => {
     try {
       setIsSubmitting(true);
       
-      await createTransaction({
-        type: TransactionType.INVOICE_PAYMENT,
-        category: 'OTHER_EXPENSE' as TransactionCategory, // Or a specific category for invoice payment
-        amount: data.amount,
-        description: data.description || `Pagamento Fatura ${card.name}`,
-        date: data.date,
-        accountId: data.accountId,
-        cardId: card.id,
-      });
+      // Escolhe a fatura baseada no tipo selecionado
+      const selectedInvoice = data.invoiceType === 'current' ? currentInvoice : nextInvoice;
+      
+      if (!selectedInvoice) {
+        toast.error('Não foi possível encontrar a fatura selecionada');
+        return;
+      }
 
-      toast.success('Pagamento registrado com sucesso!');
+      // Usa o endpoint específico de pagamento de fatura
+      await payInvoice(selectedInvoice.id, data.amount, data.accountId);
+
+      const invoiceTypeText = data.invoiceType === 'current' ? 'atual' : 'do próximo mês';
+      toast.success(`Pagamento da fatura ${invoiceTypeText} registrado com sucesso!`);
       onSuccess?.();
       onOpenChange(false);
       reset();
@@ -146,10 +193,59 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
             {errors.amount && (
               <p className="text-sm text-red-500">{errors.amount.message}</p>
             )}
-            <p className="text-xs text-gray-500">
-                Fatura atual: R$ {card.currentInvoice.toFixed(2).replace('.', ',')}
-            </p>
+            {!loadingInvoices && (
+              <div className="text-xs text-gray-500 space-y-1">
+                {currentInvoice && currentInvoice.totalAmount > 0 && (
+                  <p>Fatura atual ({currentInvoice.month}/{currentInvoice.year}): R$ {currentInvoice.totalAmount.toFixed(2).replace('.', ',')}</p>
+                )}
+                {nextInvoice && nextInvoice.totalAmount > 0 && (
+                  <p>Próxima fatura ({nextInvoice.month}/{nextInvoice.year}): R$ {nextInvoice.totalAmount.toFixed(2).replace('.', ',')}</p>
+                )}
+                {(!currentInvoice || currentInvoice.totalAmount <= 0) && (!nextInvoice || nextInvoice.totalAmount <= 0) && (
+                  <p className="text-green-600">Não há faturas pendentes</p>
+                )}
+              </div>
+            )}
           </div>
+
+          {hasAvailableInvoices && (
+            <div className="space-y-2">
+              <Label htmlFor="invoiceType">Tipo de Pagamento</Label>
+              <Controller
+                name="invoiceType"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange} disabled={loadingInvoices}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingInvoices ? "Carregando..." : "Selecione o tipo"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentInvoice && currentInvoice.totalAmount > 0 && (
+                        <SelectItem value="current">
+                          Fatura Atual ({currentInvoice.month}/{currentInvoice.year}) - R$ {currentInvoice.totalAmount.toFixed(2)}
+                        </SelectItem>
+                      )}
+                      {nextInvoice && nextInvoice.totalAmount > 0 && (
+                        <SelectItem value="next">
+                          Pagamento Antecipado ({nextInvoice.month}/{nextInvoice.year}) - R$ {nextInvoice.totalAmount.toFixed(2)}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.invoiceType && (
+                <p className="text-sm text-red-500">{errors.invoiceType.message}</p>
+              )}
+            </div>
+          )}
+
+          {!hasAvailableInvoices && !loadingInvoices && (
+            <div className="text-center py-8">
+              <p className="text-green-600 font-medium">✅ Todas as faturas estão em dia!</p>
+              <p className="text-gray-500 text-sm mt-1">Não há faturas pendentes para pagamento.</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="accountId">Pagar com</Label>
@@ -157,7 +253,7 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
               name="accountId"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={loadingAccounts || !hasAvailableInvoices}>
                   <SelectTrigger>
                     <SelectValue placeholder={loadingAccounts ? "Carregando..." : "Selecione a conta"} />
                   </SelectTrigger>
@@ -176,34 +272,40 @@ function DesktopPayInvoiceDialog({ open, card, onOpenChange, onSuccess }: PayInv
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="date">Data do Pagamento</Label>
-            <Input
-              id="date"
-              type="date"
-              {...register('date')}
-            />
-            {errors.date && (
-              <p className="text-sm text-red-500">{errors.date.message}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Input
-              id="description"
-              placeholder="Ex: Pagamento antecipado"
-              {...register('description')}
-            />
-          </div>
+          {hasAvailableInvoices && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="date">Data do Pagamento</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  {...register('date')}
+                />
+                {errors.date && (
+                  <p className="text-sm text-red-500">{errors.date.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição</Label>
+                <Input
+                  id="description"
+                  placeholder="Ex: Pagamento antecipado"
+                  {...register('description')}
+                />
+              </div>
+            </>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting} className='bg-blue-400 hover:bg-blue-500'>
-              {isSubmitting ? 'Processando...' : 'Confirmar Pagamento'}
-            </Button>
+            {hasAvailableInvoices && (
+              <Button type="submit" disabled={isSubmitting} className='bg-blue-400 hover:bg-blue-500'>
+                {isSubmitting ? 'Processando...' : 'Confirmar Pagamento'}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

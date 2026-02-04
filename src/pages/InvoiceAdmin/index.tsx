@@ -1,11 +1,18 @@
-import { useState } from 'react';
-import { Settings, AlertTriangle, RefreshCw, CheckCircle, CreditCard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, AlertTriangle, RefreshCw, CheckCircle, CreditCard, Package, Calculator, Loader2 } from 'lucide-react';
 
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Progress } from '../../components/ui/progress';
 import { InvoiceAllocationPreview } from '../../components/InvoiceAllocationPreview';
 import { toast } from 'sonner';
-import { getInvoiceAllocationPreview, correctInvoiceAllocations } from '../../services/api';
+import { 
+  getInvoiceAllocationPreview, 
+  correctInvoiceAllocations,
+  getOrphanTransactionsCount,
+  correctOrphanTransactions,
+  validateCurrentInvoice
+} from '../../services/api';
 
 interface PreviewData {
   id: string;
@@ -34,6 +41,44 @@ export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps = {}) {
     total: number;
     message: string;
   } | null>(null);
+
+  // Estados para transações órfãs
+  const [orphanCount, setOrphanCount] = useState<number | null>(null);
+  const [isLoadingOrphans, setIsLoadingOrphans] = useState(false);
+  const [isCorrectingOrphans, setIsCorrectingOrphans] = useState(false);
+  const [orphanProgress, setOrphanProgress] = useState(0);
+  const [orphanResult, setOrphanResult] = useState<{ total: number } | null>(null);
+
+  // Estados para validação de currentInvoice
+  const [isValidatingInvoices, setIsValidatingInvoices] = useState(false);
+  const [invoiceValidationResult, setInvoiceValidationResult] = useState<{
+    cards: Array<{
+      cardId: string;
+      cardName: string;
+      previousValue: number;
+      newValue: number;
+      difference: number;
+      needsCorrection: boolean;
+    }>;
+    totalCorrected: number;
+  } | null>(null);
+
+  // Carregar contagem de órfãos ao montar
+  useEffect(() => {
+    loadOrphanCount();
+  }, []);
+
+  const loadOrphanCount = async () => {
+    setIsLoadingOrphans(true);
+    try {
+      const result = await getOrphanTransactionsCount();
+      setOrphanCount(result.orphanCount);
+    } catch (error) {
+      console.error('Erro ao contar transações órfãs:', error);
+    } finally {
+      setIsLoadingOrphans(false);
+    }
+  };
 
   const loadPreview = async () => {
     setIsLoadingPreview(true);
@@ -71,6 +116,63 @@ export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps = {}) {
       console.error('Erro ao aplicar correções:', error);
       toast.error('Erro ao aplicar correções');
     }
+  };
+
+  // Corrigir transações órfãs em lotes
+  const correctOrphans = async () => {
+    setIsCorrectingOrphans(true);
+    setOrphanProgress(0);
+    let totalCorrected = 0;
+    let hasMore = true;
+    const initialCount = orphanCount || 0;
+
+    try {
+      while (hasMore) {
+        const result = await correctOrphanTransactions(50);
+        totalCorrected += result.corrected;
+        hasMore = result.hasMore;
+        
+        // Atualizar progresso
+        const progress = initialCount > 0 
+          ? Math.min(100, (totalCorrected / initialCount) * 100)
+          : 100;
+        setOrphanProgress(progress);
+      }
+
+      setOrphanResult({ total: totalCorrected });
+      setOrphanCount(0);
+      toast.success(`✅ ${totalCorrected} transações órfãs corrigidas!`);
+    } catch (error) {
+      console.error('Erro ao corrigir órfãos:', error);
+      toast.error('Erro ao corrigir transações órfãs');
+    } finally {
+      setIsCorrectingOrphans(false);
+      loadOrphanCount(); // Recarregar contagem
+    }
+  };
+
+  // Validar e corrigir currentInvoice
+  const validateInvoices = async () => {
+    setIsValidatingInvoices(true);
+    try {
+      const result = await validateCurrentInvoice();
+      setInvoiceValidationResult(result);
+      
+      if (result.totalCorrected === 0) {
+        toast.success('✅ Todos os cartões estão com valores corretos!');
+      } else {
+        toast.success(`✅ ${result.totalCorrected} cartão(ões) corrigido(s)!`);
+      }
+    } catch (error) {
+      console.error('Erro ao validar faturas:', error);
+      toast.error('Erro ao validar faturas');
+    } finally {
+      setIsValidatingInvoices(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
   return (
@@ -179,6 +281,144 @@ export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps = {}) {
             </CardContent>
           </Card>
         )}
+
+        {/* Card de transações órfãs (parcelas e recorrentes) */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Package className="h-5 w-5 text-orange-600" />
+              <CardTitle>Transações Órfãs (Parcelas e Recorrentes)</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-zinc-600">
+              Transações de cartão que não foram alocadas a nenhuma fatura (parcelas 2, 3, 4... 
+              ou transações recorrentes antigas).
+            </p>
+            
+            {orphanCount !== null && (
+              <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-lg">
+                <span className="text-zinc-600">Transações órfãs encontradas:</span>
+                <span className={`font-bold ${orphanCount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {orphanCount}
+                </span>
+              </div>
+            )}
+
+            {isCorrectingOrphans && (
+              <div className="space-y-2">
+                <Progress value={orphanProgress} className="h-2" />
+                <p className="text-sm text-zinc-500 text-center">
+                  Processando em lotes... {Math.round(orphanProgress)}%
+                </p>
+              </div>
+            )}
+
+            {orphanResult && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800">
+                  ✅ {orphanResult.total} transações foram alocadas às faturas corretas!
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={loadOrphanCount}
+                disabled={isLoadingOrphans}
+              >
+                {isLoadingOrphans ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Atualizar Contagem'
+                )}
+              </Button>
+              
+              <Button
+                onClick={correctOrphans}
+                disabled={isCorrectingOrphans || orphanCount === 0}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {isCorrectingOrphans ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Corrigindo...
+                  </>
+                ) : (
+                  'Corrigir Transações Órfãs'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card de validação de currentInvoice */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Calculator className="h-5 w-5 text-purple-600" />
+              <CardTitle>Validar Totais dos Cartões</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-zinc-600">
+              Verifica se o valor "Fatura Atual" de cada cartão corresponde à soma real das faturas 
+              não pagas. Corrige automaticamente caso haja divergências.
+            </p>
+            
+            {invoiceValidationResult && (
+              <div className="space-y-3">
+                {invoiceValidationResult.cards.map((card) => (
+                  <div 
+                    key={card.cardId}
+                    className={`p-3 rounded-lg border ${
+                      card.needsCorrection 
+                        ? 'bg-yellow-50 border-yellow-200' 
+                        : 'bg-green-50 border-green-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{card.cardName}</span>
+                      {card.needsCorrection ? (
+                        <span className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 rounded">
+                          Corrigido
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 bg-green-200 text-green-800 rounded">
+                          OK
+                        </span>
+                      )}
+                    </div>
+                    {card.needsCorrection && (
+                      <div className="text-sm text-zinc-600 mt-1">
+                        {formatCurrency(card.previousValue)} → {formatCurrency(card.newValue)}
+                        <span className="text-xs text-zinc-400 ml-2">
+                          (diferença: {formatCurrency(card.difference)})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <Button
+              onClick={validateInvoices}
+              disabled={isValidatingInvoices}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isValidatingInvoices ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                'Validar e Corrigir Totais'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Informações técnicas */}
         <Card className="border-zinc-100">
