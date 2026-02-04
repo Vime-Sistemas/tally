@@ -19,7 +19,8 @@ import {
   ClipboardPen,
   Users,
   Building2,
-  CalendarClock
+  CalendarClock,
+  CreditCard
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -129,6 +130,12 @@ export function Sidebar({ onNavigate, currentPage, collapsed = false, onToggleCo
         title: 'Dívidas',
         icon: BanknoteX,
         page: 'debts' as Page,
+      },
+      {
+        id: 'invoice-admin',
+        title: 'Faturamento de Cartão',
+        icon: CreditCard,
+        page: 'invoice-admin' as Page,
       },
       {
         id: 'params',

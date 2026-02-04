@@ -22,10 +22,10 @@ interface PreviewData {
 }
 
 interface InvoiceAdminProps {
-  onNavigate: (page: string) => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps) {
+export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps = {}) {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
