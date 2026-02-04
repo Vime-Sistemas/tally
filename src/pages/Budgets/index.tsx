@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { getBudgets, deleteBudget, getBudgetComparison, createBudget } from '../../services/api';
 import { BudgetForm } from '../../components/BudgetForm';
 import { CategoryService, type Category } from '../../services/categoryService';
-import { BudgetWizard } from '../../components/BudgetWizard';
+import { BudgetWizardDesktop } from '../../components/BudgetWizard/Desktop';
+import { BudgetAlertBanner, BudgetAlertList } from '../../components/BudgetAlerts';
+import { BudgetProgress } from '../../components/BudgetProgress';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
@@ -283,6 +285,9 @@ export function BudgetsPage() {
     <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
+        {/* Budget Alerts Banner */}
+        <BudgetAlertBanner onNavigateToBudgets={() => setActiveTab('list')} />
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -347,19 +352,15 @@ export function BudgetsPage() {
 
           {/* WIZARD TAB */}
           <TabsContent value="wizard" className="space-y-6 focus-visible:outline-none">
-             <Card className="border-zinc-200 shadow-lg">
-               <CardContent className="p-6">
-                 <BudgetWizard 
-                    month={parseInt(selectedMonth)} 
-                    year={parseInt(selectedYear)} 
-                    onCreated={() => {
-                      loadBudgets();
-                      setActiveTab('list');
-                    }}
-                    onNavigateList={() => setActiveTab('list')}
-                 />
-               </CardContent>
-             </Card>
+             <BudgetWizardDesktop 
+                month={parseInt(selectedMonth)} 
+                year={parseInt(selectedYear)} 
+                onCreated={() => {
+                  loadBudgets();
+                  setActiveTab('list');
+                }}
+                onCancel={() => setActiveTab('list')}
+             />
           </TabsContent>
 
           {/* LIST TAB */}
@@ -516,6 +517,17 @@ export function BudgetsPage() {
 
           {/* AGGREGATE TAB */}
           <TabsContent value="aggregate" className="space-y-6 focus-visible:outline-none">
+             {/* New Progress Component */}
+             <BudgetProgress 
+               budgets={budgets} 
+               comparisons={comparisons} 
+               loading={loading} 
+             />
+
+             {/* Budget Alerts List */}
+             <BudgetAlertList maxItems={5} />
+
+             {/* Legacy Aggregate Cards */}
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                    { type: BudgetType.EXPENSE, title: 'Despesas', color: 'text-red-600', bg: 'bg-red-50', border: 'border-zinc-100' },

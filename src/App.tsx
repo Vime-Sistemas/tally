@@ -30,6 +30,7 @@ import { Sidebar } from "./components/Sidebar";
 import { LoadingScreen } from "./components/LoadingScreen";
 import type { Page, AppContext } from "./types/navigation";
 import { UserProvider, useUser } from "./contexts/UserContext";
+import { BudgetAlertsProvider } from "./components/BudgetAlerts";
 import { Toaster } from "./components/ui/sonner";
 import { SessionExpiredDialog } from "./components/SessionExpiredDialog";
 import { useIsMobile } from "./hooks/use-mobile";
@@ -689,21 +690,23 @@ function OnboardingRoute() {
 function App() {
   return (
     <UserProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingRoute />} />
-          <Route path="/funcionalidades" element={<NewFeaturesPage />} />
-          <Route path="/planos" element={<PricingPage />} />
-          <Route path="/cadastro" element={<SignUp />} />
-          <Route path="/login" element={<LoginRoute />} />
-          <Route path="/onboarding" element={<OnboardingRoute />} />
-          <Route path="/comparativo-planilha-e-cdf" element={<Comparativo />} />
-          <Route path="/releases" element={<Releases />} />
-          <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
-          <Route path="/app/*" element={<AppContent />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <BudgetAlertsProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingRoute />} />
+            <Route path="/funcionalidades" element={<NewFeaturesPage />} />
+            <Route path="/planos" element={<PricingPage />} />
+            <Route path="/cadastro" element={<SignUp />} />
+            <Route path="/login" element={<LoginRoute />} />
+            <Route path="/onboarding" element={<OnboardingRoute />} />
+            <Route path="/comparativo-planilha-e-cdf" element={<Comparativo />} />
+            <Route path="/releases" element={<Releases />} />
+            <Route path="/:slug/invite/:token" element={<InviteLandingPage />} />
+            <Route path="/app/*" element={<AppContent />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </BudgetAlertsProvider>
     </UserProvider>
   );
 }
