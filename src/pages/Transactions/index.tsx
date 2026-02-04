@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TransactionForm } from '../../components/TransactionForm';
 import { TransferForm } from '../../components/TransferForm';
 import { InvestmentForm } from '../../components/InvestmentForm';
-import { MobileTransactionForm } from '../../components/TransactionForm/Mobile';
+import { TransactionWizard, type WizardData } from '../../components/TransactionWizard';
 import { MobileTransferForm } from '../../components/TransferForm/Mobile';
 import { MobileInvestmentForm } from '../../components/InvestmentForm/Mobile';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -10,8 +10,10 @@ import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/button';
 import { List, ArrowRightLeft, TrendingUp, PiggyBank } from 'lucide-react';
 import type { Page } from '../../types/navigation';
-import { TransactionType } from '../../types/transaction';
+import { TransactionType, type TransactionCategory } from '../../types/transaction';
 import { TRANSACTION_INTENT_KEY, type TransactionIntent } from '../../components/QuickTransactionMenu';
+import { createTransaction, confirmTransaction } from '../../services/api';
+import { toast } from 'sonner';
 
 type Tab = 'TRANSACTION' | 'TRANSFER' | 'INVESTMENT';
 type IncomeExpenseType = typeof TransactionType.INCOME | typeof TransactionType.EXPENSE;
@@ -23,6 +25,8 @@ interface TransactionsProps {
 export function Transactions({ onNavigate }: TransactionsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('TRANSACTION');
   const [prefilledType, setPrefilledType] = useState<IncomeExpenseType | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardIntent, setWizardIntent] = useState<TransactionIntent | undefined>();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -35,6 +39,11 @@ export function Transactions({ onNavigate }: TransactionsProps) {
         setActiveTab(intent.tab);
         if (intent.tab === 'TRANSACTION' && intent.type && (intent.type === TransactionType.INCOME || intent.type === TransactionType.EXPENSE)) {
           setPrefilledType(intent.type);
+          // On mobile, show wizard directly
+          if (isMobile) {
+            setWizardIntent(intent);
+            setShowWizard(true);
+          }
         } else {
           setPrefilledType(null);
         }
@@ -44,9 +53,16 @@ export function Transactions({ onNavigate }: TransactionsProps) {
     } finally {
       sessionStorage.removeItem(TRANSACTION_INTENT_KEY);
     }
-  }, []);
+  }, [isMobile]);
 
-  // Atalhos de teclado (mantidos)
+  // Show wizard on mobile when tab is TRANSACTION
+  useEffect(() => {
+    if (isMobile && activeTab === 'TRANSACTION' && !showWizard) {
+      setShowWizard(true);
+    }
+  }, [isMobile, activeTab, showWizard]);
+
+  // Keyboard shortcuts (desktop only)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -62,10 +78,78 @@ export function Transactions({ onNavigate }: TransactionsProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Componente de Aba estilo Apple Segmented Control
+  // Handle wizard completion
+  const handleWizardComplete = useCallback(async (data: WizardData) => {
+    try {
+      const payload = {
+        type: data.type!,
+        category: data.category as TransactionCategory,
+        amount: data.amount!,
+        description: data.description!,
+        date: data.date!,
+        accountId: data.accountId,
+        cardId: data.cardId,
+        equityId: data.category === 'INVESTMENT' ? data.equityId : undefined,
+        installments: data.installments,
+      };
+
+      await createTransaction(payload);
+      toast.success('Transação registrada com sucesso!');
+      setShowWizard(false);
+      setWizardIntent(undefined);
+      
+      // Navigate to history on success
+      if (onNavigate) {
+        onNavigate('transactions-history');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response?.data?.error === 'Insufficient balance') {
+        // Handle insufficient balance - for now, confirm anyway
+        try {
+          await confirmTransaction({
+            type: data.type!,
+            category: data.category as TransactionCategory,
+            amount: data.amount!,
+            description: data.description!,
+            date: data.date!,
+            accountId: data.accountId,
+            cardId: data.cardId,
+            confirmNegativeBalance: true,
+          });
+          toast.success('Transação registrada com saldo negativo!');
+          setShowWizard(false);
+          if (onNavigate) {
+            onNavigate('transactions-history');
+          }
+        } catch (confirmError) {
+          console.error('Erro ao confirmar transação:', confirmError);
+          toast.error('Erro ao registrar transação');
+        }
+      } else {
+        console.error('Erro ao criar transação:', error);
+        toast.error('Erro ao registrar transação');
+      }
+    }
+  }, [onNavigate]);
+
+  // Handle wizard cancel
+  const handleWizardCancel = useCallback(() => {
+    setShowWizard(false);
+    setWizardIntent(undefined);
+    if (onNavigate) {
+      onNavigate('dashboard-summary');
+    }
+  }, [onNavigate]);
+
+  // Tab Button component
   const TabButton = ({ id, label, icon: Icon, shortcut }: { id: Tab, label: string, icon: any, shortcut: string }) => (
     <button
-      onClick={() => setActiveTab(id)}
+      onClick={() => {
+        setActiveTab(id);
+        if (isMobile && id === 'TRANSACTION') {
+          setShowWizard(true);
+        }
+      }}
       className={cn(
         "relative flex items-center justify-center gap-2 text-sm font-medium transition-all duration-200 ease-out",
         isMobile 
@@ -92,6 +176,17 @@ export function Transactions({ onNavigate }: TransactionsProps) {
       )}
     </button>
   );
+
+  // Mobile: Show Wizard for transactions
+  if (isMobile && showWizard && activeTab === 'TRANSACTION') {
+    return (
+      <TransactionWizard
+        onComplete={handleWizardComplete}
+        onCancel={handleWizardCancel}
+        initialIntent={wizardIntent}
+      />
+    );
+  }
 
   return (
     <div className={cn("min-h-screen bg-white", isMobile ? "p-4" : "p-8")}>
@@ -130,10 +225,8 @@ export function Transactions({ onNavigate }: TransactionsProps) {
 
         {/* Área do Formulário */}
         <div className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-          {activeTab === 'TRANSACTION' && (
-            isMobile 
-              ? <MobileTransactionForm defaultType={prefilledType ?? undefined} /> 
-              : <TransactionForm defaultType={prefilledType ?? undefined} />
+          {activeTab === 'TRANSACTION' && !isMobile && (
+            <TransactionForm defaultType={prefilledType ?? undefined} />
           )}
           {activeTab === 'TRANSFER' && (isMobile ? <MobileTransferForm /> : <TransferForm />)}
           {activeTab === 'INVESTMENT' && (isMobile ? <MobileInvestmentForm /> : <InvestmentForm />)}
