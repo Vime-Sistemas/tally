@@ -99,7 +99,7 @@ const parseUTCDate = (dateString: string) => {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 };
 
-import { MobileTransactionHistory } from "./Mobile";
+import { MobileTransactionHistoryOptimized } from "./Mobile/Optimized";
 import { useIsMobile } from "../../hooks/use-mobile";
 
 const globalIncomeCategories: DisplayCategory[] = [
@@ -145,7 +145,7 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    return <MobileTransactionHistory />;
+    return <MobileTransactionHistoryOptimized />;
   }
 
   return <DesktopTransactionHistory onNavigate={onNavigate} />;
