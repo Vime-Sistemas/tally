@@ -90,12 +90,14 @@ export function InvoiceAdmin({ onNavigate }: InvoiceAdminProps = {}) {
                 </p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => onNavigate('dashboard')}
-            >
-              Voltar ao Dashboard
-            </Button>
+            {onNavigate && (
+              <Button
+                variant="outline"
+                onClick={() => onNavigate('dashboard')}
+              >
+                Voltar ao Dashboard
+              </Button>
+            )}
           </div>
         </div>
       </div>
